@@ -90,7 +90,7 @@ function generateId(): string {
   return Math.random().toString(36).slice(2) + Date.now().toString(36)
 }
 
-function buildDefaultSlots(): Slot[] {
+export function buildDefaultSlots(): Slot[] {
   const slots: Slot[] = []
   for (let d = 0; d < 5; d++) {
     for (let t = 0; t < DEFAULT_TIMES.length; t++) {
@@ -137,6 +137,8 @@ function rowToBooking(row: Record<string, unknown>): Booking {
 
 // ─── Slot storage ─────────────────────────────────────────────────────────────
 
+export const TEMPLATE_KEY = 'template'
+
 export async function getSlots(weekKey: string): Promise<Slot[]> {
   const { data, error } = await supabase
     .from('slots')
@@ -145,10 +147,57 @@ export async function getSlots(weekKey: string): Promise<Slot[]> {
     .order('day')
     .order('time')
 
-  if (error || !data || data.length === 0) {
-    return buildDefaultSlots()
+  if (!error && data && data.length > 0) return data.map(rowToSlot)
+
+  // Fall back to template before using blank defaults
+  const { data: tpl } = await supabase
+    .from('slots')
+    .select('*')
+    .eq('week_key', TEMPLATE_KEY)
+    .order('day')
+    .order('time')
+
+  if (tpl && tpl.length > 0) {
+    return tpl.map((row, i) => ({
+      ...rowToSlot(row),
+      id: `slot-tpl-${i}-${row.day}-${(row.time as string).replace(':', '')}`,
+    }))
   }
-  return data.map(rowToSlot)
+
+  return buildDefaultSlots()
+}
+
+export async function getTemplate(): Promise<Slot[]> {
+  const { data } = await supabase
+    .from('slots')
+    .select('*')
+    .eq('week_key', TEMPLATE_KEY)
+    .order('day')
+    .order('time')
+  return data ? data.map(rowToSlot) : []
+}
+
+export async function lockSlot(slot: Slot): Promise<void> {
+  await supabase.from('slots').delete()
+    .eq('week_key', TEMPLATE_KEY).eq('day', slot.day).eq('time', slot.time)
+  await supabase.from('slots').insert({
+    id: `tpl-${slot.day}-${slot.time.replace(':', '')}`,
+    day: slot.day,
+    time: slot.time,
+    end_time: slot.endTime,
+    group_type: slot.groupType,
+    enrolled: slot.enrolled,
+    week_key: TEMPLATE_KEY,
+  })
+}
+
+export async function unlockSlot(day: DayIndex, time: string): Promise<void> {
+  await supabase.from('slots').delete()
+    .eq('week_key', TEMPLATE_KEY).eq('day', day).eq('time', time)
+}
+
+export async function clearTemplate(): Promise<void> {
+  await supabase.from('slots').delete().eq('week_key', TEMPLATE_KEY)
 }
 
 export async function saveSlots(slots: Slot[], weekKey: string): Promise<void> {

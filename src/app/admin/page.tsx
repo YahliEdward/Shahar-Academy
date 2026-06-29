@@ -6,6 +6,7 @@ import {
   Slot, Booking, GroupType, DayIndex, DAYS, GROUP_LABELS, MAX_STUDENTS,
   getSlots, saveSlots, getBookings, updateBooking, deleteBooking,
   addSlotToDay, removeSlot, getWeekKey, getWeekDates, formatShortDate,
+  getTemplate, lockSlot, unlockSlot, clearTemplate, buildDefaultSlots,
 } from '@/lib/types'
 
 const ADMIN_PASSWORD = '123'
@@ -64,9 +65,14 @@ function SlotEditor({ onUpdate, bookings }: { onUpdate: (slots: Slot[], weekKey:
   const [weekOffset, setWeekOffset] = useState(0)
   const [activeDay, setActiveDay] = useState(0)
   const [slots, setSlots] = useState<Slot[]>([])
+  const [templateSlots, setTemplateSlots] = useState<Slot[]>([])
 
   const weekKey = getWeekKey(weekOffset)
   const weekDates = getWeekDates(weekOffset)
+
+  useEffect(() => {
+    getTemplate().then(setTemplateSlots)
+  }, [])
 
   useEffect(() => {
     getSlots(weekKey).then(setSlots)
@@ -99,6 +105,32 @@ function SlotEditor({ onUpdate, bookings }: { onUpdate: (slots: Slot[], weekKey:
     commit(slots.map((s) => s.id === id ? { ...s, [field]: value } : s))
   }
 
+  const isLocked = (slot: Slot) =>
+    templateSlots.some(t => t.day === slot.day && t.time === slot.time)
+
+  const handleLockSlot = async (slot: Slot) => {
+    await lockSlot(slot)
+    setTemplateSlots(prev => [
+      ...prev.filter(t => !(t.day === slot.day && t.time === slot.time)),
+      slot,
+    ])
+  }
+
+  const handleUnlockSlot = async (slot: Slot) => {
+    await unlockSlot(slot.day, slot.time)
+    setTemplateSlots(prev =>
+      prev.filter(t => !(t.day === slot.day && t.time === slot.time))
+    )
+  }
+
+  const handleResetToDefaults = async () => {
+    if (!window.confirm('לאפס את לוח השעות לברירת המחדל (14:00–20:00) ולנקות את כל הנעילות?')) return
+    await clearTemplate()
+    setTemplateSlots([])
+    const defaults = buildDefaultSlots()
+    commit(defaults)
+  }
+
   const daySlots = slots.filter((s) => s.day === activeDay)
   const weekStart = weekDates[0]
   const weekEnd = weekDates[4]
@@ -124,6 +156,23 @@ function SlotEditor({ onUpdate, bookings }: { onUpdate: (slots: Slot[], weekKey:
           className="w-8 h-8 rounded-lg bg-zinc-800 text-slate-400 hover:bg-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all font-bold flex items-center justify-center"
         >
           ←
+        </button>
+      </div>
+
+      {/* Locked slots indicator + reset */}
+      <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+        {templateSlots.length > 0 ? (
+          <p className="text-xs text-yellow-400/70">
+            🔒 {templateSlots.length} שעות נעולות — נטענות אוטומטית בשבועות חדשים
+          </p>
+        ) : (
+          <span />
+        )}
+        <button
+          onClick={handleResetToDefaults}
+          className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors underline"
+        >
+          איפוס לברירת מחדל
         </button>
       </div>
 
@@ -220,6 +269,19 @@ function SlotEditor({ onUpdate, bookings }: { onUpdate: (slots: Slot[], weekKey:
                   className="w-8 h-8 rounded-lg bg-yellow-400 hover:bg-yellow-300 disabled:opacity-30 text-black font-bold transition-colors text-lg"
                 >
                   +
+                </button>
+
+                {/* Lock slot */}
+                <button
+                  onClick={() => isLocked(slot) ? handleUnlockSlot(slot) : handleLockSlot(slot)}
+                  title={isLocked(slot) ? 'בטל נעילה' : 'נעל — שמור שעה זו לכל השבועות'}
+                  className={`w-8 h-8 rounded-lg text-sm transition-all border ${
+                    isLocked(slot)
+                      ? 'bg-yellow-400/20 border-yellow-400/40 text-yellow-400 hover:bg-red-900/30 hover:border-red-500/40 hover:text-red-400'
+                      : 'bg-zinc-700 border-zinc-600 text-zinc-400 hover:bg-yellow-400/20 hover:border-yellow-400/40 hover:text-yellow-400'
+                  }`}
+                >
+                  {isLocked(slot) ? '🔒' : '🔓'}
                 </button>
 
                 {/* Remove slot */}
