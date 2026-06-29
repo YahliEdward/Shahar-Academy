@@ -92,20 +92,6 @@ function generateId(): string {
 
 function buildDefaultSlots(): Slot[] {
   const slots: Slot[] = []
-  const defaultGroups: GroupType[][] = [
-    ['middle-school', 'high-4', 'high-5', 'mixed', 'empty', 'empty'],
-    ['high-5', 'middle-school', 'high-4', 'mixed', 'empty', 'empty'],
-    ['high-4', 'high-5', 'mixed', 'middle-school', 'empty', 'empty'],
-    ['mixed', 'high-4', 'high-5', 'middle-school', 'empty', 'empty'],
-    ['high-5', 'mixed', 'middle-school', 'high-4', 'empty', 'empty'],
-  ]
-  const defaultEnrolled = [
-    [4, 6, 2, 1, 0, 0],
-    [3, 5, 6, 0, 0, 0],
-    [6, 2, 4, 1, 0, 0],
-    [5, 3, 1, 4, 0, 0],
-    [2, 6, 3, 5, 0, 0],
-  ]
   for (let d = 0; d < 5; d++) {
     for (let t = 0; t < DEFAULT_TIMES.length; t++) {
       slots.push({
@@ -113,8 +99,8 @@ function buildDefaultSlots(): Slot[] {
         day: d as DayIndex,
         time: DEFAULT_TIMES[t].time,
         endTime: DEFAULT_TIMES[t].endTime,
-        groupType: defaultGroups[d][t],
-        enrolled: defaultEnrolled[d][t],
+        groupType: 'empty',
+        enrolled: 0,
       })
     }
   }
