@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import ShaharLogo from './ShaharLogo'
 
 export default function Hero() {
   const [contactOpen, setContactOpen] = useState(false)
@@ -25,9 +26,7 @@ export default function Hero() {
       {/* Logo area */}
       <div className="relative z-10 flex flex-col items-center text-center max-w-2xl mx-auto">
         <div className="mb-6 flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-yellow-400 flex items-center justify-center text-black font-black text-2xl shadow-lg shadow-yellow-400/30">
-            Σ
-          </div>
+          <ShaharLogo size={48} className="shadow-lg shadow-yellow-400/20 rounded-[11px]" />
           <span className="text-2xl font-black text-white tracking-tight">
             האקדמיה למתמטיקה <span className="text-yellow-400">של שחר</span>
           </span>

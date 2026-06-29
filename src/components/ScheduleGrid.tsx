@@ -46,12 +46,18 @@ function SlotCard({ slot, onClick }: { slot: Slot; onClick: () => void }) {
 
   if (isEmpty) {
     return (
-      <div className="rounded-xl border border-dashed border-zinc-700/50 p-3 text-center text-zinc-600 text-xs">
+      <button
+        onClick={onClick}
+        className="w-full rounded-xl border border-dashed border-zinc-700/50 p-3 text-center text-zinc-600 text-xs transition-all hover:border-yellow-400/40 hover:bg-zinc-800/40 hover:-translate-y-0.5 cursor-pointer group"
+      >
         <div className="font-semibold text-zinc-500">
           {slot.time} – {slot.endTime}
         </div>
         <div className="mt-1">פנוי</div>
-      </div>
+        <div className="mt-1.5 text-yellow-400/0 group-hover:text-yellow-400/70 transition-colors font-semibold">
+          לחץ לשריון מקום ←
+        </div>
+      </button>
     )
   }
 

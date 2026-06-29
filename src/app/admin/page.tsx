@@ -6,8 +6,9 @@ import {
   Slot, Booking, GroupType, DayIndex, DAYS, GROUP_LABELS, MAX_STUDENTS,
   getSlots, saveSlots, getBookings, updateBooking, deleteBooking,
   addSlotToDay, removeSlot, getWeekKey, getWeekDates, formatShortDate,
-  getTemplate, lockSlot, unlockSlot, clearTemplate, buildDefaultSlots,
+  getTemplate, saveTemplate, weekHasOverride, resetWeekToDefault,
 } from '@/lib/types'
+import TimePicker from '@/components/TimePicker'
 
 const ADMIN_PASSWORD = '123'
 const MAX_WEEK_OFFSET = 3
@@ -61,120 +62,139 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
 
 // ─── Slot editor ──────────────────────────────────────────────────────────
 
-function SlotEditor({ onUpdate, bookings }: { onUpdate: (slots: Slot[], weekKey: string) => void; bookings: Booking[] }) {
+type EditMode = 'default' | 'week'
+
+function SlotEditor({ bookings, onChanged }: { bookings: Booking[]; onChanged: () => void }) {
+  const [mode, setMode] = useState<EditMode>('default')
   const [weekOffset, setWeekOffset] = useState(0)
   const [activeDay, setActiveDay] = useState(0)
   const [slots, setSlots] = useState<Slot[]>([])
-  const [templateSlots, setTemplateSlots] = useState<Slot[]>([])
+  const [isOverride, setIsOverride] = useState(false)
+  const [loading, setLoading] = useState(true)
 
   const weekKey = getWeekKey(weekOffset)
   const weekDates = getWeekDates(weekOffset)
 
-  useEffect(() => {
-    getTemplate().then(setTemplateSlots)
-  }, [])
+  const load = useCallback(async () => {
+    setLoading(true)
+    if (mode === 'default') {
+      setSlots(await getTemplate())
+    } else {
+      setSlots(await getSlots(weekKey))
+      setIsOverride(await weekHasOverride(weekKey))
+    }
+    setLoading(false)
+  }, [mode, weekKey])
 
-  useEffect(() => {
-    getSlots(weekKey).then(setSlots)
-  }, [weekKey])
+  useEffect(() => { load() }, [load])
 
-  const commit = (updated: Slot[]) => {
+  // Persist the current edit: the default schedule, or a single week's override.
+  const commit = async (updated: Slot[]) => {
     setSlots(updated)
-    onUpdate(updated, weekKey)
+    if (mode === 'default') {
+      await saveTemplate(updated)
+    } else {
+      await saveSlots(updated, weekKey)
+      setIsOverride(true)
+    }
+    onChanged()
   }
 
-  const setGroupType = (id: string, groupType: GroupType) => {
+  const setGroupType = (id: string, groupType: GroupType) =>
     commit(slots.map((s) => s.id === id ? { ...s, groupType } : s))
-  }
 
-  const adjustEnrolled = (id: string, delta: number) => {
+  const adjustEnrolled = (id: string, delta: number) =>
     commit(slots.map((s) =>
       s.id === id ? { ...s, enrolled: Math.max(0, Math.min(MAX_STUDENTS, s.enrolled + delta)) } : s
     ))
-  }
 
-  const handleAddSlot = () => {
-    commit(addSlotToDay(slots, activeDay as DayIndex))
-  }
+  const handleAddSlot = () => commit(addSlotToDay(slots, activeDay as DayIndex))
 
-  const handleRemoveSlot = (id: string) => {
-    commit(removeSlot(slots, id))
-  }
+  const handleRemoveSlot = (id: string) => commit(removeSlot(slots, id))
 
-  const updateSlotTime = (id: string, field: 'time' | 'endTime', value: string) => {
+  const updateSlotTime = (id: string, field: 'time' | 'endTime', value: string) =>
     commit(slots.map((s) => s.id === id ? { ...s, [field]: value } : s))
-  }
 
-  const isLocked = (slot: Slot) =>
-    templateSlots.some(t => t.day === slot.day && t.time === slot.time)
-
-  const handleLockSlot = async (slot: Slot) => {
-    await lockSlot(slot)
-    setTemplateSlots(prev => [
-      ...prev.filter(t => !(t.day === slot.day && t.time === slot.time)),
-      slot,
-    ])
-  }
-
-  const handleUnlockSlot = async (slot: Slot) => {
-    await unlockSlot(slot.day, slot.time)
-    setTemplateSlots(prev =>
-      prev.filter(t => !(t.day === slot.day && t.time === slot.time))
-    )
-  }
-
-  const handleResetToDefaults = async () => {
-    if (!window.confirm('לאפס את לוח השעות לברירת המחדל (14:00–20:00) ולנקות את כל הנעילות?')) return
-    await clearTemplate()
-    setTemplateSlots([])
-    const defaults = buildDefaultSlots()
-    commit(defaults)
+  const handleResetWeek = async () => {
+    if (!window.confirm('להחזיר שבוע זה ללוח ברירת המחדל? כל השינויים הנקודתיים של השבוע יימחקו.')) return
+    await resetWeekToDefault(weekKey)
+    setIsOverride(false)
+    setSlots(await getSlots(weekKey))
+    onChanged()
   }
 
   const daySlots = slots.filter((s) => s.day === activeDay)
-  const weekStart = weekDates[0]
-  const weekEnd = weekDates[4]
   const weekLabel = weekOffset === 0
-    ? `שבוע נוכחי (${formatShortDate(weekStart)}–${formatShortDate(weekEnd)})`
-    : `שבוע ${formatShortDate(weekStart)}–${formatShortDate(weekEnd)}`
+    ? `שבוע נוכחי (${formatShortDate(weekDates[0])}–${formatShortDate(weekDates[4])})`
+    : `שבוע ${formatShortDate(weekDates[0])}–${formatShortDate(weekDates[4])}`
 
   return (
     <div>
-      {/* Week navigation */}
-      <div className="flex items-center gap-3 mb-5">
+      {/* Mode toggle */}
+      <div className="flex gap-2 mb-5 bg-zinc-800/50 p-1 rounded-xl">
         <button
-          onClick={() => setWeekOffset((w) => Math.max(0, w - 1))}
-          disabled={weekOffset === 0}
-          className="w-8 h-8 rounded-lg bg-zinc-800 text-slate-400 hover:bg-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all font-bold flex items-center justify-center"
+          onClick={() => setMode('default')}
+          className={`flex-1 px-4 py-2 rounded-lg font-bold text-sm transition-all ${
+            mode === 'default' ? 'bg-yellow-400 text-black' : 'text-slate-400 hover:text-white'
+          }`}
         >
-          →
+          לוח קבוע (ברירת מחדל)
         </button>
-        <span className="text-sm font-semibold text-slate-300 flex-1 text-center">{weekLabel}</span>
         <button
-          onClick={() => setWeekOffset((w) => Math.min(MAX_WEEK_OFFSET, w + 1))}
-          disabled={weekOffset === MAX_WEEK_OFFSET}
-          className="w-8 h-8 rounded-lg bg-zinc-800 text-slate-400 hover:bg-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all font-bold flex items-center justify-center"
+          onClick={() => setMode('week')}
+          className={`flex-1 px-4 py-2 rounded-lg font-bold text-sm transition-all ${
+            mode === 'week' ? 'bg-yellow-400 text-black' : 'text-slate-400 hover:text-white'
+          }`}
         >
-          ←
+          שבוע ספציפי
         </button>
       </div>
 
-      {/* Locked slots indicator + reset */}
-      <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-        {templateSlots.length > 0 ? (
-          <p className="text-xs text-yellow-400/70">
-            🔒 {templateSlots.length} שעות נעולות — נטענות אוטומטית בשבועות חדשים
-          </p>
-        ) : (
-          <span />
-        )}
-        <button
-          onClick={handleResetToDefaults}
-          className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors underline"
-        >
-          איפוס לברירת מחדל
-        </button>
-      </div>
+      {/* Context banner */}
+      {mode === 'default' ? (
+        <div className="mb-4 rounded-xl bg-yellow-400/10 border border-yellow-400/30 px-4 py-3 text-xs text-yellow-200 leading-relaxed">
+          זהו לוח השעות הקבוע — הוא חל אוטומטית על כל שבוע שלא שונה ידנית. שינויים כאן משפיעים על כל השבועות.
+        </div>
+      ) : (
+        <>
+          {/* Week navigation */}
+          <div className="flex items-center gap-3 mb-4">
+            <button
+              onClick={() => setWeekOffset((w) => Math.max(0, w - 1))}
+              disabled={weekOffset === 0}
+              className="w-8 h-8 rounded-lg bg-zinc-800 text-slate-400 hover:bg-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all font-bold flex items-center justify-center"
+            >
+              →
+            </button>
+            <span className="text-sm font-semibold text-slate-300 flex-1 text-center">{weekLabel}</span>
+            <button
+              onClick={() => setWeekOffset((w) => Math.min(MAX_WEEK_OFFSET, w + 1))}
+              disabled={weekOffset === MAX_WEEK_OFFSET}
+              className="w-8 h-8 rounded-lg bg-zinc-800 text-slate-400 hover:bg-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all font-bold flex items-center justify-center"
+            >
+              ←
+            </button>
+          </div>
+
+          {isOverride ? (
+            <div className="mb-4 rounded-xl bg-blue-500/10 border border-blue-500/30 px-4 py-3 flex items-center justify-between gap-3 flex-wrap">
+              <p className="text-xs text-blue-200 leading-relaxed">
+                ✏️ שבוע זה שונה מלוח ברירת המחדל. השינויים חלים על שבוע זה בלבד.
+              </p>
+              <button
+                onClick={handleResetWeek}
+                className="text-xs px-3 py-1.5 rounded-lg bg-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors font-semibold whitespace-nowrap"
+              >
+                החזר לברירת מחדל
+              </button>
+            </div>
+          ) : (
+            <div className="mb-4 rounded-xl bg-zinc-800/40 border border-zinc-700/40 px-4 py-3 text-xs text-zinc-400 leading-relaxed">
+              📋 שבוע זה עוקב אחרי לוח ברירת המחדל. כל שינוי כאן ייצור גרסה מיוחדת לשבוע זה בלבד.
+            </div>
+          )}
+        </>
+      )}
 
       {/* Day tabs */}
       <div className="flex gap-2 overflow-x-auto pb-2 mb-5">
@@ -187,18 +207,23 @@ function SlotEditor({ onUpdate, bookings }: { onUpdate: (slots: Slot[], weekKey:
             }`}
           >
             <div>יום {day}</div>
-            <div className={`text-xs font-normal ${activeDay === i ? 'text-black/60' : 'text-slate-600'}`}>
-              {formatShortDate(weekDates[i])}
-            </div>
+            {mode === 'week' && (
+              <div className={`text-xs font-normal ${activeDay === i ? 'text-black/60' : 'text-slate-600'}`}>
+                {formatShortDate(weekDates[i])}
+              </div>
+            )}
           </button>
         ))}
       </div>
 
       {/* Slot list */}
+      {loading ? (
+        <p className="text-center text-zinc-500 py-8 text-sm">טוען…</p>
+      ) : (
       <div className="space-y-3">
         {daySlots.map((slot) => (
           <div key={slot.id} className="bg-zinc-800/50 border border-zinc-700/50 rounded-xl p-4">
-            {(() => {
+            {mode === 'week' && (() => {
               const slotStudents = bookings.filter(
                 (b) => b.slotId === slot.id && b.weekKey === weekKey
               )
@@ -221,19 +246,15 @@ function SlotEditor({ onUpdate, bookings }: { onUpdate: (slots: Slot[], weekKey:
             })()}
             <div className="flex items-center justify-between flex-wrap gap-3">
               {/* Time inputs */}
-              <div className="flex items-center gap-1 font-mono text-sm">
-                <input
-                  type="time"
+              <div className="flex items-center gap-2 font-mono text-sm">
+                <TimePicker
                   value={slot.time}
-                  onChange={(e) => updateSlotTime(slot.id, 'time', e.target.value)}
-                  className="bg-zinc-700 border border-zinc-600 rounded-lg px-2 py-1 text-yellow-400 font-bold text-sm outline-none focus:border-yellow-400 transition-colors w-[90px]"
+                  onChange={(v) => updateSlotTime(slot.id, 'time', v)}
                 />
                 <span className="text-zinc-500">–</span>
-                <input
-                  type="time"
+                <TimePicker
                   value={slot.endTime}
-                  onChange={(e) => updateSlotTime(slot.id, 'endTime', e.target.value)}
-                  className="bg-zinc-700 border border-zinc-600 rounded-lg px-2 py-1 text-yellow-400 font-bold text-sm outline-none focus:border-yellow-400 transition-colors w-[90px]"
+                  onChange={(v) => updateSlotTime(slot.id, 'endTime', v)}
                 />
               </div>
 
@@ -271,19 +292,6 @@ function SlotEditor({ onUpdate, bookings }: { onUpdate: (slots: Slot[], weekKey:
                   +
                 </button>
 
-                {/* Lock slot */}
-                <button
-                  onClick={() => isLocked(slot) ? handleUnlockSlot(slot) : handleLockSlot(slot)}
-                  title={isLocked(slot) ? 'בטל נעילה' : 'נעל — שמור שעה זו לכל השבועות'}
-                  className={`w-8 h-8 rounded-lg text-sm transition-all border ${
-                    isLocked(slot)
-                      ? 'bg-yellow-400/20 border-yellow-400/40 text-yellow-400 hover:bg-red-900/30 hover:border-red-500/40 hover:text-red-400'
-                      : 'bg-zinc-700 border-zinc-600 text-zinc-400 hover:bg-yellow-400/20 hover:border-yellow-400/40 hover:text-yellow-400'
-                  }`}
-                >
-                  {isLocked(slot) ? '🔒' : '🔓'}
-                </button>
-
                 {/* Remove slot */}
                 {daySlots.length > 1 && (
                   <button
@@ -298,15 +306,16 @@ function SlotEditor({ onUpdate, bookings }: { onUpdate: (slots: Slot[], weekKey:
             </div>
           </div>
         ))}
-      </div>
 
-      {/* Add slot button */}
-      <button
-        onClick={handleAddSlot}
-        className="mt-4 w-full py-2.5 rounded-xl border border-dashed border-zinc-600 text-zinc-400 hover:border-yellow-400/50 hover:text-yellow-400 transition-all text-sm font-semibold"
-      >
-        + הוסף שעה ליום זה
-      </button>
+        {/* Add slot button */}
+        <button
+          onClick={handleAddSlot}
+          className="mt-1 w-full py-2.5 rounded-xl border border-dashed border-zinc-600 text-zinc-400 hover:border-yellow-400/50 hover:text-yellow-400 transition-all text-sm font-semibold"
+        >
+          + הוסף שעה ליום זה
+        </button>
+      </div>
+      )}
     </div>
   )
 }
@@ -502,9 +511,8 @@ export default function AdminPage() {
     return () => window.removeEventListener('slotsUpdated', handler)
   }, [authed])
 
-  const handleSlotUpdate = useCallback(async (updated: Slot[], weekKey: string) => {
-    setSlots(updated)
-    await saveSlots(updated, weekKey)
+  const handleScheduleChanged = useCallback(() => {
+    getSlots(getWeekKey(0)).then(setSlots)
     window.dispatchEvent(new Event('slotsUpdated'))
   }, [])
 
@@ -565,7 +573,7 @@ export default function AdminPage() {
           <BookingsList bookings={bookings} slots={slots} onRefresh={refreshBookings} />
         )}
         {tab === 'schedule' && (
-          <SlotEditor onUpdate={handleSlotUpdate} bookings={bookings} />
+          <SlotEditor bookings={bookings} onChanged={handleScheduleChanged} />
         )}
       </div>
     </div>

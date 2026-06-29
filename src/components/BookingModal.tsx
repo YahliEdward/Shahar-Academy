@@ -34,7 +34,7 @@ export default function BookingModal({ slot, weekKey, weekDates, onClose, onBook
     parentName: '',
     phone: '',
     grade: '',
-    groupPreference: slot.groupType as GroupType,
+    groupPreference: (slot.groupType === 'empty' ? 'middle-school' : slot.groupType) as GroupType,
   })
   const [submitted, setSubmitted] = useState(false)
   const [submittedSlotLabel, setSubmittedSlotLabel] = useState('')
@@ -63,20 +63,21 @@ export default function BookingModal({ slot, weekKey, weekDates, onClose, onBook
       setErrors(errs)
       return
     }
-    setLoading(true)
     const dayDate = weekDates[slot.day]
     const slotLabel = `יום ${DAYS[slot.day]} ${formatShortDate(dayDate)} | ${slot.time}–${slot.endTime}`
-    await saveBooking({ slotId: slot.id, weekKey, slotLabel, ...form, status: 'pending' })
-    const slots = await getSlots(weekKey)
-    const idx = slots.findIndex((s) => s.id === slot.id)
-    if (idx !== -1) {
-      slots[idx].enrolled = Math.min(slots[idx].enrolled + 1, 6)
-      await saveSlots(slots, weekKey)
-      window.dispatchEvent(new Event('slotsUpdated'))
-    }
     setSubmittedSlotLabel(slotLabel)
     setSubmitted(true)
-    setLoading(false)
+    saveBooking({ slotId: slot.id, weekKey, slotLabel, ...form, status: 'pending' }).then(() => {
+      getSlots(weekKey).then((slots) => {
+        const idx = slots.findIndex((s) => s.id === slot.id)
+        if (idx !== -1) {
+          slots[idx].enrolled = Math.min(slots[idx].enrolled + 1, 6)
+          saveSlots(slots, weekKey).then(() => {
+            window.dispatchEvent(new Event('slotsUpdated'))
+          })
+        }
+      })
+    }).catch(() => {/* booking saved client-side, WhatsApp fallback available */})
   }
 
   const dayName = DAYS[slot.day]

@@ -139,34 +139,29 @@ function rowToBooking(row: Record<string, unknown>): Booking {
 
 export const TEMPLATE_KEY = 'template'
 
+// Deterministic id for a slot derived from the default schedule, so bookings
+// that reference it stay stable across reloads.
+function templateSlotId(day: number, time: string): string {
+  return `slot-${day}-${time.replace(':', '')}`
+}
+
 export async function getSlots(weekKey: string): Promise<Slot[]> {
-  const { data, error } = await supabase
+  // A week either has its own override rows, or it follows the default schedule.
+  const { data: weekRows } = await supabase
     .from('slots')
     .select('*')
     .eq('week_key', weekKey)
     .order('day')
     .order('time')
 
-  if (!error && data && data.length > 0) return data.map(rowToSlot)
+  if (weekRows && weekRows.length > 0) return weekRows.map(rowToSlot)
 
-  // Fall back to template before using blank defaults
-  const { data: tpl } = await supabase
-    .from('slots')
-    .select('*')
-    .eq('week_key', TEMPLATE_KEY)
-    .order('day')
-    .order('time')
-
-  if (tpl && tpl.length > 0) {
-    return tpl.map((row, i) => ({
-      ...rowToSlot(row),
-      id: `slot-tpl-${i}-${row.day}-${(row.time as string).replace(':', '')}`,
-    }))
-  }
-
-  return buildDefaultSlots()
+  // No override → follow the default (template).
+  return getTemplate()
 }
 
+// The default weekly schedule. Falls back to a blank 14:00–20:00 grid until the
+// teacher has saved one.
 export async function getTemplate(): Promise<Slot[]> {
   const { data } = await supabase
     .from('slots')
@@ -174,30 +169,43 @@ export async function getTemplate(): Promise<Slot[]> {
     .eq('week_key', TEMPLATE_KEY)
     .order('day')
     .order('time')
-  return data ? data.map(rowToSlot) : []
+
+  if (data && data.length > 0) {
+    return data.map((row) => ({
+      ...rowToSlot(row),
+      id: templateSlotId(row.day as number, row.time as string),
+    }))
+  }
+  return buildDefaultSlots()
 }
 
-export async function lockSlot(slot: Slot): Promise<void> {
-  await supabase.from('slots').delete()
-    .eq('week_key', TEMPLATE_KEY).eq('day', slot.day).eq('time', slot.time)
-  await supabase.from('slots').insert({
-    id: `tpl-${slot.day}-${slot.time.replace(':', '')}`,
-    day: slot.day,
-    time: slot.time,
-    end_time: slot.endTime,
-    group_type: slot.groupType,
-    enrolled: slot.enrolled,
-    week_key: TEMPLATE_KEY,
-  })
-}
-
-export async function unlockSlot(day: DayIndex, time: string): Promise<void> {
-  await supabase.from('slots').delete()
-    .eq('week_key', TEMPLATE_KEY).eq('day', day).eq('time', time)
-}
-
-export async function clearTemplate(): Promise<void> {
+export async function saveTemplate(slots: Slot[]): Promise<void> {
   await supabase.from('slots').delete().eq('week_key', TEMPLATE_KEY)
+  if (slots.length === 0) return
+  const rows = slots.map((s) => ({
+    id: `tpl-${s.day}-${s.time.replace(':', '')}-${Math.random().toString(36).slice(2, 6)}`,
+    day: s.day,
+    time: s.time,
+    end_time: s.endTime,
+    group_type: s.groupType,
+    enrolled: s.enrolled,
+    week_key: TEMPLATE_KEY,
+  }))
+  await supabase.from('slots').insert(rows)
+}
+
+// True when this week has its own override rows (differs from the default).
+export async function weekHasOverride(weekKey: string): Promise<boolean> {
+  const { count } = await supabase
+    .from('slots')
+    .select('*', { count: 'exact', head: true })
+    .eq('week_key', weekKey)
+  return (count ?? 0) > 0
+}
+
+// Drop a week's override so it follows the default schedule again.
+export async function resetWeekToDefault(weekKey: string): Promise<void> {
+  await supabase.from('slots').delete().eq('week_key', weekKey)
 }
 
 export async function saveSlots(slots: Slot[], weekKey: string): Promise<void> {
