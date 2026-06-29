@@ -39,6 +39,7 @@ export default function BookingModal({ slot, weekKey, weekDates, onClose, onBook
   const [submitted, setSubmitted] = useState(false)
   const [submittedSlotLabel, setSubmittedSlotLabel] = useState('')
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     document.body.style.overflow = 'hidden'
@@ -55,25 +56,27 @@ export default function BookingModal({ slot, weekKey, weekDates, onClose, onBook
     return e
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     const errs = validate()
     if (Object.keys(errs).length > 0) {
       setErrors(errs)
       return
     }
+    setLoading(true)
     const dayDate = weekDates[slot.day]
     const slotLabel = `יום ${DAYS[slot.day]} ${formatShortDate(dayDate)} | ${slot.time}–${slot.endTime}`
-    saveBooking({ slotId: slot.id, weekKey, slotLabel, ...form, status: 'pending' })
-    const slots = getSlots(weekKey)
+    await saveBooking({ slotId: slot.id, weekKey, slotLabel, ...form, status: 'pending' })
+    const slots = await getSlots(weekKey)
     const idx = slots.findIndex((s) => s.id === slot.id)
     if (idx !== -1) {
       slots[idx].enrolled = Math.min(slots[idx].enrolled + 1, 6)
-      saveSlots(slots, weekKey)
+      await saveSlots(slots, weekKey)
       window.dispatchEvent(new Event('slotsUpdated'))
     }
     setSubmittedSlotLabel(slotLabel)
     setSubmitted(true)
+    setLoading(false)
   }
 
   const dayName = DAYS[slot.day]
@@ -190,9 +193,10 @@ export default function BookingModal({ slot, weekKey, weekDates, onClose, onBook
 
             <button
               type="submit"
-              className="w-full py-3.5 bg-yellow-400 text-black font-black text-base rounded-xl hover:bg-yellow-300 transition-all shadow-lg shadow-yellow-400/20 hover:shadow-yellow-400/40"
+              disabled={loading}
+              className="w-full py-3.5 bg-yellow-400 text-black font-black text-base rounded-xl hover:bg-yellow-300 transition-all shadow-lg shadow-yellow-400/20 hover:shadow-yellow-400/40 disabled:opacity-60"
             >
-              שלח בקשת שריון ←
+              {loading ? 'שולח...' : 'שלח בקשת שריון ←'}
             </button>
           </form>
         )}

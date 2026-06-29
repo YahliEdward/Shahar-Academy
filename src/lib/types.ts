@@ -1,3 +1,5 @@
+import { supabase } from './supabase'
+
 export type GroupType = 'middle-school' | 'high-4' | 'high-5' | 'mixed' | 'empty'
 export type DayIndex = 0 | 1 | 2 | 3 | 4
 
@@ -58,7 +60,7 @@ export const GROUP_COLORS: Record<GroupType, string> = {
 
 export function getWeekStart(offsetWeeks: number): Date {
   const now = new Date()
-  const dayOfWeek = now.getDay() // 0 = Sunday
+  const dayOfWeek = now.getDay()
   const sunday = new Date(now)
   sunday.setDate(now.getDate() - dayOfWeek + offsetWeeks * 7)
   sunday.setHours(0, 0, 0, 0)
@@ -82,7 +84,7 @@ export function formatShortDate(date: Date): string {
   return `${date.getDate()}/${date.getMonth() + 1}`
 }
 
-// ─── Slot storage ─────────────────────────────────────────────────────────────
+// ─── Slot helpers ─────────────────────────────────────────────────────────────
 
 function generateId(): string {
   return Math.random().toString(36).slice(2) + Date.now().toString(36)
@@ -119,20 +121,63 @@ function buildDefaultSlots(): Slot[] {
   return slots
 }
 
-export function getSlots(weekKey: string): Slot[] {
-  if (typeof window === 'undefined') return buildDefaultSlots()
-  const key = `sha_slots_${weekKey}`
-  const stored = localStorage.getItem(key)
-  if (!stored) {
-    const defaults = buildDefaultSlots()
-    localStorage.setItem(key, JSON.stringify(defaults))
-    return defaults
+function rowToSlot(row: Record<string, unknown>): Slot {
+  return {
+    id: row.id as string,
+    day: row.day as DayIndex,
+    time: row.time as string,
+    endTime: row.end_time as string,
+    groupType: row.group_type as GroupType,
+    enrolled: row.enrolled as number,
   }
-  return JSON.parse(stored) as Slot[]
 }
 
-export function saveSlots(slots: Slot[], weekKey: string): void {
-  localStorage.setItem(`sha_slots_${weekKey}`, JSON.stringify(slots))
+function rowToBooking(row: Record<string, unknown>): Booking {
+  return {
+    id: row.id as string,
+    slotId: row.slot_id as string,
+    weekKey: row.week_key as string | undefined,
+    slotLabel: row.slot_label as string | undefined,
+    studentName: row.student_name as string,
+    parentName: row.parent_name as string,
+    phone: row.phone as string,
+    grade: row.grade as string,
+    groupPreference: row.group_preference as GroupType,
+    status: row.status as 'pending' | 'confirmed',
+    price: row.price as string | undefined,
+    createdAt: row.created_at as string,
+  }
+}
+
+// ─── Slot storage ─────────────────────────────────────────────────────────────
+
+export async function getSlots(weekKey: string): Promise<Slot[]> {
+  const { data, error } = await supabase
+    .from('slots')
+    .select('*')
+    .eq('week_key', weekKey)
+    .order('day')
+    .order('time')
+
+  if (error || !data || data.length === 0) {
+    return buildDefaultSlots()
+  }
+  return data.map(rowToSlot)
+}
+
+export async function saveSlots(slots: Slot[], weekKey: string): Promise<void> {
+  await supabase.from('slots').delete().eq('week_key', weekKey)
+  if (slots.length === 0) return
+  const rows = slots.map((s) => ({
+    id: s.id,
+    day: s.day,
+    time: s.time,
+    end_time: s.endTime,
+    group_type: s.groupType,
+    enrolled: s.enrolled,
+    week_key: weekKey,
+  }))
+  await supabase.from('slots').insert(rows)
 }
 
 export function addSlotToDay(slots: Slot[], day: DayIndex): Slot[] {
@@ -148,15 +193,14 @@ export function addSlotToDay(slots: Slot[], day: DayIndex): Slot[] {
     newTime = last.endTime
     newEndTime = `${String(nh).padStart(2, '0')}:${String(nm).padStart(2, '0')}`
   }
-  const newSlot: Slot = {
+  return [...slots, {
     id: `slot-${day}-extra-${generateId()}`,
     day,
     time: newTime,
     endTime: newEndTime,
     groupType: 'empty',
     enrolled: 0,
-  }
-  return [...slots, newSlot]
+  }]
 }
 
 export function removeSlot(slots: Slot[], id: string): Slot[] {
@@ -165,34 +209,50 @@ export function removeSlot(slots: Slot[], id: string): Slot[] {
 
 // ─── Booking storage ──────────────────────────────────────────────────────────
 
-export function getBookings(): Booking[] {
-  if (typeof window === 'undefined') return []
-  const stored = localStorage.getItem('sha_bookings')
-  return stored ? (JSON.parse(stored) as Booking[]) : []
+export async function getBookings(): Promise<Booking[]> {
+  const { data, error } = await supabase
+    .from('bookings')
+    .select('*')
+    .order('created_at', { ascending: false })
+
+  if (error || !data) return []
+  return data.map(rowToBooking)
 }
 
-export function saveBooking(booking: Omit<Booking, 'id' | 'createdAt'>): Booking {
-  const bookings = getBookings()
-  const newBooking: Booking = {
-    ...booking,
+export async function saveBooking(booking: Omit<Booking, 'id' | 'createdAt'>): Promise<Booking> {
+  const row = {
     id: generateId(),
-    createdAt: new Date().toISOString(),
+    slot_id: booking.slotId,
+    week_key: booking.weekKey,
+    slot_label: booking.slotLabel,
+    student_name: booking.studentName,
+    parent_name: booking.parentName,
+    phone: booking.phone,
+    grade: booking.grade,
+    group_preference: booking.groupPreference,
+    status: booking.status,
+    price: booking.price,
+    created_at: new Date().toISOString(),
   }
-  bookings.push(newBooking)
-  localStorage.setItem('sha_bookings', JSON.stringify(bookings))
-  return newBooking
+  const { data, error } = await supabase.from('bookings').insert(row).select().single()
+  if (error || !data) throw new Error('Failed to save booking')
+  return rowToBooking(data)
 }
 
-export function updateBooking(id: string, updates: Partial<Booking>): void {
-  const bookings = getBookings()
-  const idx = bookings.findIndex((b) => b.id === id)
-  if (idx !== -1) {
-    bookings[idx] = { ...bookings[idx], ...updates }
-    localStorage.setItem('sha_bookings', JSON.stringify(bookings))
-  }
+export async function updateBooking(id: string, updates: Partial<Booking>): Promise<void> {
+  const row: Record<string, unknown> = {}
+  if (updates.status !== undefined) row.status = updates.status
+  if (updates.price !== undefined) row.price = updates.price
+  if (updates.slotId !== undefined) row.slot_id = updates.slotId
+  if (updates.weekKey !== undefined) row.week_key = updates.weekKey
+  if (updates.studentName !== undefined) row.student_name = updates.studentName
+  if (updates.parentName !== undefined) row.parent_name = updates.parentName
+  if (updates.phone !== undefined) row.phone = updates.phone
+  if (updates.grade !== undefined) row.grade = updates.grade
+  if (updates.groupPreference !== undefined) row.group_preference = updates.groupPreference
+  await supabase.from('bookings').update(row).eq('id', id)
 }
 
-export function deleteBooking(id: string): void {
-  const bookings = getBookings().filter((b) => b.id !== id)
-  localStorage.setItem('sha_bookings', JSON.stringify(bookings))
+export async function deleteBooking(id: string): Promise<void> {
+  await supabase.from('bookings').delete().eq('id', id)
 }

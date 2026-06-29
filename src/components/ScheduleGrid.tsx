@@ -110,9 +110,14 @@ export default function ScheduleGrid() {
   const weekKey = getWeekKey(weekOffset)
   const weekDates = getWeekDates(weekOffset)
 
+  const loadSlots = async (key: string) => {
+    const data = await getSlots(key)
+    setSlots(data)
+  }
+
   useEffect(() => {
-    setSlots(getSlots(weekKey))
-    const handleUpdate = () => setSlots(getSlots(weekKey))
+    loadSlots(weekKey)
+    const handleUpdate = () => loadSlots(weekKey)
     window.addEventListener('slotsUpdated', handleUpdate)
     return () => window.removeEventListener('slotsUpdated', handleUpdate)
   }, [weekKey])
@@ -210,7 +215,7 @@ export default function ScheduleGrid() {
           onClose={() => setSelectedSlot(null)}
           onBooked={() => {
             setSelectedSlot(null)
-            setSlots(getSlots(weekKey))
+            loadSlots(weekKey)
           }}
         />
       )}

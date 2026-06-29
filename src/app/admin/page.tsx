@@ -69,7 +69,7 @@ function SlotEditor({ onUpdate, bookings }: { onUpdate: (slots: Slot[], weekKey:
   const weekDates = getWeekDates(weekOffset)
 
   useEffect(() => {
-    setSlots(getSlots(weekKey))
+    getSlots(weekKey).then(setSlots)
   }, [weekKey])
 
   const commit = (updated: Slot[]) => {
@@ -265,14 +265,14 @@ function BookingsList({ bookings, slots, onRefresh }: {
     return `יום ${DAYS[s.day]} ${s.time}–${s.endTime}`
   }
 
-  const confirm = (b: Booking) => {
-    updateBooking(b.id, { status: 'confirmed', price: prices[b.id] || b.price })
+  const confirm = async (b: Booking) => {
+    await updateBooking(b.id, { status: 'confirmed', price: prices[b.id] || b.price })
     onRefresh()
   }
 
-  const remove = (id: string) => {
+  const remove = async (id: string) => {
     if (window.confirm('למחוק את הבקשה?')) {
-      deleteBooking(id)
+      await deleteBooking(id)
       onRefresh()
     }
   }
@@ -428,26 +428,25 @@ export default function AdminPage() {
   const [bookings, setBookings] = useState<Booking[]>([])
 
   useEffect(() => {
-    if (authed) {
-      setSlots(getSlots(getWeekKey(0)))
-      setBookings(getBookings())
-    }
+    if (!authed) return
+    getSlots(getWeekKey(0)).then(setSlots)
+    getBookings().then(setBookings)
   }, [authed])
 
   useEffect(() => {
     if (!authed) return
-    const handler = () => setBookings(getBookings())
+    const handler = () => getBookings().then(setBookings)
     window.addEventListener('slotsUpdated', handler)
     return () => window.removeEventListener('slotsUpdated', handler)
   }, [authed])
 
-  const handleSlotUpdate = useCallback((updated: Slot[], weekKey: string) => {
+  const handleSlotUpdate = useCallback(async (updated: Slot[], weekKey: string) => {
     setSlots(updated)
-    saveSlots(updated, weekKey)
+    await saveSlots(updated, weekKey)
     window.dispatchEvent(new Event('slotsUpdated'))
   }, [])
 
-  const refreshBookings = () => setBookings(getBookings())
+  const refreshBookings = () => getBookings().then(setBookings)
 
   if (!authed) return <LoginScreen onLogin={() => setAuthed(true)} />
 
