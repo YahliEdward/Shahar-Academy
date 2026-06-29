@@ -1,0 +1,57 @@
+@import "tailwindcss";
+
+:root {
+  --bg-primary: #0b0f19;
+  --bg-card: #131827;
+  --gold: #facc15;
+  --gold-dark: #d97706;
+  --text-main: #f1f5f9;
+  --text-muted: #94a3b8;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--bg-primary);
+  color: var(--text-main);
+  direction: rtl;
+  font-family: 'Heebo', 'Assistant', sans-serif;
+}
+
+/* Math grid texture overlay */
+.math-bg {
+  background-image:
+    linear-gradient(rgba(250, 204, 21, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(250, 204, 21, 0.025) 1px, transparent 1px);
+  background-size: 44px 44px;
+}
+
+/* Gentle drift for decorative math symbols in the background */
+@keyframes math-float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-18px) rotate(3deg); }
+}
+
+.math-float {
+  animation: math-float 12s ease-in-out infinite;
+}
+
+@keyframes pulse-gold {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.pulse-gold {
+  animation: pulse-gold 1.4s ease-in-out infinite;
+}
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in-up {
+  animation: fade-in-up 0.5s ease-out forwards;
+}
