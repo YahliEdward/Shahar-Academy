@@ -49,6 +49,7 @@ export default function TrustBar({ stats = DEFAULT_STATS }: { stats?: Stat[] }) 
           <div key={i}>
             <div
               data-counter
+              dir="ltr"
               data-value={s.value}
               data-prefix={s.prefix ?? ''}
               data-suffix={s.suffix ?? ''}
