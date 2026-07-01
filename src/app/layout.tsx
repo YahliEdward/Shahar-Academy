@@ -13,6 +13,7 @@ const heebo = Heebo({
 export const metadata: Metadata = {
   title: "האקדמיה למתמטיקה של שחר",
   description: "הדרך שלכם ל-5 יחידות מתחילה כאן. קבוצות למידה קטנות ואישיות.",
+  icons: { icon: '/logo.png', apple: '/logo.png' },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
