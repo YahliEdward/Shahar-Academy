@@ -2,16 +2,13 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { useGSAP } from '@gsap/react'
 import ShaharLogo from './ShaharLogo'
 import HeroVisual from './HeroVisual'
-import { gsap, EASE, prefersReducedMotion } from '@/lib/gsap'
 import { PHONE, WHATSAPP_URL } from '@/lib/constants'
 
 export default function Hero() {
   const [contactOpen, setContactOpen] = useState(false)
   const contactRef = useRef<HTMLDivElement>(null)
-  const scope = useRef<HTMLElement>(null)
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -23,34 +20,23 @@ export default function Hero() {
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
-  useGSAP(() => {
-    if (prefersReducedMotion()) return
-
-    const tl = gsap.timeline({ defaults: { ease: EASE, duration: 0.7 } })
-    tl.from('.hero-logo', { opacity: 0, y: -16 })
-      .from('.hero-heading', { opacity: 0, y: 24 }, '-=0.5')
-      .from('.hero-tagline', { opacity: 0, y: 20 }, '-=0.45')
-      .from('.hero-badges', { opacity: 0, y: 16 }, '-=0.4')
-      .from('.hero-ctas', { opacity: 0, y: 16 }, '-=0.35')
-      .from('.hero-stats', { opacity: 0, y: 16 }, '-=0.3')
-      .from('.hero-visual', { opacity: 0, scale: 0.92, y: 20, duration: 0.9 }, '-=0.9')
-  }, { scope })
-
   return (
     <section
-      ref={scope}
       className="relative min-h-0 sm:min-h-[90vh] flex items-start sm:items-center justify-center px-4 pt-20 sm:pt-24 md:pt-32 pb-20 overflow-hidden"
     >
       <div className="relative z-10 w-full max-w-6xl mx-auto grid lg:grid-cols-[1.15fr_1fr] gap-10 items-center">
         <div className="flex flex-col items-center text-center lg:items-start lg:text-right">
-          <div className="hero-logo mb-6 hidden sm:flex items-center gap-3">
+          <div className="hero-logo fade-in-up mb-6 hidden sm:flex items-center gap-3">
             <ShaharLogo size={48} className="shadow-lg shadow-yellow-400/20 rounded-[11px]" />
             <span className="text-2xl font-black text-white tracking-tight">
               האקדמיה למתמטיקה <span className="text-yellow-400">של שחר</span>
             </span>
           </div>
 
-          <h1 className="hero-heading text-4xl sm:text-5xl md:text-6xl font-black leading-tight mb-6 text-white">
+          <h1
+            className="hero-heading fade-in-up text-4xl sm:text-5xl md:text-6xl font-black leading-tight mb-6 text-white"
+            style={{ animationDelay: '0.08s' }}
+          >
             הדרך שלכם ל‑
             <span className="text-yellow-400 relative">
               5 יחידות
@@ -61,12 +47,18 @@ export default function Hero() {
             מתחילה כאן
           </h1>
 
-          <p className="hero-tagline text-lg text-slate-300 mb-4 leading-relaxed max-w-lg">
+          <p
+            className="hero-tagline fade-in-up text-lg text-slate-300 mb-4 leading-relaxed max-w-lg"
+            style={{ animationDelay: '0.14s' }}
+          >
             קבוצות למידה קטנות ואישיות בבית שחר — עד <strong className="text-yellow-400">6 תלמידים בלבד</strong> לכל קבוצה.
             תשומת לב מקסימלית, תוצאות אמיתיות.
           </p>
 
-          <div className="hero-badges flex flex-wrap justify-center lg:justify-start gap-4 mb-10 text-sm text-slate-400">
+          <div
+            className="hero-badges fade-in-up flex flex-wrap justify-center lg:justify-start gap-4 mb-10 text-sm text-slate-400"
+            style={{ animationDelay: '0.2s' }}
+          >
             <span className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-green-400 inline-block" />
               חטיבת ביניים
@@ -85,7 +77,10 @@ export default function Hero() {
             </span>
           </div>
 
-          <div className="hero-ctas flex flex-row gap-3 w-full sm:w-auto">
+          <div
+            className="hero-ctas fade-in-up flex flex-row gap-3 w-full sm:w-auto"
+            style={{ animationDelay: '0.26s' }}
+          >
             <Link
               href="/schedule"
               className="flex-1 sm:flex-none whitespace-nowrap px-4 sm:px-8 py-4 bg-yellow-400 text-black font-black text-lg rounded-xl hover:bg-yellow-300 transition-all shadow-lg shadow-yellow-400/20 hover:shadow-yellow-400/40 hover:-translate-y-0.5 text-center"
@@ -129,7 +124,10 @@ export default function Hero() {
             </div>
           </div>
 
-          <div className="hero-stats mt-10 grid grid-cols-3 gap-6 text-center lg:text-right border-t border-white/10 pt-8 w-full">
+          <div
+            className="hero-stats fade-in-up mt-10 grid grid-cols-3 gap-6 text-center lg:text-right border-t border-white/10 pt-8 w-full"
+            style={{ animationDelay: '0.32s' }}
+          >
             <div>
               <div className="text-3xl font-black text-yellow-400">6</div>
               <div className="text-xs text-slate-400 mt-1">תלמידים מקסימום</div>
@@ -145,7 +143,7 @@ export default function Hero() {
           </div>
         </div>
 
-        <div className="hero-visual hidden lg:block">
+        <div className="hero-visual fade-in-up hidden lg:block" style={{ animationDelay: '0.1s' }}>
           <HeroVisual />
         </div>
       </div>
