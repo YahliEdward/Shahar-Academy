@@ -138,7 +138,7 @@ export default function ScheduleGrid() {
       : `שבוע ${formatShortDate(weekStart)}–${formatShortDate(weekEnd)}`
 
   return (
-    <section id="schedule" className="py-16 px-4 max-w-6xl mx-auto">
+    <section id="schedule" className="pt-6 pb-16 px-4 max-w-6xl mx-auto">
       <div className="text-center mb-10">
         <h2 className="text-3xl font-black text-white mb-2">
           לוח השעות השבועי

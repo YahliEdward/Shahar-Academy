@@ -48,12 +48,12 @@ export default function Navbar() {
       style={{ height: scrolled ? '58px' : 'var(--nav-height)' }}
     >
       <nav className="w-full max-w-6xl mx-auto px-4 flex items-center justify-between">
-        <a href="#" className="flex items-center gap-2 shrink-0">
+        <Link href="/" className="flex items-center gap-2 shrink-0">
           <ShaharLogo size={36} />
           <span className="hidden sm:inline text-sm font-black text-white tracking-tight">
             אקדמיית <span className="text-yellow-400">שחר</span>
           </span>
-        </a>
+        </Link>
 
         <ul className="hidden md:flex items-center gap-6">
           {LINKS.map((link) => (
