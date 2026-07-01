@@ -123,24 +123,6 @@ export default function Hero() {
               )}
             </div>
           </div>
-
-          <div
-            className="hero-stats fade-in-up mt-10 grid grid-cols-3 gap-6 text-center lg:text-right border-t border-white/10 pt-8 w-full"
-            style={{ animationDelay: '0.32s' }}
-          >
-            <div>
-              <div className="text-3xl font-black text-yellow-400">6</div>
-              <div className="text-xs text-slate-400 mt-1">תלמידים מקסימום</div>
-            </div>
-            <div>
-              <div className="text-3xl font-black text-yellow-400">95%</div>
-              <div className="text-xs text-slate-400 mt-1">שביעות רצון</div>
-            </div>
-            <div>
-              <div className="text-3xl font-black text-yellow-400">100%</div>
-              <div className="text-xs text-slate-400 mt-1">אישי ומותאם</div>
-            </div>
-          </div>
         </div>
 
         <div className="hero-visual fade-in-up hidden lg:block" style={{ animationDelay: '0.1s' }}>
