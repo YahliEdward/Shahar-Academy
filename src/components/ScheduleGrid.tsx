@@ -168,21 +168,21 @@ export default function ScheduleGrid() {
       </div>
 
       {/* Day tabs — mobile only */}
-      <div className="md:hidden flex gap-2 overflow-x-auto pb-2 mb-6 justify-center">
+      <div className="md:hidden grid grid-cols-5 gap-1.5 mb-6">
         {DAYS.map((day, i) => (
           <button
             key={day}
             onClick={() => setActiveDay(i)}
-            className={`flex-shrink-0 px-5 py-2.5 rounded-lg font-bold text-sm transition-all ${
+            className={`flex flex-col items-center justify-center rounded-lg py-2 px-1 font-bold transition-all ${
               activeDay === i
                 ? 'bg-yellow-400 text-black shadow-lg shadow-yellow-400/20'
                 : 'bg-zinc-800 text-slate-400 hover:bg-zinc-700 hover:text-white'
             }`}
           >
-            <div>יום {day}</div>
-            <div className={`text-xs font-normal mt-0.5 ${activeDay === i ? 'text-black/70' : 'text-slate-500'}`}>
+            <span className="text-xs leading-tight">{day}</span>
+            <span className={`text-[10px] font-normal mt-0.5 ${activeDay === i ? 'text-black/70' : 'text-slate-500'}`}>
               {formatShortDate(weekDates[i])}
-            </div>
+            </span>
           </button>
         ))}
       </div>
