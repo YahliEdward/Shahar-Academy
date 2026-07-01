@@ -39,11 +39,11 @@ export default function Hero() {
   return (
     <section
       ref={scope}
-      className="relative min-h-[90vh] flex items-center justify-center px-4 pt-32 pb-20 overflow-hidden"
+      className="relative min-h-0 sm:min-h-[90vh] flex items-start sm:items-center justify-center px-4 pt-20 sm:pt-24 md:pt-32 pb-20 overflow-hidden"
     >
       <div className="relative z-10 w-full max-w-6xl mx-auto grid lg:grid-cols-[1.15fr_1fr] gap-10 items-center">
         <div className="flex flex-col items-center text-center lg:items-start lg:text-right">
-          <div className="hero-logo mb-6 flex items-center gap-3">
+          <div className="hero-logo mb-6 hidden sm:flex items-center gap-3">
             <ShaharLogo size={48} className="shadow-lg shadow-yellow-400/20 rounded-[11px]" />
             <span className="text-2xl font-black text-white tracking-tight">
               האקדמיה למתמטיקה <span className="text-yellow-400">של שחר</span>
