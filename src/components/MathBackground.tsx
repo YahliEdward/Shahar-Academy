@@ -26,10 +26,20 @@ export default function MathBackground() {
       {/* Base color + grid texture */}
       <div className="absolute inset-0 bg-[#0b0f19] math-bg" />
 
-      {/* Soft gold glow blobs */}
-      <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[700px] h-[500px] rounded-full bg-yellow-400/10 blur-[140px]" />
-      <div className="absolute top-1/2 -right-40 w-[500px] h-[500px] rounded-full bg-yellow-500/[0.06] blur-[130px]" />
-      <div className="absolute bottom-0 -left-40 w-[500px] h-[500px] rounded-full bg-amber-500/[0.05] blur-[130px]" />
+      {/* Soft gold glow blobs — radial-gradient instead of filter:blur, which is expensive to
+          rasterize on mobile GPUs at this size and can visibly delay first paint */}
+      <div
+        className="absolute -top-32 left-1/2 -translate-x-1/2 w-[700px] h-[500px]"
+        style={{ background: 'radial-gradient(closest-side, rgba(250,204,21,0.10), transparent 70%)' }}
+      />
+      <div
+        className="absolute top-1/2 -right-40 w-[500px] h-[500px]"
+        style={{ background: 'radial-gradient(closest-side, rgba(234,179,8,0.06), transparent 70%)' }}
+      />
+      <div
+        className="absolute bottom-0 -left-40 w-[500px] h-[500px]"
+        style={{ background: 'radial-gradient(closest-side, rgba(245,158,11,0.05), transparent 70%)' }}
+      />
 
       {/* Subtle radial vignette to deepen edges */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_45%,rgba(0,0,0,0.55)_100%)]" />
