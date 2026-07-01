@@ -27,7 +27,7 @@ export default function Hero() {
       <div className="relative z-10 w-full max-w-6xl mx-auto grid lg:grid-cols-[1.15fr_1fr] gap-10 items-center">
         <div className="flex flex-col items-center text-center lg:items-start lg:text-right">
           <div className="hero-logo fade-in-up mb-6 hidden sm:flex items-center gap-3">
-            <ShaharLogo size={48} className="shadow-lg shadow-yellow-400/20 rounded-[11px]" />
+            <ShaharLogo size={48} className="drop-shadow-lg" />
             <span className="text-2xl font-black text-white tracking-tight">
               האקדמיה למתמטיקה <span className="text-yellow-400">של שחר</span>
             </span>

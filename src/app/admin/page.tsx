@@ -11,6 +11,7 @@ import {
   fetchTemplate, fetchWeekSlots, putTemplate, putWeekSlots, resetWeek,
 } from '@/lib/adminApi'
 import TimePicker from '@/components/TimePicker'
+import ShaharLogo from '@/components/ShaharLogo'
 
 const MAX_WEEK_OFFSET = 3
 
@@ -36,8 +37,8 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
   return (
     <div className="min-h-screen flex items-center justify-center p-4 math-bg">
       <div className="w-full max-w-sm bg-zinc-900 border border-zinc-700/50 rounded-2xl p-8 text-center shadow-2xl">
-        <div className="w-14 h-14 rounded-xl bg-yellow-400 flex items-center justify-center text-black font-black text-2xl mx-auto mb-5 shadow-lg shadow-yellow-400/30">
-          Σ
+        <div className="flex justify-center mb-5">
+          <ShaharLogo size={56} />
         </div>
         <h1 className="text-xl font-black text-white mb-1">אזור המורים</h1>
         <p className="text-sm text-zinc-400 mb-6">כניסה מוגבלת לשחר בלבד</p>
@@ -542,7 +543,7 @@ export default function AdminPage() {
       <header className="bg-zinc-900/80 border-b border-zinc-800 sticky top-0 z-40 backdrop-blur-sm">
         <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-yellow-400 flex items-center justify-center text-black font-black text-sm">Σ</div>
+            <ShaharLogo size={32} />
             <span className="font-black text-white">לוח בקרה — שחר</span>
           </div>
           <div className="flex gap-2 items-center">
