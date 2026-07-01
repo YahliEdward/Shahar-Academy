@@ -4,13 +4,14 @@ import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import {
   Slot, Booking, GroupType, DayIndex, DAYS, GROUP_LABELS, MAX_STUDENTS,
-  getSlots, saveSlots, getBookings, updateBooking, deleteBooking,
   addSlotToDay, removeSlot, getWeekKey, getWeekDates, formatShortDate,
-  getTemplate, saveTemplate, weekHasOverride, resetWeekToDefault,
 } from '@/lib/types'
+import {
+  adminLogin, adminLogout, fetchBookings, patchBooking, removeBooking,
+  fetchTemplate, fetchWeekSlots, putTemplate, putWeekSlots, resetWeek,
+} from '@/lib/adminApi'
 import TimePicker from '@/components/TimePicker'
 
-const ADMIN_PASSWORD = '123'
 const MAX_WEEK_OFFSET = 3
 
 const GROUP_OPTIONS: GroupType[] = ['middle-school', 'high-4', 'high-5', 'mixed', 'empty']
@@ -20,10 +21,15 @@ const GROUP_OPTIONS: GroupType[] = ['middle-school', 'high-4', 'high-5', 'mixed'
 function LoginScreen({ onLogin }: { onLogin: () => void }) {
   const [pw, setPw] = useState('')
   const [error, setError] = useState(false)
+  const [loading, setLoading] = useState(false)
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (pw === ADMIN_PASSWORD) onLogin()
+    setLoading(true)
+    setError(false)
+    const ok = await adminLogin(pw)
+    setLoading(false)
+    if (ok) onLogin()
     else setError(true)
   }
 
@@ -47,9 +53,10 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
           {error && <p className="text-red-400 text-sm">סיסמה שגויה</p>}
           <button
             type="submit"
-            className="w-full py-3 bg-yellow-400 text-black font-black rounded-xl hover:bg-yellow-300 transition-colors"
+            disabled={loading}
+            className="w-full py-3 bg-yellow-400 text-black font-black rounded-xl hover:bg-yellow-300 transition-colors disabled:opacity-60"
           >
-            כניסה
+            {loading ? 'בודק…' : 'כניסה'}
           </button>
         </form>
         <Link href="/" className="block mt-4 text-xs text-zinc-600 hover:text-zinc-400 transition-colors">
@@ -78,10 +85,11 @@ function SlotEditor({ bookings, onChanged }: { bookings: Booking[]; onChanged: (
   const load = useCallback(async () => {
     setLoading(true)
     if (mode === 'default') {
-      setSlots(await getTemplate())
+      setSlots(await fetchTemplate())
     } else {
-      setSlots(await getSlots(weekKey))
-      setIsOverride(await weekHasOverride(weekKey))
+      const { slots: weekSlots, isOverride: hasOverride } = await fetchWeekSlots(weekKey)
+      setSlots(weekSlots)
+      setIsOverride(hasOverride)
     }
     setLoading(false)
   }, [mode, weekKey])
@@ -92,9 +100,9 @@ function SlotEditor({ bookings, onChanged }: { bookings: Booking[]; onChanged: (
   const commit = async (updated: Slot[]) => {
     setSlots(updated)
     if (mode === 'default') {
-      await saveTemplate(updated)
+      await putTemplate(updated)
     } else {
-      await saveSlots(updated, weekKey)
+      await putWeekSlots(weekKey, updated)
       setIsOverride(true)
     }
     onChanged()
@@ -117,9 +125,10 @@ function SlotEditor({ bookings, onChanged }: { bookings: Booking[]; onChanged: (
 
   const handleResetWeek = async () => {
     if (!window.confirm('להחזיר שבוע זה ללוח ברירת המחדל? כל השינויים הנקודתיים של השבוע יימחקו.')) return
-    await resetWeekToDefault(weekKey)
+    await resetWeek(weekKey)
+    const { slots: weekSlots } = await fetchWeekSlots(weekKey)
     setIsOverride(false)
-    setSlots(await getSlots(weekKey))
+    setSlots(weekSlots)
     onChanged()
   }
 
@@ -337,13 +346,13 @@ function BookingsList({ bookings, slots, onRefresh }: {
   }
 
   const confirm = async (b: Booking) => {
-    await updateBooking(b.id, { status: 'confirmed', price: prices[b.id] || b.price })
+    await patchBooking(b.id, { status: 'confirmed', price: prices[b.id] || b.price })
     onRefresh()
   }
 
   const remove = async (id: string) => {
     if (window.confirm('למחוק את הבקשה?')) {
-      await deleteBooking(id)
+      await removeBooking(id)
       onRefresh()
     }
   }
@@ -500,23 +509,28 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (!authed) return
-    getSlots(getWeekKey(0)).then(setSlots)
-    getBookings().then(setBookings)
+    fetchWeekSlots(getWeekKey(0)).then((r) => setSlots(r.slots))
+    fetchBookings().then(setBookings)
   }, [authed])
 
   useEffect(() => {
     if (!authed) return
-    const handler = () => getBookings().then(setBookings)
+    const handler = () => fetchBookings().then(setBookings)
     window.addEventListener('slotsUpdated', handler)
     return () => window.removeEventListener('slotsUpdated', handler)
   }, [authed])
 
   const handleScheduleChanged = useCallback(() => {
-    getSlots(getWeekKey(0)).then(setSlots)
+    fetchWeekSlots(getWeekKey(0)).then((r) => setSlots(r.slots))
     window.dispatchEvent(new Event('slotsUpdated'))
   }, [])
 
-  const refreshBookings = () => getBookings().then(setBookings)
+  const refreshBookings = () => fetchBookings().then(setBookings)
+
+  const handleLogout = async () => {
+    await adminLogout()
+    setAuthed(false)
+  }
 
   if (!authed) return <LoginScreen onLogin={() => setAuthed(true)} />
 
@@ -534,7 +548,7 @@ export default function AdminPage() {
           <div className="flex gap-2 items-center">
             <Link href="/" className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors">← לאתר</Link>
             <button
-              onClick={() => setAuthed(false)}
+              onClick={handleLogout}
               className="text-xs px-3 py-1.5 bg-zinc-800 rounded-lg text-zinc-400 hover:text-white transition-colors"
             >
               יציאה

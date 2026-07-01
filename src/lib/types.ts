@@ -107,7 +107,7 @@ export function buildDefaultSlots(): Slot[] {
   return slots
 }
 
-function rowToSlot(row: Record<string, unknown>): Slot {
+export function rowToSlot(row: Record<string, unknown>): Slot {
   return {
     id: row.id as string,
     day: row.day as DayIndex,
@@ -118,7 +118,7 @@ function rowToSlot(row: Record<string, unknown>): Slot {
   }
 }
 
-function rowToBooking(row: Record<string, unknown>): Booking {
+export function rowToBooking(row: Record<string, unknown>): Booking {
   return {
     id: row.id as string,
     slotId: row.slot_id as string,
@@ -141,7 +141,7 @@ export const TEMPLATE_KEY = 'template'
 
 // Deterministic id for a slot derived from the default schedule, so bookings
 // that reference it stay stable across reloads.
-function templateSlotId(day: number, time: string): string {
+export function templateSlotId(day: number, time: string): string {
   return `slot-${day}-${time.replace(':', '')}`
 }
 
@@ -179,49 +179,10 @@ export async function getTemplate(): Promise<Slot[]> {
   return buildDefaultSlots()
 }
 
-export async function saveTemplate(slots: Slot[]): Promise<void> {
-  await supabase.from('slots').delete().eq('week_key', TEMPLATE_KEY)
-  if (slots.length === 0) return
-  const rows = slots.map((s) => ({
-    id: `tpl-${s.day}-${s.time.replace(':', '')}-${Math.random().toString(36).slice(2, 6)}`,
-    day: s.day,
-    time: s.time,
-    end_time: s.endTime,
-    group_type: s.groupType,
-    enrolled: s.enrolled,
-    week_key: TEMPLATE_KEY,
-  }))
-  await supabase.from('slots').insert(rows)
-}
-
-// True when this week has its own override rows (differs from the default).
-export async function weekHasOverride(weekKey: string): Promise<boolean> {
-  const { count } = await supabase
-    .from('slots')
-    .select('*', { count: 'exact', head: true })
-    .eq('week_key', weekKey)
-  return (count ?? 0) > 0
-}
-
-// Drop a week's override so it follows the default schedule again.
-export async function resetWeekToDefault(weekKey: string): Promise<void> {
-  await supabase.from('slots').delete().eq('week_key', weekKey)
-}
-
-export async function saveSlots(slots: Slot[], weekKey: string): Promise<void> {
-  await supabase.from('slots').delete().eq('week_key', weekKey)
-  if (slots.length === 0) return
-  const rows = slots.map((s) => ({
-    id: s.id,
-    day: s.day,
-    time: s.time,
-    end_time: s.endTime,
-    group_type: s.groupType,
-    enrolled: s.enrolled,
-    week_key: weekKey,
-  }))
-  await supabase.from('slots').insert(rows)
-}
+// NOTE: Writing slots/templates and all booking access now happen server-side
+// via src/lib/serverDb.ts and the /api routes, so the anon client (which is
+// blocked by Row Level Security) is only used here for public *reads* of the
+// schedule (getSlots / getTemplate above).
 
 export function addSlotToDay(slots: Slot[], day: DayIndex): Slot[] {
   const daySlots = slots.filter((s) => s.day === day)
@@ -248,54 +209,4 @@ export function addSlotToDay(slots: Slot[], day: DayIndex): Slot[] {
 
 export function removeSlot(slots: Slot[], id: string): Slot[] {
   return slots.filter((s) => s.id !== id)
-}
-
-// ─── Booking storage ──────────────────────────────────────────────────────────
-
-export async function getBookings(): Promise<Booking[]> {
-  const { data, error } = await supabase
-    .from('bookings')
-    .select('*')
-    .order('created_at', { ascending: false })
-
-  if (error || !data) return []
-  return data.map(rowToBooking)
-}
-
-export async function saveBooking(booking: Omit<Booking, 'id' | 'createdAt'>): Promise<Booking> {
-  const row = {
-    id: generateId(),
-    slot_id: booking.slotId,
-    week_key: booking.weekKey,
-    slot_label: booking.slotLabel,
-    student_name: booking.studentName,
-    parent_name: booking.parentName,
-    phone: booking.phone,
-    grade: booking.grade,
-    group_preference: booking.groupPreference,
-    status: booking.status,
-    price: booking.price,
-    created_at: new Date().toISOString(),
-  }
-  const { data, error } = await supabase.from('bookings').insert(row).select().single()
-  if (error || !data) throw new Error('Failed to save booking')
-  return rowToBooking(data)
-}
-
-export async function updateBooking(id: string, updates: Partial<Booking>): Promise<void> {
-  const row: Record<string, unknown> = {}
-  if (updates.status !== undefined) row.status = updates.status
-  if (updates.price !== undefined) row.price = updates.price
-  if (updates.slotId !== undefined) row.slot_id = updates.slotId
-  if (updates.weekKey !== undefined) row.week_key = updates.weekKey
-  if (updates.studentName !== undefined) row.student_name = updates.studentName
-  if (updates.parentName !== undefined) row.parent_name = updates.parentName
-  if (updates.phone !== undefined) row.phone = updates.phone
-  if (updates.grade !== undefined) row.grade = updates.grade
-  if (updates.groupPreference !== undefined) row.group_preference = updates.groupPreference
-  await supabase.from('bookings').update(row).eq('id', id)
-}
-
-export async function deleteBooking(id: string): Promise<void> {
-  await supabase.from('bookings').delete().eq('id', id)
 }

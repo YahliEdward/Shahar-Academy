@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Slot, GroupType, GROUP_LABELS, DAYS, saveBooking, getSlots, saveSlots, formatShortDate } from '@/lib/types'
+import { Slot, GroupType, GROUP_LABELS, DAYS, formatShortDate } from '@/lib/types'
+import { submitBooking } from '@/lib/adminApi'
 
 const ADMIN_PHONE = '972503166659'
 
@@ -40,6 +41,7 @@ export default function BookingModal({ slot, weekKey, weekDates, onClose, onBook
   const [submittedSlotLabel, setSubmittedSlotLabel] = useState('')
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
+  const [submitError, setSubmitError] = useState('')
 
   useEffect(() => {
     document.body.style.overflow = 'hidden'
@@ -65,19 +67,19 @@ export default function BookingModal({ slot, weekKey, weekDates, onClose, onBook
     }
     const dayDate = weekDates[slot.day]
     const slotLabel = `יום ${DAYS[slot.day]} ${formatShortDate(dayDate)} | ${slot.time}–${slot.endTime}`
-    setSubmittedSlotLabel(slotLabel)
-    setSubmitted(true)
-    saveBooking({ slotId: slot.id, weekKey, slotLabel, ...form, status: 'pending' }).then(() => {
-      getSlots(weekKey).then((slots) => {
-        const idx = slots.findIndex((s) => s.id === slot.id)
-        if (idx !== -1) {
-          slots[idx].enrolled = Math.min(slots[idx].enrolled + 1, 6)
-          saveSlots(slots, weekKey).then(() => {
-            window.dispatchEvent(new Event('slotsUpdated'))
-          })
-        }
-      })
-    }).catch(() => {/* booking saved client-side, WhatsApp fallback available */})
+
+    setLoading(true)
+    setSubmitError('')
+    try {
+      await submitBooking({ slotId: slot.id, weekKey, slotLabel, ...form })
+      setSubmittedSlotLabel(slotLabel)
+      setSubmitted(true)
+      window.dispatchEvent(new Event('slotsUpdated'))
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : 'שמירת הבקשה נכשלה, נסו שוב')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const dayName = DAYS[slot.day]
@@ -191,6 +193,10 @@ export default function BookingModal({ slot, weekKey, weekDates, onClose, onBook
             <div className="bg-yellow-400/10 border border-yellow-400/30 rounded-xl p-3 text-xs text-yellow-200 leading-relaxed">
               <strong>שימו לב:</strong> שריון המקום הוא זמני. שחר יחזור אליכם טלפונית תוך מספר שעות לתיאום המחיר המותאם עבורכם ואישור סופי של ההרשמה.
             </div>
+
+            {submitError && (
+              <p className="text-sm text-red-400 text-center">{submitError}</p>
+            )}
 
             <button
               type="submit"

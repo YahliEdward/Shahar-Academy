@@ -1,3 +1,5 @@
+import ScrollReveal from './reveal/ScrollReveal'
+
 const testimonials = [
   {
     name: 'מיכל ר.',
@@ -31,13 +33,13 @@ const testimonials = [
 
 export default function Testimonials() {
   return (
-    <section className="py-16 px-4 max-w-6xl mx-auto">
+    <section id="testimonials" className="py-16 px-4 max-w-6xl mx-auto">
       <div className="text-center mb-10">
         <h2 className="text-3xl font-black text-white mb-2">מה אומרים עלינו</h2>
         <p className="text-slate-400">סיפורי הצלחה אמיתיים מתלמידים והורים</p>
       </div>
 
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <ScrollReveal selector=":scope > div" className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {testimonials.map((t, i) => (
           <div
             key={i}
@@ -60,7 +62,7 @@ export default function Testimonials() {
             </div>
           </div>
         ))}
-      </div>
+      </ScrollReveal>
     </section>
   )
 }

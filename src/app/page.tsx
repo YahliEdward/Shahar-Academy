@@ -1,26 +1,25 @@
+import Navbar from '@/components/Navbar'
 import Hero from '@/components/Hero'
-import ScheduleGrid from '@/components/ScheduleGrid'
+import TrustBar from '@/components/TrustBar'
+import Features from '@/components/Features'
+import WhyChooseUs from '@/components/WhyChooseUs'
 import Testimonials from '@/components/Testimonials'
-import Link from 'next/link'
+import FAQ from '@/components/FAQ'
+import FinalCTA from '@/components/FinalCTA'
+import Footer from '@/components/Footer'
 
 export default function HomePage() {
   return (
     <main>
+      <Navbar />
       <Hero />
-      <ScheduleGrid />
+      <TrustBar />
+      <Features />
+      <WhyChooseUs />
       <Testimonials />
-
-      <footer className="border-t border-zinc-800 py-8 px-4 text-center text-sm text-zinc-600">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div>© {new Date().getFullYear()} האקדמיה למתמטיקה של שחר. כל הזכויות שמורות.</div>
-          <Link
-            href="/admin"
-            className="text-zinc-700 hover:text-zinc-400 transition-colors text-xs"
-          >
-            כניסה למורה
-          </Link>
-        </div>
-      </footer>
+      <FAQ />
+      <FinalCTA />
+      <Footer />
     </main>
   )
 }

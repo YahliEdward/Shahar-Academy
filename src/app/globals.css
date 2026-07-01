@@ -7,10 +7,27 @@
   --gold-dark: #d97706;
   --text-main: #f1f5f9;
   --text-muted: #94a3b8;
+  --nav-height: 72px;
 }
 
 html {
   scroll-behavior: smooth;
+}
+
+[id] {
+  scroll-margin-top: var(--nav-height);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .math-float,
+  .pulse-gold,
+  .fade-in-up {
+    animation: none !important;
+  }
+
+  html {
+    scroll-behavior: auto;
+  }
 }
 
 body {
@@ -54,4 +71,19 @@ body {
 
 .fade-in-up {
   animation: fade-in-up 0.5s ease-out forwards;
+}
+
+/* FAQ accordion — height animated via grid-template-rows, GSAP handles chevron/opacity */
+.faq-answer-wrap {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.35s ease;
+}
+
+.faq-answer-wrap.is-open {
+  grid-template-rows: 1fr;
+}
+
+.faq-answer-inner {
+  overflow: hidden;
 }

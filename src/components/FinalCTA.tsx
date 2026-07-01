@@ -1,0 +1,33 @@
+import Link from 'next/link'
+import { WHATSAPP_URL } from '@/lib/constants'
+
+export default function FinalCTA() {
+  return (
+    <section id="cta" className="relative py-20 px-4 overflow-hidden">
+      <div className="max-w-3xl mx-auto text-center bg-gradient-to-b from-zinc-800/60 to-zinc-900/60 border border-yellow-400/20 rounded-3xl p-10 sm:p-14">
+        <h2 className="text-3xl sm:text-4xl font-black text-white mb-4">
+          מוכנים להתחיל את הדרך ל־<span className="text-yellow-400">5 יחידות</span>?
+        </h2>
+        <p className="text-slate-300 mb-8 max-w-xl mx-auto leading-relaxed">
+          המקומות בכל קבוצה מוגבלים ל־6 תלמידים בלבד. בחרו שעה פנויה עכשיו — לפני שהיא נתפסת.
+        </p>
+        <div className="flex flex-col sm:flex-row gap-3 justify-center">
+          <Link
+            href="/schedule"
+            className="px-8 py-4 bg-yellow-400 text-black font-black text-lg rounded-xl hover:bg-yellow-300 transition-all shadow-lg shadow-yellow-400/20 hover:shadow-yellow-400/40 hover:-translate-y-0.5"
+          >
+            בחרו שעה עכשיו ←
+          </Link>
+          <a
+            href={WHATSAPP_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-8 py-4 border border-white/20 text-white font-bold text-lg rounded-xl hover:bg-white/5 transition-all"
+          >
+            שאלו אותנו בוואטסאפ
+          </a>
+        </div>
+      </div>
+    </section>
+  )
+}
