@@ -38,6 +38,7 @@ export default function Navbar() {
   }, [menuOpen])
 
   return (
+    <>
     <header
       className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 flex items-center ${
         scrolled
@@ -93,10 +94,11 @@ export default function Navbar() {
           </button>
         </div>
       </nav>
+    </header>
 
       {/* Mobile drawer */}
       <div
-        className={`md:hidden fixed inset-x-0 bottom-0 bg-[rgba(11,15,25,0.98)] backdrop-blur-md transition-opacity duration-300 ${
+        className={`md:hidden fixed inset-x-0 bottom-0 z-50 bg-[rgba(11,15,25,1)] backdrop-blur-md transition-opacity duration-300 ${
           menuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
         }`}
         style={{ top: scrolled ? '58px' : 'var(--nav-height)' }}
@@ -135,6 +137,6 @@ export default function Navbar() {
           </a>
         </div>
       </div>
-    </header>
+    </>
   )
 }
