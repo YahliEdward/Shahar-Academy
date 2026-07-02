@@ -81,6 +81,7 @@ function SlotEditor({ bookings, onChanged }: { bookings: Booking[]; onChanged: (
   // Which edit target (template / specific week) the current slots belong to.
   // Deriving `loading` from it avoids a synchronous setState inside the effect.
   const [loadedFor, setLoadedFor] = useState<string | null>(null)
+  const [loadError, setLoadError] = useState(false)
 
   const weekKey = getWeekKey(weekOffset)
   const weekDates = getWeekDates(weekOffset)
@@ -90,17 +91,24 @@ function SlotEditor({ bookings, onChanged }: { bookings: Booking[]; onChanged: (
   useEffect(() => {
     let cancelled = false
     const load = async () => {
-      if (mode === 'default') {
-        const template = await fetchTemplate()
+      try {
+        if (mode === 'default') {
+          const template = await fetchTemplate()
+          if (cancelled) return
+          setSlots(template)
+        } else {
+          const { slots: weekSlots, isOverride: hasOverride } = await fetchWeekSlots(weekKey)
+          if (cancelled) return
+          setSlots(weekSlots)
+          setIsOverride(hasOverride)
+        }
+        setLoadError(false)
+      } catch {
         if (cancelled) return
-        setSlots(template)
-      } else {
-        const { slots: weekSlots, isOverride: hasOverride } = await fetchWeekSlots(weekKey)
-        if (cancelled) return
-        setSlots(weekSlots)
-        setIsOverride(hasOverride)
+        setLoadError(true)
+      } finally {
+        if (!cancelled) setLoadedFor(mode === 'default' ? 'template' : weekKey)
       }
-      setLoadedFor(mode === 'default' ? 'template' : weekKey)
     }
     load()
     return () => { cancelled = true }
@@ -238,6 +246,8 @@ function SlotEditor({ bookings, onChanged }: { bookings: Booking[]; onChanged: (
       {/* Slot list */}
       {loading ? (
         <p className="text-center text-zinc-500 py-8 text-sm">טוען…</p>
+      ) : loadError ? (
+        <p className="text-center text-red-400 py-8 text-sm">שגיאה בטעינת הלוח — נסו לרענן</p>
       ) : (
       <div className="space-y-3">
         {daySlots.map((slot) => (
@@ -524,23 +534,23 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (!authed) return
-    fetchWeekSlots(getWeekKey(0)).then((r) => setSlots(r.slots))
-    fetchBookings().then(setBookings)
+    fetchWeekSlots(getWeekKey(0)).then((r) => setSlots(r.slots)).catch(() => {})
+    fetchBookings().then(setBookings).catch(() => {})
   }, [authed])
 
   useEffect(() => {
     if (!authed) return
-    const handler = () => fetchBookings().then(setBookings)
+    const handler = () => fetchBookings().then(setBookings).catch(() => {})
     window.addEventListener('slotsUpdated', handler)
     return () => window.removeEventListener('slotsUpdated', handler)
   }, [authed])
 
   const handleScheduleChanged = useCallback(() => {
-    fetchWeekSlots(getWeekKey(0)).then((r) => setSlots(r.slots))
+    fetchWeekSlots(getWeekKey(0)).then((r) => setSlots(r.slots)).catch(() => {})
     window.dispatchEvent(new Event('slotsUpdated'))
   }, [])
 
-  const refreshBookings = () => fetchBookings().then(setBookings)
+  const refreshBookings = () => fetchBookings().then(setBookings).catch(() => {})
 
   const handleLogout = async () => {
     await adminLogout()

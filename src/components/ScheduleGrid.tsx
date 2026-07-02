@@ -128,6 +128,7 @@ export default function ScheduleGrid() {
   const [weekOffset, setWeekOffset] = useState(0)
   // null = first load still in flight (shows a loading hint instead of a blank grid).
   const [slots, setSlots] = useState<Slot[] | null>(null)
+  const [loadError, setLoadError] = useState(false)
   // Open on today's tab (Friday/Saturday fall back to Thursday).
   const [activeDay, setActiveDay] = useState<number>(() => Math.min(new Date().getDay(), 4))
   const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null)
@@ -138,9 +139,19 @@ export default function ScheduleGrid() {
   useEffect(() => {
     let cancelled = false
     const load = async () => {
-      const data = await getSlots(weekKey)
-      // Guard against out-of-order responses when flipping weeks quickly.
-      if (!cancelled) setSlots(data)
+      try {
+        const data = await getSlots(weekKey)
+        // Guard against out-of-order responses when flipping weeks quickly.
+        if (!cancelled) {
+          setSlots(data)
+          setLoadError(false)
+        }
+      } catch {
+        if (!cancelled) {
+          setSlots([])
+          setLoadError(true)
+        }
+      }
     }
     load()
     window.addEventListener('slotsUpdated', load)
@@ -206,8 +217,12 @@ export default function ScheduleGrid() {
         ))}
       </div>
 
-      {slots === null && (
+      {slots === null && !loadError && (
         <p className="text-center text-zinc-500 py-10 text-sm">טוען את הלוח…</p>
+      )}
+
+      {loadError && (
+        <p className="text-center text-red-400 py-10 text-sm">שגיאה בטעינת הלוח — נסו לרענן</p>
       )}
 
       {/* Mobile: single day view */}
