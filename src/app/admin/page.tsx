@@ -7,7 +7,7 @@ import {
   addSlotToDay, removeSlot, getWeekKey, getWeekDates, formatShortDate,
 } from '@/lib/types'
 import {
-  adminLogin, adminLogout, fetchBookings, patchBooking, removeBooking,
+  adminLogin, adminLogout, adminSession, fetchBookings, patchBooking, removeBooking,
   fetchTemplate, fetchWeekSlots, putTemplate, putWeekSlots, resetWeek,
 } from '@/lib/adminApi'
 import TimePicker from '@/components/TimePicker'
@@ -21,17 +21,17 @@ const GROUP_OPTIONS: GroupType[] = ['middle-school', 'high-4', 'high-5', 'mixed'
 
 function LoginScreen({ onLogin }: { onLogin: () => void }) {
   const [pw, setPw] = useState('')
-  const [error, setError] = useState(false)
+  const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-    setError(false)
-    const ok = await adminLogin(pw)
+    setError('')
+    const { ok, error: loginError } = await adminLogin(pw)
     setLoading(false)
     if (ok) onLogin()
-    else setError(true)
+    else setError(loginError ?? 'סיסמה שגויה')
   }
 
   return (
@@ -47,11 +47,11 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
             type="password"
             placeholder="סיסמה"
             value={pw}
-            onChange={(e) => { setPw(e.target.value); setError(false) }}
+            onChange={(e) => { setPw(e.target.value); setError('') }}
             className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white text-center tracking-widest text-lg outline-none focus:border-yellow-400 transition-colors"
             autoFocus
           />
-          {error && <p className="text-red-400 text-sm">סיסמה שגויה</p>}
+          {error && <p className="text-red-400 text-sm">{error}</p>}
           <button
             type="submit"
             disabled={loading}
@@ -78,24 +78,33 @@ function SlotEditor({ bookings, onChanged }: { bookings: Booking[]; onChanged: (
   const [activeDay, setActiveDay] = useState(0)
   const [slots, setSlots] = useState<Slot[]>([])
   const [isOverride, setIsOverride] = useState(false)
-  const [loading, setLoading] = useState(true)
+  // Which edit target (template / specific week) the current slots belong to.
+  // Deriving `loading` from it avoids a synchronous setState inside the effect.
+  const [loadedFor, setLoadedFor] = useState<string | null>(null)
 
   const weekKey = getWeekKey(weekOffset)
   const weekDates = getWeekDates(weekOffset)
+  const editKey = mode === 'default' ? 'template' : weekKey
+  const loading = loadedFor !== editKey
 
-  const load = useCallback(async () => {
-    setLoading(true)
-    if (mode === 'default') {
-      setSlots(await fetchTemplate())
-    } else {
-      const { slots: weekSlots, isOverride: hasOverride } = await fetchWeekSlots(weekKey)
-      setSlots(weekSlots)
-      setIsOverride(hasOverride)
+  useEffect(() => {
+    let cancelled = false
+    const load = async () => {
+      if (mode === 'default') {
+        const template = await fetchTemplate()
+        if (cancelled) return
+        setSlots(template)
+      } else {
+        const { slots: weekSlots, isOverride: hasOverride } = await fetchWeekSlots(weekKey)
+        if (cancelled) return
+        setSlots(weekSlots)
+        setIsOverride(hasOverride)
+      }
+      setLoadedFor(mode === 'default' ? 'template' : weekKey)
     }
-    setLoading(false)
+    load()
+    return () => { cancelled = true }
   }, [mode, weekKey])
-
-  useEffect(() => { load() }, [load])
 
   // Persist the current edit: the default schedule, or a single week's override.
   const commit = async (updated: Slot[]) => {
@@ -134,9 +143,7 @@ function SlotEditor({ bookings, onChanged }: { bookings: Booking[]; onChanged: (
   }
 
   const daySlots = slots.filter((s) => s.day === activeDay)
-  const weekLabel = weekOffset === 0
-    ? `שבוע נוכחי (${formatShortDate(weekDates[0])}–${formatShortDate(weekDates[4])})`
-    : `שבוע ${formatShortDate(weekDates[0])}–${formatShortDate(weekDates[4])}`
+  const weekRange = `${formatShortDate(weekDates[0])}–${formatShortDate(weekDates[4])}`
 
   return (
     <div>
@@ -176,7 +183,9 @@ function SlotEditor({ bookings, onChanged }: { bookings: Booking[]; onChanged: (
             >
               →
             </button>
-            <span className="text-sm font-semibold text-slate-300 flex-1 text-center">{weekLabel}</span>
+            <span className="text-sm font-semibold text-slate-300 flex-1 text-center">
+              {weekOffset === 0 ? 'שבוע נוכחי' : 'שבוע'} (<span dir="ltr">{weekRange}</span>)
+            </span>
             <button
               onClick={() => setWeekOffset((w) => Math.min(MAX_WEEK_OFFSET, w + 1))}
               disabled={weekOffset === MAX_WEEK_OFFSET}
@@ -503,10 +512,15 @@ function BookingCard({
 // ─── Main admin page ──────────────────────────────────────────────────────
 
 export default function AdminPage() {
-  const [authed, setAuthed] = useState(false)
+  // null = still checking whether a previous session cookie is valid.
+  const [authed, setAuthed] = useState<boolean | null>(null)
   const [tab, setTab] = useState<'schedule' | 'bookings'>('bookings')
   const [slots, setSlots] = useState<Slot[]>([])
   const [bookings, setBookings] = useState<Booking[]>([])
+
+  useEffect(() => {
+    adminSession().then(setAuthed)
+  }, [])
 
   useEffect(() => {
     if (!authed) return
@@ -533,6 +547,13 @@ export default function AdminPage() {
     setAuthed(false)
   }
 
+  if (authed === null) {
+    return (
+      <div className="min-h-screen flex items-center justify-center math-bg">
+        <p className="text-zinc-500 text-sm">טוען…</p>
+      </div>
+    )
+  }
   if (!authed) return <LoginScreen onLogin={() => setAuthed(true)} />
 
   const pendingCount = bookings.filter((b) => b.status === 'pending').length

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import {
   Slot, DAYS, GROUP_LABELS, MAX_STUDENTS,
-  getSlots, getWeekKey, getWeekDates, formatShortDate,
+  getSlots, getWeekKey, getWeekDates, formatShortDate, isSlotPast,
 } from '@/lib/types'
 import BookingModal from './BookingModal'
 
@@ -40,18 +40,29 @@ function AvailabilityBadge({ enrolled }: { enrolled: number }) {
   )
 }
 
-function SlotCard({ slot, onClick }: { slot: Slot; onClick: () => void }) {
+function SlotCard({ slot, isPast, onClick }: { slot: Slot; isPast: boolean; onClick: () => void }) {
   const isFull = slot.enrolled >= MAX_STUDENTS
   const isEmpty = slot.groupType === 'empty'
+  const disabled = isFull || isPast
 
   if (isEmpty) {
+    if (isPast) {
+      return (
+        <div className="w-full rounded-xl border border-dashed border-zinc-800/60 p-3 text-center text-zinc-700 text-xs opacity-50">
+          <div className="font-semibold" dir="ltr">
+            {slot.time}–{slot.endTime}
+          </div>
+          <div className="mt-1">הסתיים</div>
+        </div>
+      )
+    }
     return (
       <button
         onClick={onClick}
         className="w-full rounded-xl border border-dashed border-zinc-700/50 p-3 text-center text-zinc-600 text-xs transition-all hover:border-yellow-400/40 hover:bg-zinc-800/40 hover:-translate-y-0.5 cursor-pointer group"
       >
-        <div className="font-semibold text-zinc-500">
-          {slot.time} – {slot.endTime}
+        <div className="font-semibold text-zinc-500" dir="ltr">
+          {slot.time}–{slot.endTime}
         </div>
         <div className="mt-1">פנוי</div>
         <div className="mt-1.5 text-yellow-400/0 group-hover:text-yellow-400/70 transition-colors font-semibold">
@@ -63,16 +74,16 @@ function SlotCard({ slot, onClick }: { slot: Slot; onClick: () => void }) {
 
   return (
     <button
-      onClick={isFull ? undefined : onClick}
-      disabled={isFull}
+      onClick={disabled ? undefined : onClick}
+      disabled={disabled}
       className={`w-full text-right rounded-xl border p-3 transition-all group ${
-        isFull
+        disabled
           ? 'border-zinc-700/50 bg-zinc-800/30 cursor-not-allowed opacity-60'
           : 'border-zinc-700/50 bg-zinc-800/40 hover:border-yellow-400/50 hover:bg-zinc-800/80 hover:-translate-y-0.5 cursor-pointer'
       }`}
     >
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xs font-mono text-slate-400">
+        <span className="text-xs font-mono text-slate-400" dir="ltr">
           {slot.time}–{slot.endTime}
         </span>
         <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${GROUP_BADGE[slot.groupType]}`}>
@@ -96,9 +107,15 @@ function SlotCard({ slot, onClick }: { slot: Slot; onClick: () => void }) {
         </div>
       </div>
 
-      <AvailabilityBadge enrolled={slot.enrolled} />
+      {isPast ? (
+        <span className="text-xs px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-500 font-semibold border border-zinc-700">
+          הסתיים
+        </span>
+      ) : (
+        <AvailabilityBadge enrolled={slot.enrolled} />
+      )}
 
-      {!isFull && (
+      {!disabled && (
         <div className="mt-2 text-xs text-yellow-400/70 group-hover:text-yellow-400 transition-colors font-semibold">
           לחץ לשריון מקום ←
         </div>
@@ -109,33 +126,35 @@ function SlotCard({ slot, onClick }: { slot: Slot; onClick: () => void }) {
 
 export default function ScheduleGrid() {
   const [weekOffset, setWeekOffset] = useState(0)
-  const [slots, setSlots] = useState<Slot[]>([])
-  const [activeDay, setActiveDay] = useState<number>(0)
+  // null = first load still in flight (shows a loading hint instead of a blank grid).
+  const [slots, setSlots] = useState<Slot[] | null>(null)
+  // Open on today's tab (Friday/Saturday fall back to Thursday).
+  const [activeDay, setActiveDay] = useState<number>(() => Math.min(new Date().getDay(), 4))
   const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null)
 
   const weekKey = getWeekKey(weekOffset)
   const weekDates = getWeekDates(weekOffset)
 
-  const loadSlots = async (key: string) => {
-    const data = await getSlots(key)
-    setSlots(data)
-  }
-
   useEffect(() => {
-    loadSlots(weekKey)
-    const handleUpdate = () => loadSlots(weekKey)
-    window.addEventListener('slotsUpdated', handleUpdate)
-    return () => window.removeEventListener('slotsUpdated', handleUpdate)
+    let cancelled = false
+    const load = async () => {
+      const data = await getSlots(weekKey)
+      // Guard against out-of-order responses when flipping weeks quickly.
+      if (!cancelled) setSlots(data)
+    }
+    load()
+    window.addEventListener('slotsUpdated', load)
+    return () => {
+      cancelled = true
+      window.removeEventListener('slotsUpdated', load)
+    }
   }, [weekKey])
 
-  const slotsByDay = DAYS.map((_, d) => slots.filter((s) => s.day === d))
+  const slotsByDay = DAYS.map((_, d) => (slots ?? []).filter((s) => s.day === d))
 
   const weekStart = weekDates[0]
   const weekEnd = weekDates[4]
-  const weekLabel =
-    weekOffset === 0
-      ? `שבוע נוכחי (${formatShortDate(weekStart)}–${formatShortDate(weekEnd)})`
-      : `שבוע ${formatShortDate(weekStart)}–${formatShortDate(weekEnd)}`
+  const weekRange = `${formatShortDate(weekStart)}–${formatShortDate(weekEnd)}`
 
   return (
     <section id="schedule" className="pt-6 pb-16 px-4 max-w-6xl mx-auto">
@@ -156,7 +175,7 @@ export default function ScheduleGrid() {
           →
         </button>
         <span className="text-sm font-semibold text-slate-300 min-w-[200px] text-center">
-          {weekLabel}
+          {weekOffset === 0 ? 'שבוע נוכחי' : 'שבוע'} (<span dir="ltr">{weekRange}</span>)
         </span>
         <button
           onClick={() => setWeekOffset((w) => Math.min(MAX_WEEK_OFFSET, w + 1))}
@@ -187,11 +206,20 @@ export default function ScheduleGrid() {
         ))}
       </div>
 
+      {slots === null && (
+        <p className="text-center text-zinc-500 py-10 text-sm">טוען את הלוח…</p>
+      )}
+
       {/* Mobile: single day view */}
       <div className="md:hidden">
         <div className="space-y-3">
           {slotsByDay[activeDay]?.map((slot) => (
-            <SlotCard key={slot.id} slot={slot} onClick={() => setSelectedSlot(slot)} />
+            <SlotCard
+              key={slot.id}
+              slot={slot}
+              isPast={isSlotPast(slot, weekDates)}
+              onClick={() => setSelectedSlot(slot)}
+            />
           ))}
         </div>
       </div>
@@ -206,7 +234,12 @@ export default function ScheduleGrid() {
             </div>
             <div className="space-y-3">
               {slotsByDay[d]?.map((slot) => (
-                <SlotCard key={slot.id} slot={slot} onClick={() => setSelectedSlot(slot)} />
+                <SlotCard
+                  key={slot.id}
+                  slot={slot}
+                  isPast={isSlotPast(slot, weekDates)}
+                  onClick={() => setSelectedSlot(slot)}
+                />
               ))}
             </div>
           </div>
@@ -219,10 +252,8 @@ export default function ScheduleGrid() {
           weekKey={weekKey}
           weekDates={weekDates}
           onClose={() => setSelectedSlot(null)}
-          onBooked={() => {
-            setSelectedSlot(null)
-            loadSlots(weekKey)
-          }}
+          // The modal dispatches 'slotsUpdated' on success, which reloads the grid.
+          onBooked={() => setSelectedSlot(null)}
         />
       )}
     </section>

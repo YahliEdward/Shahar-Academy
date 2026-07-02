@@ -1,10 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Slot, GroupType, GROUP_LABELS, DAYS, formatShortDate } from '@/lib/types'
 import { submitBooking } from '@/lib/adminApi'
-
-const ADMIN_PHONE = '972503166659'
+import { WHATSAPP_NUMBER } from '@/lib/constants'
 
 const adminWhatsappUrl = (studentName: string, grade: string, slotLabel: string, phone: string) => {
   const msg = encodeURIComponent(
@@ -13,7 +12,7 @@ const adminWhatsappUrl = (studentName: string, grade: string, slotLabel: string,
     `שיעור: ${slotLabel}\n` +
     `טלפון הורה: ${phone}`
   )
-  return `https://wa.me/${ADMIN_PHONE}?text=${msg}`
+  return `https://wa.me/${WHATSAPP_NUMBER}?text=${msg}`
 }
 
 interface Props {
@@ -43,10 +42,45 @@ export default function BookingModal({ slot, weekKey, weekDates, onClose, onBook
   const [loading, setLoading] = useState(false)
   const [submitError, setSubmitError] = useState('')
 
+  const dialogRef = useRef<HTMLDivElement>(null)
+
+  // Scroll lock + Escape-to-close + focus trap: focus moves into the dialog on
+  // open, Tab cycles inside it, and focus returns to the trigger on close.
   useEffect(() => {
+    const dialog = dialogRef.current
+    const previouslyFocused = document.activeElement as HTMLElement | null
+    dialog?.focus()
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose()
+        return
+      }
+      if (e.key !== 'Tab' || !dialog) return
+      const focusables = [...dialog.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea'
+      )].filter((el) => !el.hasAttribute('disabled'))
+      if (focusables.length === 0) return
+      const first = focusables[0]
+      const last = focusables[focusables.length - 1]
+      const active = document.activeElement
+      if (e.shiftKey && (active === first || active === dialog)) {
+        e.preventDefault()
+        last.focus()
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault()
+        first.focus()
+      }
+    }
+
     document.body.style.overflow = 'hidden'
-    return () => { document.body.style.overflow = '' }
-  }, [])
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.body.style.overflow = ''
+      document.removeEventListener('keydown', onKey)
+      previouslyFocused?.focus()
+    }
+  }, [onClose])
 
   const validate = () => {
     const e: Record<string, string> = {}
@@ -90,17 +124,25 @@ export default function BookingModal({ slot, weekKey, weekDates, onClose, onBook
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div className="w-full max-w-md bg-[#131827] rounded-2xl border border-zinc-700/50 shadow-2xl fade-in-up overflow-hidden">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="שריון מקום"
+        tabIndex={-1}
+        className="w-full max-w-md bg-[#131827] rounded-2xl border border-zinc-700/50 shadow-2xl fade-in-up overflow-hidden outline-none"
+      >
         {/* Header */}
         <div className="bg-zinc-800/60 px-5 py-4 flex items-center justify-between border-b border-zinc-700/50">
           <div>
             <h3 className="font-black text-white text-lg">שריון מקום</h3>
             <p className="text-sm text-zinc-400 mt-0.5">
-              יום {dayName} {formatShortDate(dayDate)} | {slot.time}–{slot.endTime} | {GROUP_LABELS[slot.groupType]}
+              יום {dayName} {formatShortDate(dayDate)} | <span dir="ltr">{slot.time}–{slot.endTime}</span> | {GROUP_LABELS[slot.groupType]}
             </p>
           </div>
           <button
             onClick={onClose}
+            aria-label="סגירה"
             className="w-8 h-8 rounded-lg bg-zinc-700 hover:bg-zinc-600 flex items-center justify-center text-zinc-300 text-lg transition-colors"
           >
             ×

@@ -22,6 +22,7 @@ Set these in `.env.local` (local) **and** in your Netlify project
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | yes | Anon key — used only to *read* the schedule in the browser |
 | `SUPABASE_SERVICE_ROLE_KEY` | **no — secret** | Service-role key. Used only by server route handlers; bypasses RLS |
 | `ADMIN_PASSWORD` | **no — secret** | Password for the `/admin` area |
+| `SESSION_SECRET` | **no — secret, optional** | Signs admin session cookies. Any long random string. Falls back to `ADMIN_PASSWORD` if unset |
 
 Get the service-role key from Supabase → Project Settings → API → `service_role`.
 
@@ -35,10 +36,17 @@ This is enforced by Row Level Security. **You must run [`supabase-schema.sql`](s
 (the `alter table ... enable row level security` + policy section) in the
 Supabase SQL editor. Until you do, the anon key can still read/write everything.
 
+Booking capacity is enforced by a single conditional `UPDATE` in Postgres
+(`adjust_enrolled()` in the schema file), so two parallel requests can never
+both take the last seat.
+
 ### Activation checklist
 
-1. Run `supabase-schema.sql` in the Supabase SQL editor (enables RLS + policies).
-2. Set `SUPABASE_SERVICE_ROLE_KEY` and `ADMIN_PASSWORD` in `.env.local` and on Netlify.
+1. Run `supabase-schema.sql` in the Supabase SQL editor. It is safe to re-run on
+   an existing database — it migrates the `slots` primary key to `(id, week_key)`
+   and creates the `adjust_enrolled()` function used for atomic capacity checks.
+2. Set `SUPABASE_SERVICE_ROLE_KEY` and `ADMIN_PASSWORD` (and ideally
+   `SESSION_SECRET`) in `.env.local` and on Netlify.
 3. Redeploy, then smoke-test: book a slot as a visitor, and log into `/admin`.
 
 ## Project layout

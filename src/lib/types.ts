@@ -67,8 +67,14 @@ export function getWeekStart(offsetWeeks: number): Date {
   return sunday
 }
 
+// Local-date key (YYYY-MM-DD). Deliberately NOT toISOString(): that converts to
+// UTC, which in Israel rolls Sunday 00:00 back to Saturday's date and produces
+// different keys for users in different timezones.
 export function getWeekKey(offsetWeeks: number): string {
-  return getWeekStart(offsetWeeks).toISOString().split('T')[0]
+  const d = getWeekStart(offsetWeeks)
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  return `${d.getFullYear()}-${mm}-${dd}`
 }
 
 export function getWeekDates(offsetWeeks: number): Date[] {
@@ -82,6 +88,16 @@ export function getWeekDates(offsetWeeks: number): Date[] {
 
 export function formatShortDate(date: Date): string {
   return `${date.getDate()}/${date.getMonth() + 1}`
+}
+
+// True when the slot's start time on its day of the given week is already gone.
+export function isSlotPast(slot: Slot, weekDates: Date[]): boolean {
+  const day = weekDates[slot.day]
+  if (!day) return false
+  const [h, m] = slot.time.split(':').map(Number)
+  const start = new Date(day)
+  start.setHours(h || 0, m || 0, 0, 0)
+  return start.getTime() < Date.now()
 }
 
 // ─── Slot helpers ─────────────────────────────────────────────────────────────

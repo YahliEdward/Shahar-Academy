@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isAdminConfigured } from '@/lib/supabaseAdmin'
-import { createBooking, SlotFullError, NewBooking } from '@/lib/serverDb'
+import { createBooking, SlotFullError, SlotNotFoundError, SlotPastError, NewBooking } from '@/lib/serverDb'
 import { GroupType } from '@/lib/types'
 
 const GROUP_TYPES: GroupType[] = ['middle-school', 'high-4', 'high-5', 'mixed', 'empty']
@@ -30,8 +30,11 @@ export async function POST(request: NextRequest) {
   const slotLabel = str(body.slotLabel)
   const groupPreference = body.groupPreference as GroupType
 
-  if (!studentName || !parentName || !grade || !slotId) {
+  if (!studentName || !parentName || !grade || !slotId || !weekKey) {
     return NextResponse.json({ error: 'חסרים פרטים' }, { status: 400 })
+  }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(weekKey)) {
+    return NextResponse.json({ error: 'שבוע לא תקין' }, { status: 400 })
   }
   if (!/^0\d{8,9}$/.test(phone.replace(/[-\s]/g, ''))) {
     return NextResponse.json({ error: 'מספר טלפון לא תקין' }, { status: 400 })
@@ -50,6 +53,12 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     if (err instanceof SlotFullError) {
       return NextResponse.json({ error: 'המקום התמלא' }, { status: 409 })
+    }
+    if (err instanceof SlotNotFoundError) {
+      return NextResponse.json({ error: 'המשבצת כבר לא קיימת — רעננו את הדף ונסו שוב' }, { status: 409 })
+    }
+    if (err instanceof SlotPastError) {
+      return NextResponse.json({ error: 'השעה כבר עברה — בחרו שעה אחרת' }, { status: 409 })
     }
     return NextResponse.json({ error: 'שמירת הבקשה נכשלה' }, { status: 500 })
   }
