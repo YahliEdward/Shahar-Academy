@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: TITLE,
   description: DESCRIPTION,
-  icons: { icon: '/logo.png', apple: '/logo.png' },
+  icons: { icon: '/icon-192.png', apple: '/icon-192.png' },
   openGraph: {
     title: TITLE,
     description: DESCRIPTION,
@@ -26,13 +26,14 @@ export const metadata: Metadata = {
     siteName: TITLE,
     locale: 'he_IL',
     type: 'website',
-    images: [{ url: '/logo.png', width: 1254, height: 1254, alt: TITLE }],
+    // WhatsApp won't show preview images over ~600KB — this one is a 58KB JPEG.
+    images: [{ url: '/og-image.jpg', width: 512, height: 512, alt: TITLE }],
   },
   twitter: {
     card: 'summary',
     title: TITLE,
     description: DESCRIPTION,
-    images: ['/logo.png'],
+    images: ['/og-image.jpg'],
   },
 }
 
@@ -43,7 +44,7 @@ const jsonLd = {
   name: TITLE,
   description: DESCRIPTION,
   url: SITE_URL,
-  logo: `${SITE_URL}/logo.png`,
+  logo: `${SITE_URL}/og-image.jpg`,
   telephone: PHONE,
   areaServed: { '@type': 'Country', name: 'Israel' },
 }
