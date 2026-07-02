@@ -54,9 +54,12 @@ function slotsToRows(slots: Slot[], weekKey: string) {
 }
 
 export async function saveSlots(slots: Slot[], weekKey: string): Promise<void> {
-  await getSupabaseAdmin().from('slots').delete().eq('week_key', weekKey)
+  const db = getSupabaseAdmin()
+  const { error: deleteError } = await db.from('slots').delete().eq('week_key', weekKey)
+  if (deleteError) throw new Error(`Failed to clear slots for ${weekKey}: ${deleteError.message}`)
   if (slots.length === 0) return
-  await getSupabaseAdmin().from('slots').insert(slotsToRows(slots, weekKey))
+  const { error: insertError } = await db.from('slots').insert(slotsToRows(slots, weekKey))
+  if (insertError) throw new Error(`Failed to save slots for ${weekKey}: ${insertError.message}`)
 }
 
 export async function saveTemplate(slots: Slot[]): Promise<void> {
@@ -94,21 +97,55 @@ function generateId(): string {
 export type NewBooking = Omit<Booking, 'id' | 'createdAt' | 'status'>
 
 export class SlotFullError extends Error {}
+export class SlotNotFoundError extends Error {}
+export class SlotPastError extends Error {}
 
-// Creates a booking and bumps the slot's enrolled count, enforcing capacity
-// server-side so the last seat can't be double-booked from the browser.
-export async function createBooking(booking: NewBooking): Promise<Booking> {
-  const weekKey = booking.weekKey ?? ''
+// Wall-clock comparison in Israel time, so the serverless region's timezone
+// doesn't affect the result. Both sides use the "YYYY-MM-DD HH:mm" format, so
+// plain string comparison is chronological.
+function isSlotInPast(slot: Slot, weekKey: string): boolean {
+  const start = new Date(`${weekKey}T00:00:00Z`)
+  if (Number.isNaN(start.getTime())) return false
+  start.setUTCDate(start.getUTCDate() + slot.day)
+  const slotStamp = `${start.toISOString().slice(0, 10)} ${slot.time}`
+  const nowInIsrael = new Intl.DateTimeFormat('sv-SE', {
+    timeZone: 'Asia/Jerusalem',
+    dateStyle: 'short',
+    timeStyle: 'short',
+  }).format(new Date())
+  return slotStamp < nowInIsrael
+}
 
-  // Resolve the slot for this week (falling back to the template) and verify
-  // there is still room before committing anything.
-  const slots = await getSlots(weekKey)
-  const idx = slots.findIndex((s) => s.id === booking.slotId)
-  if (idx !== -1 && slots[idx].enrolled >= MAX_STUDENTS) {
-    throw new SlotFullError('Slot is full')
+// Copies the template into concrete rows the first time a template-following
+// week takes a booking, so the capacity update below can target a real row.
+// Concurrent calls are safe: duplicate inserts hit the (id, week_key) primary
+// key and the week is simply re-read.
+async function ensureWeekSlots(weekKey: string): Promise<Slot[]> {
+  const db = getSupabaseAdmin()
+  const readWeek = async () => {
+    const { data } = await db.from('slots').select('*')
+      .eq('week_key', weekKey).order('day').order('time')
+    return data && data.length > 0 ? data.map(rowToSlot) : null
   }
 
-  const row = {
+  const existing = await readWeek()
+  if (existing) return existing
+
+  const template = await getTemplate()
+  const { error } = await db.from('slots').insert(slotsToRows(template, weekKey))
+  if (error) {
+    // Unique violation → either a concurrent request materialised the week
+    // (fine, re-read) or the DB still has the old single-column PK and the
+    // insert collided with another week's rows (migration not run yet).
+    const reread = await readWeek()
+    if (reread) return reread
+    throw new Error(`Failed to materialise week ${weekKey}: ${error.message}`)
+  }
+  return template
+}
+
+function bookingRow(booking: NewBooking) {
+  return {
     id: generateId(),
     slot_id: booking.slotId,
     week_key: booking.weekKey,
@@ -122,16 +159,63 @@ export async function createBooking(booking: NewBooking): Promise<Booking> {
     price: booking.price,
     created_at: new Date().toISOString(),
   }
-  const { data, error } = await getSupabaseAdmin().from('bookings').insert(row).select().single()
+}
+
+// Pre-migration path (old delete/reinsert persistence, non-atomic capacity
+// check). Kept so bookings don't break if the code deploys before the
+// adjust_enrolled() function from supabase-schema.sql exists.
+async function createBookingLegacy(booking: NewBooking, weekKey: string): Promise<Booking> {
+  const slots = await getSlots(weekKey)
+  const idx = slots.findIndex((s) => s.id === booking.slotId)
+  if (idx !== -1 && slots[idx].enrolled >= MAX_STUDENTS) {
+    throw new SlotFullError('Slot is full')
+  }
+
+  const { data, error } = await getSupabaseAdmin()
+    .from('bookings').insert(bookingRow(booking)).select().single()
   if (error || !data) throw new Error('Failed to save booking')
 
-  // Persist the incremented enrolled count for the week (materialising a week
-  // override the first time a template-following week takes a booking).
   if (idx !== -1) {
     slots[idx] = { ...slots[idx], enrolled: Math.min(slots[idx].enrolled + 1, MAX_STUDENTS) }
     await saveSlots(slots, weekKey)
   }
+  return rowToBooking(data)
+}
 
+// Creates a booking and bumps the slot's enrolled count. Capacity is enforced
+// by a single conditional UPDATE in Postgres (adjust_enrolled), so two
+// parallel requests can never both take the last seat.
+export async function createBooking(booking: NewBooking): Promise<Booking> {
+  const weekKey = booking.weekKey ?? ''
+  const db = getSupabaseAdmin()
+
+  const slots = await ensureWeekSlots(weekKey)
+  const slot = slots.find((s) => s.id === booking.slotId)
+  if (!slot) throw new SlotNotFoundError('Unknown slot')
+  if (isSlotInPast(slot, weekKey)) throw new SlotPastError('Slot already started')
+
+  // Take the seat first — atomically. false means the slot filled up between
+  // the page load and the submit.
+  const { data: seatTaken, error: rpcError } = await db.rpc('adjust_enrolled', {
+    p_slot_id: booking.slotId,
+    p_week_key: weekKey,
+    p_delta: 1,
+    p_max: MAX_STUDENTS,
+  })
+  if (rpcError) {
+    console.warn('adjust_enrolled() missing — run supabase-schema.sql. Using legacy path.', rpcError.message)
+    return createBookingLegacy(booking, weekKey)
+  }
+  if (!seatTaken) throw new SlotFullError('Slot is full')
+
+  const { data, error } = await db.from('bookings').insert(bookingRow(booking)).select().single()
+  if (error || !data) {
+    // Release the seat we just took (best effort).
+    await db.rpc('adjust_enrolled', {
+      p_slot_id: booking.slotId, p_week_key: weekKey, p_delta: -1, p_max: MAX_STUDENTS,
+    })
+    throw new Error('Failed to save booking')
+  }
   return rowToBooking(data)
 }
 

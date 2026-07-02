@@ -14,13 +14,28 @@ async function jsonOrThrow(res: Response) {
 
 // ─── Auth ───────────────────────────────────────────────────────────────────
 
-export async function adminLogin(password: string): Promise<boolean> {
+export async function adminLogin(password: string): Promise<{ ok: boolean; error?: string }> {
   const res = await fetch('/api/admin/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ password }),
   })
-  return res.ok
+  if (res.ok) return { ok: true }
+  let error: string | undefined
+  try { error = (await res.json()).error } catch {}
+  return { ok: false, error }
+}
+
+// True when the browser still holds a valid admin session cookie, so the
+// dashboard can skip the login screen after a refresh.
+export async function adminSession(): Promise<boolean> {
+  try {
+    const res = await fetch('/api/admin/login')
+    if (!res.ok) return false
+    return Boolean((await res.json()).authenticated)
+  } catch {
+    return false
+  }
 }
 
 export async function adminLogout(): Promise<void> {

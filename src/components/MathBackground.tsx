@@ -13,9 +13,9 @@ export default function MathBackground() {
     { char: '≈', top: '54%', left: '40%', size: 'text-6xl', delay: '2.7s' },
   ]
 
-  const formulas = [
+  const formulas: { text: React.ReactNode; top: string; left: string; delay: string }[] = [
     { text: 'a² + b² = c²', top: '14%', left: '30%', delay: '0.4s' },
-    { text: 'eⁱᵖ + 1 = 0', top: '40%', left: '60%', delay: '1.6s' },
+    { text: <>e<sup>iπ</sup> + 1 = 0</>, top: '40%', left: '60%', delay: '1.6s' },
     { text: 'f(x) = ax² + bx + c', top: '66%', left: '55%', delay: '2.8s' },
     { text: '∫ x dx', top: '78%', left: '40%', delay: '1.0s' },
     { text: 'sin²θ + cos²θ = 1', top: '30%', left: '74%', delay: '2.2s' },
