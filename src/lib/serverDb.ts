@@ -234,5 +234,21 @@ export async function updateBooking(id: string, updates: Partial<Booking>): Prom
 }
 
 export async function deleteBooking(id: string): Promise<void> {
-  await getSupabaseAdmin().from('bookings').delete().eq('id', id)
+  const db = getSupabaseAdmin()
+  // Look up slot/week before deleting — the row (and its slot_id/week_key) is
+  // gone once the delete succeeds.
+  const { data: booking } = await db
+    .from('bookings').select('slot_id, week_key').eq('id', id).single()
+
+  await db.from('bookings').delete().eq('id', id)
+
+  if (booking) {
+    // Release the seat (best effort) — mirrors the fallback style in createBooking.
+    const { error } = await db.rpc('adjust_enrolled', {
+      p_slot_id: booking.slot_id, p_week_key: booking.week_key ?? '', p_delta: -1, p_max: MAX_STUDENTS,
+    })
+    if (error) {
+      console.warn('adjust_enrolled() missing on delete — run supabase-schema.sql.', error.message)
+    }
+  }
 }

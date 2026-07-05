@@ -49,7 +49,7 @@ export default function Navbar() {
     >
       <nav className="w-full max-w-6xl mx-auto px-4 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 shrink-0">
-          <ShaharLogo size={36} />
+          <ShaharLogo size={44} />
           <span className="hidden sm:inline text-sm font-black text-white tracking-tight">
             אקדמיית <span className="text-yellow-400">שחר</span>
           </span>

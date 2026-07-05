@@ -18,6 +18,7 @@ export default function TimePicker({
   onChange: (v: string) => void
 }) {
   const [open, setOpen] = useState(false)
+  const [detailed, setDetailed] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const hourColRef = useRef<HTMLDivElement>(null)
   const minuteColRef = useRef<HTMLDivElement>(null)
@@ -35,16 +36,19 @@ export default function TimePicker({
     onChange(`${pad(hh)}:${pad(m)}`)
     setOpen(false)
   }
+  const pickWholeHour = (h: number) => {
+    onChange(`${pad(h)}:00`)
+    setOpen(false)
+  }
 
   useEffect(() => {
     if (!open) return
+    setDetailed(mm !== 0)
 
-    // Center each column on its selected value when the popover opens
-    for (const col of [hourColRef.current, minuteColRef.current]) {
-      const selected = col?.querySelector<HTMLElement>('[data-selected="true"]')
-      if (col && selected) {
-        col.scrollTop = selected.offsetTop - col.clientHeight / 2 + selected.clientHeight / 2
-      }
+    // Center the hour column on its selected value when the popover opens
+    const selected = hourColRef.current?.querySelector<HTMLElement>('[data-selected="true"]')
+    if (hourColRef.current && selected) {
+      hourColRef.current.scrollTop = selected.offsetTop - hourColRef.current.clientHeight / 2 + selected.clientHeight / 2
     }
 
     const handlePointerDown = (e: MouseEvent) => {
@@ -64,26 +68,28 @@ export default function TimePicker({
     }
   }, [open])
 
+  useEffect(() => {
+    if (!open || !detailed) return
+    const selected = minuteColRef.current?.querySelector<HTMLElement>('[data-selected="true"]')
+    if (minuteColRef.current && selected) {
+      minuteColRef.current.scrollTop = selected.offsetTop - minuteColRef.current.clientHeight / 2 + selected.clientHeight / 2
+    }
+  }, [open, detailed])
+
   return (
     <div ref={containerRef} className="relative inline-block" style={{ direction: 'ltr' }}>
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className={`flex items-center gap-1.5 bg-zinc-700/80 border rounded-lg px-3 py-1.5 text-sm outline-none transition-colors ${
-          open ? 'border-yellow-400' : 'border-zinc-600 hover:border-zinc-500'
+        className={`flex items-center bg-zinc-800 border rounded-lg px-3 py-1.5 text-sm outline-none transition-colors ${
+          open
+            ? 'border-yellow-400 ring-1 ring-yellow-400/20'
+            : 'border-zinc-700 hover:border-zinc-500'
         }`}
       >
-        <span className="font-mono font-bold text-yellow-400 tracking-wide">
+        <span className={`tabular-nums font-medium ${open ? 'text-yellow-400' : 'text-zinc-200'}`}>
           {pad(hh)}:{pad(mm)}
         </span>
-        <svg
-          width="10"
-          height="10"
-          viewBox="0 0 10 10"
-          className={`text-zinc-400 transition-transform ${open ? 'rotate-180' : ''}`}
-        >
-          <path d="M1.5 3.5 L5 7 L8.5 3.5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
       </button>
 
       {open && (
@@ -91,21 +97,31 @@ export default function TimePicker({
           className="absolute top-full left-0 mt-1.5 bg-zinc-800 border border-zinc-600 rounded-xl shadow-xl shadow-black/40 overflow-hidden"
           style={{ zIndex: 50 }}
         >
-          <div className="flex text-[11px] text-zinc-400 border-b border-zinc-700" style={{ direction: 'rtl' }}>
+          <div className="flex items-center justify-between text-[11px] text-zinc-400 border-b border-zinc-700 pr-1">
             <span className="w-14 py-1.5 text-center">שעה</span>
-            <span className="w-14 py-1.5 text-center border-r border-zinc-700">דקות</span>
+            <button
+              type="button"
+              onClick={() => setDetailed((d) => !d)}
+              aria-label="ערוך דקות"
+              className={`p-1 rounded transition-colors ${detailed ? 'text-yellow-400' : 'text-zinc-500 hover:text-zinc-300'}`}
+            >
+              <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+                <path d="M9.5 1.5 L12.5 4.5 L4.5 12.5 L1.5 12.5 L1.5 9.5 Z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" />
+              </svg>
+            </button>
+            {detailed && <span className="w-14 py-1.5 text-center border-l border-zinc-700">דקות</span>}
           </div>
-          <div className="flex" style={{ direction: 'rtl' }}>
+          <div className="flex">
             <div ref={hourColRef} className="flex flex-col h-44 overflow-y-auto w-14 p-1" style={colScrollStyle}>
               {HOURS.map((h) => (
                 <button
                   key={h}
                   type="button"
-                  data-selected={h === hh}
-                  onClick={() => setHour(h)}
-                  className={`font-mono text-sm rounded-md px-2 py-1 text-center shrink-0 transition-colors ${
-                    h === hh
-                      ? 'bg-yellow-400 text-zinc-900 font-bold'
+                  data-selected={detailed ? h === hh : h === hh && mm === 0}
+                  onClick={() => (detailed ? setHour(h) : pickWholeHour(h))}
+                  className={`tabular-nums text-sm rounded-md px-2 py-1 text-center shrink-0 transition-colors ${
+                    (detailed ? h === hh : h === hh && mm === 0)
+                      ? 'bg-yellow-400/15 text-yellow-400 font-medium'
                       : 'text-zinc-300 hover:bg-zinc-700'
                   }`}
                 >
@@ -113,23 +129,25 @@ export default function TimePicker({
                 </button>
               ))}
             </div>
-            <div ref={minuteColRef} className="flex flex-col h-44 overflow-y-auto w-14 p-1 border-r border-zinc-700" style={colScrollStyle}>
-              {MINUTES.map((m) => (
-                <button
-                  key={m}
-                  type="button"
-                  data-selected={m === mm}
-                  onClick={() => setMinute(m)}
-                  className={`font-mono text-sm rounded-md px-2 py-1 text-center shrink-0 transition-colors ${
-                    m === mm
-                      ? 'bg-yellow-400 text-zinc-900 font-bold'
-                      : 'text-zinc-300 hover:bg-zinc-700'
-                  }`}
-                >
-                  {pad(m)}
-                </button>
-              ))}
-            </div>
+            {detailed && (
+              <div ref={minuteColRef} className="flex flex-col h-44 overflow-y-auto w-14 p-1 border-l border-zinc-700" style={colScrollStyle}>
+                {MINUTES.map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    data-selected={m === mm}
+                    onClick={() => setMinute(m)}
+                    className={`tabular-nums text-sm rounded-md px-2 py-1 text-center shrink-0 transition-colors ${
+                      m === mm
+                        ? 'bg-yellow-400/15 text-yellow-400 font-medium'
+                        : 'text-zinc-300 hover:bg-zinc-700'
+                    }`}
+                  >
+                    {pad(m)}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
