@@ -24,7 +24,7 @@ export default function MathBackground() {
   return (
     <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none select-none" aria-hidden="true">
       {/* Base color + grid texture */}
-      <div className="absolute inset-0 bg-[#0b0f19] math-bg" />
+      <div className="absolute inset-0 bg-[#1c2440] math-bg" />
 
       {/* Soft gold glow blobs — radial-gradient instead of filter:blur, which is expensive to
           rasterize on mobile GPUs at this size and can visibly delay first paint */}
@@ -42,7 +42,7 @@ export default function MathBackground() {
       />
 
       {/* Subtle radial vignette to deepen edges */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_45%,rgba(0,0,0,0.55)_100%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_45%,rgba(0,0,0,0.3)_100%)]" />
 
       {/* Floating math symbols */}
       {symbols.map((s, i) => (

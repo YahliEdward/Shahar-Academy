@@ -3,7 +3,7 @@ import { createHash, createHmac, timingSafeEqual } from 'crypto'
 
 // Name of the httpOnly session cookie set after a successful admin login.
 export const ADMIN_COOKIE = 'shahar_admin'
-export const SESSION_MAX_AGE = 60 * 60 * 12 // 12 hours
+export const SESSION_MAX_AGE = 60 * 60 * 24 * 365 // 1 year
 
 // The admin password lives only on the server (NOT a NEXT_PUBLIC_ var), so it
 // never reaches the browser bundle.
