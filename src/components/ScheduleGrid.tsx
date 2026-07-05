@@ -2,20 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import {
-  Slot, DAYS, GROUP_LABELS, MAX_STUDENTS,
+  Slot, DAYS, GROUP_LABELS, GROUP_BADGE, MAX_STUDENTS,
   getSlots, getWeekKey, getWeekDates, formatShortDate, isSlotPast,
 } from '@/lib/types'
 import BookingModal from './BookingModal'
 
 const MAX_WEEK_OFFSET = 3
-
-const GROUP_BADGE: Record<string, string> = {
-  'middle-school': 'bg-blue-500/20 text-blue-300 border border-blue-500/30',
-  'high-4': 'bg-purple-500/20 text-purple-300 border border-purple-500/30',
-  'high-5': 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30',
-  'mixed': 'bg-green-500/20 text-green-300 border border-green-500/30',
-  'empty': 'bg-zinc-700/20 text-zinc-400 border border-zinc-600/30',
-}
 
 function AvailabilityBadge({ enrolled }: { enrolled: number }) {
   const free = MAX_STUDENTS - enrolled

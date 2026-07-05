@@ -48,6 +48,16 @@ export const GROUP_LABELS: Record<GroupType, string> = {
   'empty': 'פנוי',
 }
 
+// Compact chip/badge styling per group type (used on the public schedule and
+// in the admin dashboard).
+export const GROUP_BADGE: Record<GroupType, string> = {
+  'middle-school': 'bg-blue-500/20 text-blue-300 border border-blue-500/30',
+  'high-4': 'bg-purple-500/20 text-purple-300 border border-purple-500/30',
+  'high-5': 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30',
+  'mixed': 'bg-green-500/20 text-green-300 border border-green-500/30',
+  'empty': 'bg-zinc-700/20 text-zinc-400 border border-zinc-600/30',
+}
+
 export const GROUP_COLORS: Record<GroupType, string> = {
   'middle-school': 'bg-blue-900/40 border-blue-500/40',
   'high-4': 'bg-purple-900/40 border-purple-500/40',
