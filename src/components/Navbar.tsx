@@ -8,6 +8,7 @@ import { WHATSAPP_URL } from '@/lib/constants'
 const LINKS = [
   { id: 'features', label: 'היתרונות שלנו', href: '/#features' },
   { id: 'why-us', label: 'למה דווקא אנחנו', href: '/#why-us' },
+  { id: 'about', label: 'על שחר', href: '/#about' },
   { id: 'schedule', label: 'לוח שעות', href: '/schedule' },
   { id: 'testimonials', label: 'המלצות', href: '/#testimonials' },
   { id: 'faq', label: 'שאלות נפוצות', href: '/#faq' },
