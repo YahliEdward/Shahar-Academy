@@ -1,0 +1,21 @@
+import type { MetadataRoute } from 'next'
+
+// Web app manifest — lets the site be installed to a phone's home screen,
+// which is what enables push notifications on iOS (16.4+) for the admin.
+export default function manifest(): MetadataRoute.Manifest {
+  return {
+    name: 'האקדמיה למתמטיקה של שחר',
+    short_name: 'שחר אקדמיה',
+    description: 'הדרך שלכם ל-5 יחידות מתחילה כאן',
+    start_url: '/',
+    display: 'standalone',
+    dir: 'rtl',
+    lang: 'he',
+    background_color: '#0b0f19',
+    theme_color: '#0b0f19',
+    icons: [
+      { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { src: '/icon-512.png', sizes: '512x512', type: 'image/png' },
+    ],
+  }
+}

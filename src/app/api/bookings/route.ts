@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isAdminConfigured } from '@/lib/supabaseAdmin'
 import { createBooking, SlotFullError, SlotNotFoundError, SlotPastError, NewBooking } from '@/lib/serverDb'
+import { sendPushToAll } from '@/lib/webPush'
 import { GroupType } from '@/lib/types'
 
 const GROUP_TYPES: GroupType[] = ['middle-school', 'high-4', 'high-5', 'mixed', 'empty']
@@ -49,6 +50,13 @@ export async function POST(request: NextRequest) {
 
   try {
     const booking = await createBooking(newBooking)
+    // Notify Shahar's phone. Must finish before the response is returned
+    // (serverless), and never fails the booking itself.
+    await sendPushToAll({
+      title: 'הרשמה חדשה! 📚',
+      body: `${studentName} (${grade})\n${slotLabel}\nטלפון הורה: ${phone}`,
+      url: '/admin',
+    })
     return NextResponse.json({ booking })
   } catch (err) {
     if (err instanceof SlotFullError) {
