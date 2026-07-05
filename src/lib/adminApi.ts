@@ -95,6 +95,24 @@ export async function resetWeek(weekKey: string): Promise<void> {
   }))
 }
 
+// ─── Push notifications ──────────────────────────────────────────────────────
+
+export async function savePushSubscription(subscription: PushSubscriptionJSON): Promise<void> {
+  await jsonOrThrow(await fetch('/api/admin/push', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ subscription }),
+  }))
+}
+
+export async function removePushSubscription(endpoint: string): Promise<void> {
+  await jsonOrThrow(await fetch('/api/admin/push', {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ endpoint }),
+  }))
+}
+
 // ─── Public booking ───────────────────────────────────────────────────────────
 
 export interface BookingRequest {

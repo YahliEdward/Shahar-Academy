@@ -12,6 +12,7 @@ import {
 } from '@/lib/adminApi'
 import TimePicker from '@/components/TimePicker'
 import ShaharLogo from '@/components/ShaharLogo'
+import PushToggle from '@/components/PushToggle'
 
 const MAX_WEEK_OFFSET = 3
 
@@ -741,6 +742,8 @@ export default function AdminPage() {
       </header>
 
       <div className="max-w-4xl mx-auto px-4 py-6">
+        <PushToggle />
+
         {/* Tabs */}
         <div className="flex gap-2 mb-6">
           <button

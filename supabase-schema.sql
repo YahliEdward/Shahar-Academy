@@ -102,3 +102,18 @@ create policy "public can read slots"
 
 -- No anon policies on bookings → the anon key cannot select/insert/update/delete
 -- bookings at all. All booking access happens server-side via service_role.
+
+-- ════════════════════════════════════════════════════════════════════════════
+-- Push notifications
+-- ════════════════════════════════════════════════════════════════════════════
+-- Devices registered for booking notifications (Shahar's phone). Written and
+-- read only by the server with the service_role key; no anon policies.
+
+create table if not exists push_subscriptions (
+  endpoint text primary key,
+  p256dh text not null,
+  auth text not null,
+  created_at timestamptz not null default now()
+);
+
+alter table push_subscriptions enable row level security;
