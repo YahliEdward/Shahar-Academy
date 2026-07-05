@@ -13,8 +13,8 @@ npm run dev      # http://localhost:3000
 
 ## Environment variables
 
-Set these in `.env.local` (local) **and** in your Netlify project
-(Site settings → Environment variables) for production:
+Set these in `.env.local` (local) **and** in your Vercel project
+(Project Settings → Environment Variables) for production:
 
 | Variable | Public? | Purpose |
 | --- | --- | --- |
@@ -46,7 +46,7 @@ both take the last seat.
    an existing database — it migrates the `slots` primary key to `(id, week_key)`
    and creates the `adjust_enrolled()` function used for atomic capacity checks.
 2. Set `SUPABASE_SERVICE_ROLE_KEY` and `ADMIN_PASSWORD` (and ideally
-   `SESSION_SECRET`) in `.env.local` and on Netlify.
+   `SESSION_SECRET`) in `.env.local` and on Vercel.
 3. Redeploy, then smoke-test: book a slot as a visitor, and log into `/admin`.
 
 ## Project layout
