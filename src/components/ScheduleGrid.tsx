@@ -124,9 +124,33 @@ function SlotCard({ slot, isPast, onClick }: { slot: Slot; isPast: boolean; onCl
   )
 }
 
+function SkeletonCard() {
+  return (
+    <div className="w-full rounded-xl border border-zinc-700/50 bg-zinc-800/40 p-3 animate-pulse">
+      <div className="flex items-center justify-between mb-2">
+        <div className="h-3 w-16 rounded bg-zinc-700/70" />
+        <div className="h-4 w-14 rounded-full bg-zinc-700/70" />
+      </div>
+      <div className="h-1.5 rounded-full bg-zinc-700/70 mb-2" />
+      <div className="h-3 w-20 rounded bg-zinc-700/70 mb-2" />
+      <div className="h-5 w-24 rounded-full bg-zinc-700/70" />
+    </div>
+  )
+}
+
+function EmptyDay() {
+  return (
+    <div className="rounded-xl border border-dashed border-zinc-800 p-6 text-center text-sm text-zinc-600">
+      אין שיעורים ביום זה
+    </div>
+  )
+}
+
+const SKELETON_ROWS = 3
+
 export default function ScheduleGrid() {
   const [weekOffset, setWeekOffset] = useState(0)
-  // null = first load still in flight (shows a loading hint instead of a blank grid).
+  // null = a load is in flight (renders skeleton cards instead of a blank grid).
   const [slots, setSlots] = useState<Slot[] | null>(null)
   const [loadError, setLoadError] = useState(false)
   // Open on today's tab (Friday/Saturday fall back to Thursday).
@@ -138,6 +162,10 @@ export default function ScheduleGrid() {
 
   useEffect(() => {
     let cancelled = false
+    // Show the skeleton on week changes too — stale slots under new dates are misleading.
+    // Reloads triggered by 'slotsUpdated' keep the current data visible instead.
+    setSlots(null)
+    setLoadError(false)
     const load = async () => {
       try {
         const data = await getSlots(weekKey)
@@ -161,6 +189,7 @@ export default function ScheduleGrid() {
     }
   }, [weekKey])
 
+  const loading = slots === null && !loadError
   const slotsByDay = DAYS.map((_, d) => (slots ?? []).filter((s) => s.day === d))
 
   const weekStart = weekDates[0]
@@ -217,10 +246,6 @@ export default function ScheduleGrid() {
         ))}
       </div>
 
-      {slots === null && !loadError && (
-        <p className="text-center text-zinc-500 py-10 text-sm">טוען את הלוח…</p>
-      )}
-
       {loadError && (
         <p className="text-center text-red-400 py-10 text-sm">שגיאה בטעינת הלוח — נסו לרענן</p>
       )}
@@ -228,14 +253,20 @@ export default function ScheduleGrid() {
       {/* Mobile: single day view */}
       <div className="md:hidden">
         <div className="space-y-3">
-          {slotsByDay[activeDay]?.map((slot) => (
-            <SlotCard
-              key={slot.id}
-              slot={slot}
-              isPast={isSlotPast(slot, weekDates)}
-              onClick={() => setSelectedSlot(slot)}
-            />
-          ))}
+          {loading ? (
+            Array.from({ length: SKELETON_ROWS }).map((_, i) => <SkeletonCard key={i} />)
+          ) : slotsByDay[activeDay].length === 0 && !loadError ? (
+            <EmptyDay />
+          ) : (
+            slotsByDay[activeDay].map((slot) => (
+              <SlotCard
+                key={slot.id}
+                slot={slot}
+                isPast={isSlotPast(slot, weekDates)}
+                onClick={() => setSelectedSlot(slot)}
+              />
+            ))
+          )}
         </div>
       </div>
 
@@ -248,14 +279,20 @@ export default function ScheduleGrid() {
               <div className="text-xs text-slate-500 font-normal">{formatShortDate(weekDates[d])}</div>
             </div>
             <div className="space-y-3">
-              {slotsByDay[d]?.map((slot) => (
-                <SlotCard
-                  key={slot.id}
-                  slot={slot}
-                  isPast={isSlotPast(slot, weekDates)}
-                  onClick={() => setSelectedSlot(slot)}
-                />
-              ))}
+              {loading ? (
+                Array.from({ length: SKELETON_ROWS }).map((_, i) => <SkeletonCard key={i} />)
+              ) : slotsByDay[d].length === 0 && !loadError ? (
+                <EmptyDay />
+              ) : (
+                slotsByDay[d].map((slot) => (
+                  <SlotCard
+                    key={slot.id}
+                    slot={slot}
+                    isPast={isSlotPast(slot, weekDates)}
+                    onClick={() => setSelectedSlot(slot)}
+                  />
+                ))
+              )}
             </div>
           </div>
         ))}
