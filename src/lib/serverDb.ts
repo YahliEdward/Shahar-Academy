@@ -1,6 +1,6 @@
 import { getSupabaseAdmin } from './supabaseAdmin'
 import {
-  Slot, Booking, MAX_STUDENTS, TEMPLATE_KEY,
+  Slot, Booking, GroupType, MAX_STUDENTS, TEMPLATE_KEY,
   rowToSlot, rowToBooking, templateSlotId, buildDefaultSlots,
 } from './types'
 
@@ -217,6 +217,37 @@ export async function createBooking(booking: NewBooking): Promise<Booking> {
     throw new Error('Failed to save booking')
   }
   return rowToBooking(data)
+}
+
+// Lets an admin register a student directly, without going through the
+// public booking form — only studentName is required, everything else
+// defaults to '' (or the slot's own group) and is filled in later if needed.
+// Reuses createBooking so capacity/seat-taking stays capacity-safe.
+export type NewAdminBooking = {
+  slotId: string
+  weekKey: string
+  slotLabel?: string
+  studentName: string
+  parentName?: string
+  phone?: string
+  grade?: string
+  groupPreference?: GroupType
+}
+
+export async function createBookingAsAdmin(input: NewAdminBooking): Promise<Booking> {
+  const slots = await getSlots(input.weekKey)
+  const slot = slots.find((s) => s.id === input.slotId)
+  const fallbackGroup: GroupType = slot && slot.groupType !== 'empty' ? slot.groupType : 'middle-school'
+  return createBooking({
+    slotId: input.slotId,
+    weekKey: input.weekKey,
+    slotLabel: input.slotLabel ?? '',
+    studentName: input.studentName,
+    parentName: input.parentName ?? '',
+    phone: input.phone ?? '',
+    grade: input.grade ?? '',
+    groupPreference: input.groupPreference ?? fallbackGroup,
+  })
 }
 
 export async function updateBooking(id: string, updates: Partial<Booking>): Promise<void> {
