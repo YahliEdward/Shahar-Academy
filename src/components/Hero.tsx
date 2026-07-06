@@ -40,7 +40,7 @@ export default function Hero() {
               <ShaharLogo size={60} className="drop-shadow-lg" />
             </Link>
             <span className="text-2xl font-black text-white tracking-tight">
-              האקדמיה למתמטיקה <span className="text-yellow-400">של שחר</span>
+              שחר <span className="text-yellow-400">מורה פרטי</span>
             </span>
           </div>
 

@@ -3,7 +3,7 @@ import { Slot, Booking, DAYS, getWeekDates, isSlotPast } from '@/lib/types'
 
 export const whatsappUrl = (phone: string, name: string) => {
   const num = phone.replace(/[^0-9]/g, '').replace(/^0/, '972')
-  const msg = encodeURIComponent(`שלום! זה שחר מהאקדמיה למתמטיקה. קיבלתי את הבקשה עבור ${name}. אשמח לתאם את הפרטים :)`)
+  const msg = encodeURIComponent(`שלום! זה שחר, מורה פרטי למתמטיקה. קיבלתי את הבקשה עבור ${name}. אשמח לתאם את הפרטים :)`)
   return `https://wa.me/${num}?text=${msg}`
 }
 

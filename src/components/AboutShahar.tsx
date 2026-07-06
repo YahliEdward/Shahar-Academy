@@ -27,23 +27,23 @@ export default function AboutShahar() {
           <div className="absolute -inset-3 rounded-3xl bg-yellow-400/10 border border-yellow-400/20 rotate-2" />
           <Image
             src="/shahar.jpg"
-            alt="שחר — מורה למתמטיקה ומייסד האקדמיה"
+            alt="שחר — מורה פרטי למתמטיקה"
             width={800}
             height={1000}
             className="relative rounded-2xl border border-zinc-700/50 object-cover"
           />
           <div className="absolute bottom-4 right-4 bg-[rgba(11,15,25,0.85)] backdrop-blur-sm border border-yellow-400/30 rounded-xl px-4 py-2">
             <div className="font-black text-white">שחר</div>
-            <div className="text-xs text-yellow-300">מורה למתמטיקה ומייסד האקדמיה</div>
+            <div className="text-xs text-yellow-300">מורה פרטי למתמטיקה</div>
           </div>
         </div>
 
         <div>
-          <h2 className="text-3xl font-black text-white mb-2">מי עומד מאחורי האקדמיה</h2>
+          <h2 className="text-3xl font-black text-white mb-2">מי עומד מאחורי הלימודים</h2>
           <p className="text-slate-400 mb-6">נעים להכיר — שחר</p>
 
           <p className="text-slate-300 leading-relaxed mb-8">
-            נעים מאוד, אני שחר. הקמתי את האקדמיה מתוך אמונה פשוטה: אין תלמיד ש&quot;לא מסוגל&quot;
+            נעים מאוד, אני שחר. אני מלמד מתוך אמונה פשוטה: אין תלמיד ש&quot;לא מסוגל&quot;
             במתמטיקה — יש רק תלמיד שעוד לא קיבל את ההסבר הנכון, בקצב הנכון, באווירה הנכונה.
             בקבוצות הקטנות שלנו, בבית שלי, כל תלמיד מקבל בדיוק את זה.
           </p>
