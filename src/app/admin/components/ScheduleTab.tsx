@@ -34,6 +34,10 @@ export default function ScheduleTab({ bookings, onChanged, defaultMode = 'defaul
   const [loadError, setLoadError] = useState(false)
   const [reloadKey, setReloadKey] = useState(0)
   const [detailSlot, setDetailSlot] = useState<Slot | null>(null)
+  // Real slot rows of the weeks template mode manages students for (this week
+  // and next), keyed by weekKey. Template cards show these weeks' enrolled
+  // counts — the actual seats taken — instead of the template's default.
+  const [targetWeeks, setTargetWeeks] = useState<Record<string, Slot[]>>({})
 
   const weekKey = getWeekKey(weekOffset)
   const weekDates = getWeekDates(weekOffset)
@@ -57,9 +61,17 @@ export default function ScheduleTab({ bookings, onChanged, defaultMode = 'defaul
     const load = async () => {
       try {
         if (mode === 'default') {
-          const template = await fetchTemplate()
+          const [template, thisWeek, nextWeek] = await Promise.all([
+            fetchTemplate(),
+            fetchWeekSlots(getWeekKey(0)),
+            fetchWeekSlots(getWeekKey(1)),
+          ])
           if (cancelled) return
           setSlots(template)
+          setTargetWeeks({
+            [getWeekKey(0)]: thisWeek.slots,
+            [getWeekKey(1)]: nextWeek.slots,
+          })
         } else {
           const { slots: weekSlots, isOverride: hasOverride } = await fetchWeekSlots(weekKey)
           if (cancelled) return
@@ -101,10 +113,53 @@ export default function ScheduleTab({ bookings, onChanged, defaultMode = 'defaul
   const setGroupType = (id: string, groupType: GroupType) =>
     commit(slots.map((s) => s.id === id ? { ...s, groupType } : s))
 
-  const adjustEnrolled = (id: string, delta: number) =>
+  const clampEnrolled = (n: number) => Math.max(0, Math.min(MAX_STUDENTS, n))
+
+  // In template mode the meter reflects (and edits) the slot's next upcoming
+  // occurrence — the same week its students are managed in — not the template's
+  // default enrolled, so adding a student visibly fills the X/6 meter.
+  const adjustEnrolled = async (slot: Slot, delta: number) => {
+    if (mode === 'default') {
+      const target = templateTargetWeek(slot)
+      const weekSlots = targetWeeks[target.key]
+      if (!weekSlots?.some((s) => s.id === slot.id)) {
+        // The upcoming week has an override that no longer includes this hour.
+        toast('השעה לא קיימת בשבוע הקרוב — ערכו אותה במצב "שבוע ספציפי"', 'error')
+        return
+      }
+      const updated = weekSlots.map((s) =>
+        s.id === slot.id ? { ...s, enrolled: clampEnrolled(s.enrolled + delta) } : s
+      )
+      try {
+        await putWeekSlots(target.key, updated)
+        setTargetWeeks((tw) => ({ ...tw, [target.key]: updated }))
+        toast('נשמר ✓')
+        onChanged()
+      } catch {
+        toast('שגיאה בשמירה — נסו שוב', 'error')
+        setReloadKey((k) => k + 1)
+      }
+      return
+    }
     commit(slots.map((s) =>
-      s.id === id ? { ...s, enrolled: Math.max(0, Math.min(MAX_STUDENTS, s.enrolled + delta)) } : s
+      s.id === slot.id ? { ...s, enrolled: clampEnrolled(s.enrolled + delta) } : s
     ))
+  }
+
+  // What the card shows: in template mode, overlay the target week's actual
+  // enrolled count (bookings bump that week's row, never the template's).
+  const displaySlot = (slot: Slot): Slot => {
+    if (mode !== 'default') return slot
+    const weekSlot = targetWeeks[templateTargetWeek(slot).key]?.find((s) => s.id === slot.id)
+    return weekSlot ? { ...slot, enrolled: weekSlot.enrolled } : slot
+  }
+
+  // Adding/removing a student changes the week's enrolled count server-side —
+  // re-pull the slots (and target weeks) so the meter reflects it.
+  const handleStudentsChanged = () => {
+    onChanged()
+    setReloadKey((k) => k + 1)
+  }
 
   const handleAddSlot = () => commit(addSlotToDay(slots, activeDay as DayIndex))
 
@@ -246,7 +301,7 @@ export default function ScheduleTab({ bookings, onChanged, defaultMode = 'defaul
           {daySlots.map((slot) => (
             <SlotEditorCard
               key={slot.id}
-              slot={slot}
+              slot={displaySlot(slot)}
               students={bookings.filter((b) => {
                 const targetKey = mode === 'default' ? templateTargetWeek(slot).key : weekKey
                 return b.slotId === slot.id && b.weekKey === targetKey
@@ -255,7 +310,7 @@ export default function ScheduleTab({ bookings, onChanged, defaultMode = 'defaul
               canRemove={activeDay === MOTZASH_DAY ? true : daySlots.length > 1}
               onTimeChange={(field, value) => updateSlotTime(slot.id, field, value)}
               onGroupChange={(g) => setGroupType(slot.id, g)}
-              onAdjustEnrolled={(delta) => adjustEnrolled(slot.id, delta)}
+              onAdjustEnrolled={(delta) => adjustEnrolled(slot, delta)}
               onRemove={() => handleRemoveSlot(slot.id)}
               onShowStudents={() => setDetailSlot(slot)}
             />
@@ -281,7 +336,7 @@ export default function ScheduleTab({ bookings, onChanged, defaultMode = 'defaul
             date={target.dates[detailSlot.day]}
             bookings={bookings}
             onClose={() => setDetailSlot(null)}
-            onChanged={onChanged}
+            onChanged={handleStudentsChanged}
           />
         )
       })()}

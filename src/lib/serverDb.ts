@@ -19,10 +19,19 @@ export async function getTemplate(): Promise<Slot[]> {
     .order('time')
 
   if (data && data.length > 0) {
-    return data.map((row) => ({
-      ...rowToSlot(row),
-      id: templateSlotId(row.day as number, row.time as string),
-    }))
+    // Template ids are remapped to templateSlotId(day, time), so two rows at
+    // the same day+time collapse into the same id. Keep only the first —
+    // duplicates (e.g. left behind by interleaved saves) would otherwise
+    // render the same hour twice, sharing the same students.
+    const seen = new Set<string>()
+    const slots: Slot[] = []
+    for (const row of data) {
+      const id = templateSlotId(row.day as number, row.time as string)
+      if (seen.has(id)) continue
+      seen.add(id)
+      slots.push({ ...rowToSlot(row), id })
+    }
+    return slots
   }
   return buildDefaultSlots()
 }
@@ -53,12 +62,26 @@ function slotsToRows(slots: Slot[], weekKey: string) {
   }))
 }
 
+// Template rows get random ids, so unlike week rows the (id, week_key) primary
+// key can't reject two rows at the same day+time — and getTemplate() would then
+// render that hour twice. Drop such duplicates before persisting.
+function dedupeTemplateSlots(slots: Slot[]): Slot[] {
+  const seen = new Set<string>()
+  return slots.filter((s) => {
+    const key = `${s.day}-${s.time}`
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+}
+
 export async function saveSlots(slots: Slot[], weekKey: string): Promise<void> {
   const db = getSupabaseAdmin()
+  const toSave = weekKey === TEMPLATE_KEY ? dedupeTemplateSlots(slots) : slots
   const { error: deleteError } = await db.from('slots').delete().eq('week_key', weekKey)
   if (deleteError) throw new Error(`Failed to clear slots for ${weekKey}: ${deleteError.message}`)
-  if (slots.length === 0) return
-  const { error: insertError } = await db.from('slots').insert(slotsToRows(slots, weekKey))
+  if (toSave.length === 0) return
+  const { error: insertError } = await db.from('slots').insert(slotsToRows(toSave, weekKey))
   if (insertError) throw new Error(`Failed to save slots for ${weekKey}: ${insertError.message}`)
 }
 
@@ -94,7 +117,9 @@ function generateId(): string {
   return Math.random().toString(36).slice(2) + Date.now().toString(36)
 }
 
-export type NewBooking = Omit<Booking, 'id' | 'createdAt' | 'status'>
+// status defaults to 'pending' (public requests await approval); admin-created
+// bookings pass 'confirmed' explicitly.
+export type NewBooking = Omit<Booking, 'id' | 'createdAt' | 'status'> & { status?: Booking['status'] }
 
 export class SlotFullError extends Error {}
 export class SlotNotFoundError extends Error {}
@@ -155,7 +180,7 @@ function bookingRow(booking: NewBooking) {
     phone: booking.phone,
     grade: booking.grade,
     group_preference: booking.groupPreference,
-    status: 'pending',
+    status: booking.status ?? 'pending',
     price: booking.price,
     created_at: new Date().toISOString(),
   }
@@ -222,6 +247,8 @@ export async function createBooking(booking: NewBooking): Promise<Booking> {
 // Lets an admin register a student directly, without going through the
 // public booking form — only studentName is required, everything else
 // defaults to '' (or the slot's own group) and is filled in later if needed.
+// The booking is confirmed immediately: an admin adding a student is the
+// approval, so it must not land in the pending-requests queue.
 // Reuses createBooking so capacity/seat-taking stays capacity-safe.
 export type NewAdminBooking = {
   slotId: string
@@ -247,6 +274,7 @@ export async function createBookingAsAdmin(input: NewAdminBooking): Promise<Book
     phone: input.phone ?? '',
     grade: input.grade ?? '',
     groupPreference: input.groupPreference ?? fallbackGroup,
+    status: 'confirmed',
   })
 }
 

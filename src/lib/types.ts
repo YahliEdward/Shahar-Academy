@@ -206,10 +206,17 @@ export async function getTemplate(): Promise<Slot[]> {
     .order('time')
 
   if (data && data.length > 0) {
-    return data.map((row) => ({
-      ...rowToSlot(row),
-      id: templateSlotId(row.day as number, row.time as string),
-    }))
+    // Two template rows at the same day+time remap to the same id — keep only
+    // the first so a duplicated row can't render the same hour twice.
+    const seen = new Set<string>()
+    const slots: Slot[] = []
+    for (const row of data) {
+      const id = templateSlotId(row.day as number, row.time as string)
+      if (seen.has(id)) continue
+      seen.add(id)
+      slots.push({ ...rowToSlot(row), id })
+    }
+    return slots
   }
   return buildDefaultSlots()
 }
