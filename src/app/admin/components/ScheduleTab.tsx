@@ -40,6 +40,12 @@ export default function ScheduleTab({ bookings, onChanged, defaultMode = 'defaul
   const editKey = mode === 'default' ? 'template' : weekKey
   const loading = loadedFor !== editKey
 
+  // In "לוח קבוע" (template) mode there's no browsable week — clicking a slot
+  // always manages that slot's real students for the current week, regardless
+  // of whatever week was last browsed in "week" mode.
+  const studentsWeekKey = mode === 'default' ? getWeekKey(0) : weekKey
+  const studentsWeekDates = mode === 'default' ? getWeekDates(0) : weekDates
+
   useEffect(() => {
     let cancelled = false
     const load = async () => {
@@ -168,7 +174,7 @@ export default function ScheduleTab({ bookings, onChanged, defaultMode = 'defaul
       {/* Context banner */}
       {mode === 'default' ? (
         <div className="mb-4 rounded-xl bg-yellow-400/10 border border-yellow-400/30 px-4 py-2.5 text-xs text-yellow-200">
-          שינויים כאן חלים אוטומטית על כל שבוע שלא שונה ידנית.
+          שינויים כאן חלים אוטומטית על כל שבוע שלא שונה ידנית. לחיצה על שעה מציגה ומאפשרת לנהל את התלמידים הרשומים אליה בשבוע הנוכחי.
         </div>
       ) : (
         <>
@@ -235,10 +241,8 @@ export default function ScheduleTab({ bookings, onChanged, defaultMode = 'defaul
             <SlotEditorCard
               key={slot.id}
               slot={slot}
-              students={mode === 'week'
-                ? bookings.filter((b) => b.slotId === slot.id && b.weekKey === weekKey)
-                : []}
-              showStudents={mode === 'week'}
+              students={bookings.filter((b) => b.slotId === slot.id && b.weekKey === studentsWeekKey)}
+              showStudents
               canRemove={activeDay === MOTZASH_DAY ? true : daySlots.length > 1}
               onTimeChange={(field, value) => updateSlotTime(slot.id, field, value)}
               onGroupChange={(g) => setGroupType(slot.id, g)}
@@ -260,7 +264,8 @@ export default function ScheduleTab({ bookings, onChanged, defaultMode = 'defaul
       {detailSlot && (
         <StudentsModal
           slot={detailSlot}
-          weekKey={weekKey}
+          weekKey={studentsWeekKey}
+          date={studentsWeekDates[detailSlot.day]}
           bookings={bookings}
           onClose={() => setDetailSlot(null)}
           onChanged={onChanged}

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Slot, Booking, GroupType, dayLabel, GROUP_LABELS } from '@/lib/types'
+import { Slot, Booking, GroupType, dayLabel, formatShortDate, GROUP_LABELS } from '@/lib/types'
 import { removeBooking, patchBooking, adminCreateBooking } from '@/lib/adminApi'
 import { whatsappUrl } from '../lib'
 import { useToast } from './ui/Toast'
@@ -45,9 +45,10 @@ function validatePhone(phone: string): string | null {
   return /^0\d{8,9}$/.test(phone.replace(/[-\s]/g, '')) ? null : 'מספר לא תקין'
 }
 
-export default function StudentsModal({ slot, weekKey, bookings, onClose, onChanged }: {
+export default function StudentsModal({ slot, weekKey, date, bookings, onClose, onChanged }: {
   slot: Slot
   weekKey: string
+  date?: Date
   bookings: Booking[]
   onClose: () => void
   onChanged: () => void
@@ -190,7 +191,7 @@ export default function StudentsModal({ slot, weekKey, bookings, onClose, onChan
           <div>
             <h3 className="font-black text-white text-lg">תלמידים רשומים</h3>
             <p className="text-sm text-zinc-400 mt-0.5">
-              יום {dayLabel(slot.day)} | <span dir="ltr">{slot.time}–{slot.endTime}</span> | {GROUP_LABELS[slot.groupType]}
+              יום {dayLabel(slot.day)}{date ? ` ${formatShortDate(date)}` : ''} | <span dir="ltr">{slot.time}–{slot.endTime}</span> | {GROUP_LABELS[slot.groupType]}
             </p>
           </div>
           <button
