@@ -7,7 +7,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: 'שחר מורה פרטי',
     short_name: 'שחר',
     description: 'הדרך שלכם ל-5 יחידות מתחילה כאן',
-    start_url: '/',
+    start_url: '/admin',
     display: 'standalone',
     dir: 'rtl',
     lang: 'he',
