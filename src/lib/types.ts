@@ -1,4 +1,4 @@
-import { supabase } from './supabase'
+import { getSupabase } from './supabase'
 
 export type GroupType = 'middle-school' | 'high-4' | 'high-5' | 'mixed' | 'empty'
 export type DayIndex = 0 | 1 | 2 | 3 | 4 | 5 | 6
@@ -182,7 +182,7 @@ export function templateSlotId(day: number, time: string): string {
 
 export async function getSlots(weekKey: string): Promise<Slot[]> {
   // A week either has its own override rows, or it follows the default schedule.
-  const { data: weekRows } = await supabase
+  const { data: weekRows } = await getSupabase()
     .from('slots')
     .select('*')
     .eq('week_key', weekKey)
@@ -198,7 +198,7 @@ export async function getSlots(weekKey: string): Promise<Slot[]> {
 // The default weekly schedule. Falls back to a blank 14:00–20:00 grid until the
 // teacher has saved one.
 export async function getTemplate(): Promise<Slot[]> {
-  const { data } = await supabase
+  const { data } = await getSupabase()
     .from('slots')
     .select('*')
     .eq('week_key', TEMPLATE_KEY)
