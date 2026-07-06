@@ -31,6 +31,11 @@ export const MAX_STUDENTS = 6
 
 export const DAYS = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי'] as const
 
+// Friday (ערב שבת) is a short pre-Shabbat day that often has no lessons at
+// all, so — unlike the fixed Sun–Thu days — it's allowed to drop to zero
+// scheduled hours instead of always keeping at least one.
+export const FRIDAY_DAY = 5 as const
+
 // Motzash (מוצ״ש — Saturday night) is an optional day: not part of the fixed
 // DAYS list or the default template, only shown once slots exist for it.
 export const MOTZASH_DAY = 6 as const

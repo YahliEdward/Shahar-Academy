@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import {
-  Slot, Booking, GroupType, DayIndex, MOTZASH_DAY, MAX_STUDENTS,
+  Slot, Booking, GroupType, DayIndex, FRIDAY_DAY, MOTZASH_DAY, MAX_STUDENTS,
   addSlotToDay, removeSlot, getWeekKey, getWeekDates, formatShortDate, isSlotPast,
 } from '@/lib/types'
 import { fetchTemplate, fetchWeekSlots, putTemplate, putWeekSlots, resetWeek } from '@/lib/adminApi'
@@ -307,7 +307,7 @@ export default function ScheduleTab({ bookings, onChanged, defaultMode = 'defaul
                 return b.slotId === slot.id && b.weekKey === targetKey
               })}
               showStudents
-              canRemove={activeDay === MOTZASH_DAY ? true : daySlots.length > 1}
+              canRemove={activeDay === MOTZASH_DAY || activeDay === FRIDAY_DAY ? true : daySlots.length > 1}
               onTimeChange={(field, value) => updateSlotTime(slot.id, field, value)}
               onGroupChange={(g) => setGroupType(slot.id, g)}
               onAdjustEnrolled={(delta) => adjustEnrolled(slot, delta)}
