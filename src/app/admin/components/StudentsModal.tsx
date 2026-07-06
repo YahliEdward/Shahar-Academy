@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import { Slot, Booking, DAYS, GROUP_LABELS } from '@/lib/types'
+import { Slot, Booking, dayLabel, GROUP_LABELS } from '@/lib/types'
 import { removeBooking } from '@/lib/adminApi'
 import { whatsappUrl } from '../lib'
 import { useToast } from './ui/Toast'
@@ -67,7 +67,7 @@ export default function StudentsModal({ slot, weekKey, bookings, onClose, onChan
           <div>
             <h3 className="font-black text-white text-lg">תלמידים רשומים</h3>
             <p className="text-sm text-zinc-400 mt-0.5">
-              יום {DAYS[slot.day]} | <span dir="ltr">{slot.time}–{slot.endTime}</span> | {GROUP_LABELS[slot.groupType]}
+              יום {dayLabel(slot.day)} | <span dir="ltr">{slot.time}–{slot.endTime}</span> | {GROUP_LABELS[slot.groupType]}
             </p>
           </div>
           <button

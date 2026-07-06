@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import {
-  Slot, Booking, GroupType, DayIndex, MAX_STUDENTS,
+  Slot, Booking, GroupType, DayIndex, MOTZASH_DAY, MAX_STUDENTS,
   addSlotToDay, removeSlot, getWeekKey, getWeekDates, formatShortDate,
 } from '@/lib/types'
 import { fetchTemplate, fetchWeekSlots, putTemplate, putWeekSlots, resetWeek } from '@/lib/adminApi'
@@ -96,7 +96,19 @@ export default function ScheduleTab({ bookings, onChanged, defaultMode = 'defaul
 
   const handleAddSlot = () => commit(addSlotToDay(slots, activeDay as DayIndex))
 
-  const handleRemoveSlot = (id: string) => commit(removeSlot(slots, id))
+  const handleAddMotzash = () => {
+    commit(addSlotToDay(slots, MOTZASH_DAY))
+    setActiveDay(MOTZASH_DAY)
+  }
+
+  const handleRemoveSlot = (id: string) => {
+    const removed = slots.find((s) => s.id === id)
+    const updated = removeSlot(slots, id)
+    commit(updated)
+    if (removed?.day === MOTZASH_DAY && !updated.some((s) => s.day === MOTZASH_DAY)) {
+      setActiveDay(0)
+    }
+  }
 
   const updateSlotTime = (id: string, field: 'time' | 'endTime', value: string) =>
     commit(slots.map((s) => {
@@ -130,7 +142,7 @@ export default function ScheduleTab({ bookings, onChanged, defaultMode = 'defaul
   }
 
   const daySlots = slots.filter((s) => s.day === activeDay)
-  const weekRange = `${formatShortDate(weekDates[0])}–${formatShortDate(weekDates[4])}`
+  const weekRange = `${formatShortDate(weekDates[0])}–${formatShortDate(weekDates[5])}`
 
   return (
     <div>
@@ -204,6 +216,7 @@ export default function ScheduleTab({ bookings, onChanged, defaultMode = 'defaul
         slots={slots}
         activeDay={activeDay}
         onSelectDay={setActiveDay}
+        onAddMotzash={handleAddMotzash}
         mode={mode}
         weekDates={weekDates}
         bookings={bookings}
@@ -226,7 +239,7 @@ export default function ScheduleTab({ bookings, onChanged, defaultMode = 'defaul
                 ? bookings.filter((b) => b.slotId === slot.id && b.weekKey === weekKey)
                 : []}
               showStudents={mode === 'week'}
-              canRemove={daySlots.length > 1}
+              canRemove={activeDay === MOTZASH_DAY ? true : daySlots.length > 1}
               onTimeChange={(field, value) => updateSlotTime(slot.id, field, value)}
               onGroupChange={(g) => setGroupType(slot.id, g)}
               onAdjustEnrolled={(delta) => adjustEnrolled(slot.id, delta)}

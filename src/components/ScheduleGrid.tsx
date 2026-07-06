@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import {
-  Slot, DAYS, GROUP_LABELS, GROUP_BADGE, MAX_STUDENTS,
+  Slot, DayIndex, MOTZASH_DAY, dayLabel, GROUP_LABELS, GROUP_BADGE, MAX_STUDENTS,
   getSlots, getWeekKey, getWeekDates, formatShortDate, isSlotPast,
 } from '@/lib/types'
 import BookingModal from './BookingModal'
@@ -145,8 +145,8 @@ export default function ScheduleGrid() {
   // null = a load is in flight (renders skeleton cards instead of a blank grid).
   const [slots, setSlots] = useState<Slot[] | null>(null)
   const [loadError, setLoadError] = useState(false)
-  // Open on today's tab (Friday/Saturday fall back to Thursday).
-  const [activeDay, setActiveDay] = useState<number>(() => Math.min(new Date().getDay(), 4))
+  // Open on today's tab (Saturday falls back to Friday unless Motzash is active).
+  const [activeDay, setActiveDay] = useState<number>(() => Math.min(new Date().getDay(), 5))
   const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null)
 
   const weekKey = getWeekKey(weekOffset)
@@ -182,10 +182,12 @@ export default function ScheduleGrid() {
   }, [weekKey])
 
   const loading = slots === null && !loadError
-  const slotsByDay = DAYS.map((_, d) => (slots ?? []).filter((s) => s.day === d))
+  const slotsByDay = Array.from({ length: 7 }, (_, d) => (slots ?? []).filter((s) => s.day === d))
+  const hasMotzash = slotsByDay[MOTZASH_DAY].length > 0
+  const visibleDays: DayIndex[] = hasMotzash ? [0, 1, 2, 3, 4, 5, 6] : [0, 1, 2, 3, 4, 5]
 
   const weekStart = weekDates[0]
-  const weekEnd = weekDates[4]
+  const weekEnd = weekDates[5]
   const weekRange = `${formatShortDate(weekStart)}–${formatShortDate(weekEnd)}`
 
   return (
@@ -219,10 +221,10 @@ export default function ScheduleGrid() {
       </div>
 
       {/* Day tabs — mobile only */}
-      <div className="md:hidden grid grid-cols-5 gap-1.5 mb-6">
-        {DAYS.map((day, i) => (
+      <div className={`md:hidden grid ${hasMotzash ? 'grid-cols-7' : 'grid-cols-6'} gap-1.5 mb-6`}>
+        {visibleDays.map((i) => (
           <button
-            key={day}
+            key={i}
             onClick={() => setActiveDay(i)}
             className={`flex flex-col items-center justify-center rounded-lg py-2 px-1 font-bold transition-all ${
               activeDay === i
@@ -230,7 +232,7 @@ export default function ScheduleGrid() {
                 : 'bg-zinc-800 text-slate-400 hover:bg-zinc-700 hover:text-white'
             }`}
           >
-            <span className="text-xs leading-tight">{day}</span>
+            <span className="text-xs leading-tight">{dayLabel(i)}</span>
             <span className={`text-[10px] font-normal mt-0.5 ${activeDay === i ? 'text-black/70' : 'text-slate-500'}`}>
               {formatShortDate(weekDates[i])}
             </span>
@@ -263,11 +265,11 @@ export default function ScheduleGrid() {
       </div>
 
       {/* Desktop: full week grid */}
-      <div className="hidden md:grid grid-cols-5 gap-4">
-        {DAYS.map((day, d) => (
-          <div key={day}>
+      <div className={`hidden md:grid ${hasMotzash ? 'grid-cols-7' : 'grid-cols-6'} gap-4`}>
+        {visibleDays.map((d) => (
+          <div key={d}>
             <div className="text-center font-bold text-slate-300 mb-3 pb-2 border-b border-zinc-700/50">
-              <div>יום {day}</div>
+              <div>יום {dayLabel(d)}</div>
               <div className="text-xs text-slate-500 font-normal">{formatShortDate(weekDates[d])}</div>
             </div>
             <div className="space-y-3">

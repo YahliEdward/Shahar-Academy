@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import {
-  Slot, Booking, DAYS, GROUP_LABELS, GROUP_BADGE,
+  Slot, Booking, DayIndex, dayLabel, GROUP_LABELS, GROUP_BADGE,
   getWeekKey, getWeekDates, formatShortDate, isSlotPast,
 } from '@/lib/types'
 import { getTodayInfo, whatsappUrl } from '../lib'
@@ -18,8 +18,8 @@ export default function TodayPanel({ slots, bookings, open, onToggle, panelRef }
   onToggle: (open: boolean) => void
   panelRef?: React.Ref<HTMLDivElement>
 }) {
-  const { isWeekend, jsDay, todaySlots, nextSlot } = getTodayInfo(slots)
-  const isOpen = open ?? (!isWeekend && todaySlots.length > 0)
+  const { jsDay, todaySlots, nextSlot } = getTodayInfo(slots)
+  const isOpen = open ?? todaySlots.length > 0
 
   // isSlotPast compares against Date.now() at render; tick every minute while
   // open so the "done / next" markers stay current during a long session.
@@ -44,11 +44,11 @@ export default function TodayPanel({ slots, bookings, open, onToggle, panelRef }
         <div className="flex items-center gap-2 min-w-0">
           <span className="font-black text-white text-sm">השיעורים של היום</span>
           <span className="text-xs text-zinc-500">
-            {isWeekend ? formatShortDate(today) : `יום ${DAYS[jsDay]} · ${formatShortDate(today)}`}
+            {`יום ${dayLabel(jsDay as DayIndex)} · ${formatShortDate(today)}`}
           </span>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
-          {!isWeekend && todaySlots.length > 0 && (
+          {todaySlots.length > 0 && (
             <span className="text-xs rounded-full px-2 py-0.5 bg-yellow-400/15 text-yellow-300 border border-yellow-400/30 font-bold">
               {todaySlots.length}
             </span>
@@ -59,10 +59,10 @@ export default function TodayPanel({ slots, bookings, open, onToggle, panelRef }
 
       {isOpen && (
         <div className="px-4 pb-4 space-y-2 border-t border-zinc-700/50 pt-3">
-          {isWeekend ? (
-            <p className="text-center text-zinc-500 text-sm py-3">אין שיעורים בסוף השבוע 🙂</p>
-          ) : todaySlots.length === 0 ? (
-            <p className="text-center text-zinc-500 text-sm py-3">אין שיעורים מתוכננים להיום</p>
+          {todaySlots.length === 0 ? (
+            <p className="text-center text-zinc-500 text-sm py-3">
+              {jsDay === 6 ? 'אין שיעורים היום (מוצ״ש לא פעיל השבוע)' : 'אין שיעורים מתוכננים להיום'}
+            </p>
           ) : (
             todaySlots.map((slot) => {
               const past = isSlotPast(slot, weekDates)
