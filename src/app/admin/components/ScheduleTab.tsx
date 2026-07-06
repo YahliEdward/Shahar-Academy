@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import {
   Slot, Booking, GroupType, DayIndex, MOTZASH_DAY, MAX_STUDENTS,
-  addSlotToDay, removeSlot, getWeekKey, getWeekDates, formatShortDate,
+  addSlotToDay, removeSlot, getWeekKey, getWeekDates, formatShortDate, isSlotPast,
 } from '@/lib/types'
 import { fetchTemplate, fetchWeekSlots, putTemplate, putWeekSlots, resetWeek } from '@/lib/adminApi'
 import WeekMiniGrid from './WeekMiniGrid'
@@ -41,10 +41,16 @@ export default function ScheduleTab({ bookings, onChanged, defaultMode = 'defaul
   const loading = loadedFor !== editKey
 
   // In "לוח קבוע" (template) mode there's no browsable week — clicking a slot
-  // always manages that slot's real students for the current week, regardless
-  // of whatever week was last browsed in "week" mode.
-  const studentsWeekKey = mode === 'default' ? getWeekKey(0) : weekKey
-  const studentsWeekDates = mode === 'default' ? getWeekDates(0) : weekDates
+  // manages that slot's real students for its next upcoming occurrence: this
+  // week if that slot's time hasn't passed yet, otherwise next week. That way
+  // adding a student to e.g. "Monday 14:00" from the template never fails
+  // with "the slot already started" just because this week's Monday passed.
+  const currentWeekDates = getWeekDates(0)
+  const nextWeekDates = getWeekDates(1)
+  const templateTargetWeek = (slot: Slot) =>
+    isSlotPast(slot, currentWeekDates)
+      ? { key: getWeekKey(1), dates: nextWeekDates }
+      : { key: getWeekKey(0), dates: currentWeekDates }
 
   useEffect(() => {
     let cancelled = false
@@ -174,7 +180,7 @@ export default function ScheduleTab({ bookings, onChanged, defaultMode = 'defaul
       {/* Context banner */}
       {mode === 'default' ? (
         <div className="mb-4 rounded-xl bg-yellow-400/10 border border-yellow-400/30 px-4 py-2.5 text-xs text-yellow-200">
-          שינויים כאן חלים אוטומטית על כל שבוע שלא שונה ידנית. לחיצה על שעה מציגה ומאפשרת לנהל את התלמידים הרשומים אליה בשבוע הנוכחי.
+          שינויים כאן חלים אוטומטית על כל שבוע שלא שונה ידנית. לחיצה על שעה מציגה ומאפשרת לנהל את התלמידים הרשומים אליה במופע הקרוב שלה (השבוע, או שבוע הבא אם השעה כבר עברה השבוע).
         </div>
       ) : (
         <>
@@ -241,7 +247,10 @@ export default function ScheduleTab({ bookings, onChanged, defaultMode = 'defaul
             <SlotEditorCard
               key={slot.id}
               slot={slot}
-              students={bookings.filter((b) => b.slotId === slot.id && b.weekKey === studentsWeekKey)}
+              students={bookings.filter((b) => {
+                const targetKey = mode === 'default' ? templateTargetWeek(slot).key : weekKey
+                return b.slotId === slot.id && b.weekKey === targetKey
+              })}
               showStudents
               canRemove={activeDay === MOTZASH_DAY ? true : daySlots.length > 1}
               onTimeChange={(field, value) => updateSlotTime(slot.id, field, value)}
@@ -261,16 +270,21 @@ export default function ScheduleTab({ bookings, onChanged, defaultMode = 'defaul
         </div>
       )}
 
-      {detailSlot && (
-        <StudentsModal
-          slot={detailSlot}
-          weekKey={studentsWeekKey}
-          date={studentsWeekDates[detailSlot.day]}
-          bookings={bookings}
-          onClose={() => setDetailSlot(null)}
-          onChanged={onChanged}
-        />
-      )}
+      {detailSlot && (() => {
+        const target = mode === 'default'
+          ? templateTargetWeek(detailSlot)
+          : { key: weekKey, dates: weekDates }
+        return (
+          <StudentsModal
+            slot={detailSlot}
+            weekKey={target.key}
+            date={target.dates[detailSlot.day]}
+            bookings={bookings}
+            onClose={() => setDetailSlot(null)}
+            onChanged={onChanged}
+          />
+        )
+      })()}
     </div>
   )
 }
