@@ -83,6 +83,8 @@ export async function POST(request: NextRequest) {
     if (err instanceof SlotPastError) {
       return NextResponse.json({ error: 'השעה כבר עברה' }, { status: 409 })
     }
-    return NextResponse.json({ error: 'שמירת התלמיד נכשלה' }, { status: 500 })
+    console.error('createBookingAsAdmin failed', err)
+    const detail = err instanceof Error ? err.message : String(err)
+    return NextResponse.json({ error: `שמירת התלמיד נכשלה: ${detail}` }, { status: 500 })
   }
 }
