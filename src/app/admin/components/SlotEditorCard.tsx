@@ -18,7 +18,7 @@ export default function SlotEditorCard({ slot, students, showStudents, canRemove
 }) {
   return (
     <div className={`rounded-xl border p-4 ${GROUP_COLORS[slot.groupType]}`}>
-      {showStudents && students.length > 0 && (
+      {showStudents && (
         <div
           role="button"
           tabIndex={0}
@@ -26,17 +26,23 @@ export default function SlotEditorCard({ slot, students, showStudents, canRemove
           onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onShowStudents() }}
           className="mb-3 pb-3 border-b border-white/10 cursor-pointer rounded-lg -mx-1 px-1 hover:bg-white/5 transition-colors"
         >
-          <p className="text-xs text-zinc-400 mb-1.5">תלמידים רשומים (לחצו לפרטים):</p>
-          <div className="flex flex-wrap gap-1">
-            {students.map((b) => (
-              <span
-                key={b.id}
-                className={`text-xs rounded px-2 py-0.5 ${b.status === 'confirmed' ? 'bg-green-900/50 text-green-300 border border-green-700/40' : 'bg-zinc-700 text-zinc-200'}`}
-              >
-                {b.studentName}
-              </span>
-            ))}
-          </div>
+          {students.length > 0 ? (
+            <>
+              <p className="text-xs text-zinc-400 mb-1.5">תלמידים רשומים (לחצו לפרטים):</p>
+              <div className="flex flex-wrap gap-1">
+                {students.map((b) => (
+                  <span
+                    key={b.id}
+                    className={`text-xs rounded px-2 py-0.5 ${b.status === 'confirmed' ? 'bg-green-900/50 text-green-300 border border-green-700/40' : 'bg-zinc-700 text-zinc-200'}`}
+                  >
+                    {b.studentName}
+                  </span>
+                ))}
+              </div>
+            </>
+          ) : (
+            <p className="text-xs text-zinc-500">אין תלמידים עדיין — לחצו להוספה</p>
+          )}
         </div>
       )}
       <div className="flex items-center justify-between flex-wrap gap-3">

@@ -1,4 +1,4 @@
-# האקדמיה למתמטיקה של שחר
+# שחר מורה פרטי
 
 A small booking site for a math tutor: a public weekly schedule where parents
 reserve a seat, and a `/admin` area where the teacher manages the schedule and

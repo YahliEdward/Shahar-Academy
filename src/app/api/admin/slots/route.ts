@@ -14,7 +14,7 @@ function isValidSlot(s: unknown): s is Slot {
   const o = s as Record<string, unknown>
   return (
     typeof o.id === 'string' && o.id.length > 0 && o.id.length <= 100 &&
-    typeof o.day === 'number' && Number.isInteger(o.day) && o.day >= 0 && o.day <= 4 &&
+    typeof o.day === 'number' && Number.isInteger(o.day) && o.day >= 0 && o.day <= 6 &&
     typeof o.time === 'string' && TIME_RE.test(o.time) &&
     typeof o.endTime === 'string' && TIME_RE.test(o.endTime) &&
     typeof o.groupType === 'string' && GROUP_TYPES.includes(o.groupType as GroupType) &&

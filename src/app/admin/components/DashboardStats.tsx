@@ -36,18 +36,18 @@ export default function DashboardStats({ bookings, slots, onPendingClick, onToda
   onOccupancyClick: () => void
 }) {
   const pendingCount = bookings.filter((b) => b.status === 'pending').length
-  const { isWeekend, todaySlots, nextSlot } = getTodayInfo(slots)
+  const { jsDay, todaySlots, nextSlot } = getTodayInfo(slots)
 
   const activeSlots = slots.filter((s) => s.groupType !== 'empty')
   const capacity = activeSlots.length * MAX_STUDENTS
   const enrolled = activeSlots.reduce((sum, s) => sum + s.enrolled, 0)
 
-  const todaySub = isWeekend
-    ? 'סוף שבוע'
-    : nextSlot
-      ? `הבא: ${nextSlot.time}`
-      : todaySlots.length > 0
-        ? 'הסתיימו להיום'
+  const todaySub = nextSlot
+    ? `הבא: ${nextSlot.time}`
+    : todaySlots.length > 0
+      ? 'הסתיימו להיום'
+      : jsDay === 6
+        ? 'סוף שבוע'
         : 'יום פנוי'
 
   return (

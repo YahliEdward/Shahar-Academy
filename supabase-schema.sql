@@ -43,6 +43,18 @@ alter table slots drop constraint if exists slots_pkey;
 alter table slots add constraint slots_pkey primary key (id, week_key);
 
 -- ════════════════════════════════════════════════════════════════════════════
+-- Migration: allow admin-created bookings with only a student name
+-- ════════════════════════════════════════════════════════════════════════════
+-- Previously every field was required because the only way to create a
+-- booking was the public self-registration form. Admins can now create a
+-- booking with just a student name, so these three columns must accept NULL.
+-- student_name, slot_id and group_preference stay NOT NULL. Safe to re-run.
+
+alter table bookings alter column parent_name drop not null;
+alter table bookings alter column phone drop not null;
+alter table bookings alter column grade drop not null;
+
+-- ════════════════════════════════════════════════════════════════════════════
 -- Atomic capacity updates
 -- ════════════════════════════════════════════════════════════════════════════
 -- Single conditional UPDATE so two parallel bookings can never both take the

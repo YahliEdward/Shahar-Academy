@@ -1,7 +1,7 @@
 import { supabase } from './supabase'
 
 export type GroupType = 'middle-school' | 'high-4' | 'high-5' | 'mixed' | 'empty'
-export type DayIndex = 0 | 1 | 2 | 3 | 4
+export type DayIndex = 0 | 1 | 2 | 3 | 4 | 5 | 6
 
 export interface Slot {
   id: string
@@ -29,7 +29,16 @@ export interface Booking {
 
 export const MAX_STUDENTS = 6
 
-export const DAYS = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי'] as const
+export const DAYS = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי'] as const
+
+// Motzash (מוצ״ש — Saturday night) is an optional day: not part of the fixed
+// DAYS list or the default template, only shown once slots exist for it.
+export const MOTZASH_DAY = 6 as const
+export const MOTZASH_LABEL = 'מוצ״ש'
+
+export function dayLabel(day: DayIndex): string {
+  return day === MOTZASH_DAY ? MOTZASH_LABEL : DAYS[day]
+}
 
 export const DEFAULT_TIMES: { time: string; endTime: string }[] = [
   { time: '14:00', endTime: '15:00' },
@@ -89,7 +98,7 @@ export function getWeekKey(offsetWeeks: number): string {
 
 export function getWeekDates(offsetWeeks: number): Date[] {
   const sunday = getWeekStart(offsetWeeks)
-  return Array.from({ length: 5 }, (_, i) => {
+  return Array.from({ length: 7 }, (_, i) => {
     const d = new Date(sunday)
     d.setDate(sunday.getDate() + i)
     return d
@@ -118,7 +127,7 @@ function generateId(): string {
 
 export function buildDefaultSlots(): Slot[] {
   const slots: Slot[] = []
-  for (let d = 0; d < 5; d++) {
+  for (let d = 0; d < 6; d++) {
     for (let t = 0; t < DEFAULT_TIMES.length; t++) {
       slots.push({
         id: `slot-${d}-${t}`,
@@ -197,10 +206,17 @@ export async function getTemplate(): Promise<Slot[]> {
     .order('time')
 
   if (data && data.length > 0) {
-    return data.map((row) => ({
-      ...rowToSlot(row),
-      id: templateSlotId(row.day as number, row.time as string),
-    }))
+    // Two template rows at the same day+time remap to the same id — keep only
+    // the first so a duplicated row can't render the same hour twice.
+    const seen = new Set<string>()
+    const slots: Slot[] = []
+    for (const row of data) {
+      const id = templateSlotId(row.day as number, row.time as string)
+      if (seen.has(id)) continue
+      seen.add(id)
+      slots.push({ ...rowToSlot(row), id })
+    }
+    return slots
   }
   return buildDefaultSlots()
 }

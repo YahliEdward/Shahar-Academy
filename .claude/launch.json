@@ -2,7 +2,7 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "shahar-academy",
+      "name": "shahar-private-teacher",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
       "port": 3002,

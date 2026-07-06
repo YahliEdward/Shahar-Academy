@@ -61,6 +61,27 @@ export async function removeBooking(id: string): Promise<void> {
   await jsonOrThrow(await fetch(`/api/admin/bookings/${id}`, { method: 'DELETE' }))
 }
 
+export interface AdminNewBookingRequest {
+  slotId: string
+  weekKey: string
+  slotLabel?: string
+  studentName: string
+  parentName?: string
+  phone?: string
+  grade?: string
+  groupPreference?: GroupType
+}
+
+// Admin-only creation path — only studentName is required.
+export async function adminCreateBooking(payload: AdminNewBookingRequest): Promise<Booking> {
+  const data = await jsonOrThrow(await fetch('/api/admin/bookings', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  }))
+  return data.booking as Booking
+}
+
 // ─── Slots ──────────────────────────────────────────────────────────────────
 
 export async function fetchTemplate(): Promise<Slot[]> {
