@@ -130,9 +130,9 @@ export default function ScheduleTab({ bookings, onChanged, defaultMode = 'defaul
       const updated = weekSlots.map((s) =>
         s.id === slot.id ? { ...s, enrolled: clampEnrolled(s.enrolled + delta) } : s
       )
+      setTargetWeeks((tw) => ({ ...tw, [target.key]: updated }))
       try {
         await putWeekSlots(target.key, updated)
-        setTargetWeeks((tw) => ({ ...tw, [target.key]: updated }))
         toast('נשמר ✓')
         onChanged()
       } catch {
