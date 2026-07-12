@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSlots, getBookings } from '@/lib/serverDb'
 import { sendPushToAll } from '@/lib/webPush'
-import { DAYS, GROUP_LABELS } from '@/lib/types'
+import { DayIndex, GROUP_LABELS, MOTZASH_DAY, dayLabel } from '@/lib/types'
 
 // Daily "today's lessons" summary pushed to Shahar's devices, triggered by
 // Vercel Cron (see vercel.json). Vercel calls this route with
@@ -16,10 +16,9 @@ export async function GET(request: NextRequest) {
   // (same Intl approach as serverDb.isSlotInPast).
   const todayStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jerusalem' }).format(new Date())
   const today = new Date(`${todayStr}T00:00:00Z`)
-  const dayIndex = today.getUTCDay()
-  if (dayIndex > 4) {
-    return NextResponse.json({ ok: true, skipped: 'weekend' })
-  }
+  // Every calendar day maps to a schedule day: Sun–Fri directly, and Saturday
+  // to the optional Motzash (Saturday-night) day.
+  const dayIndex = today.getUTCDay() as DayIndex
 
   const sunday = new Date(today)
   sunday.setUTCDate(sunday.getUTCDate() - dayIndex)
@@ -42,8 +41,9 @@ export async function GET(request: NextRequest) {
   })
 
   const count = todaySlots.length
+  const dayName = dayIndex === MOTZASH_DAY ? dayLabel(dayIndex) : `יום ${dayLabel(dayIndex)}`
   await sendPushToAll({
-    title: `📚 ${count === 1 ? 'שיעור אחד' : `${count} שיעורים`} היום (יום ${DAYS[dayIndex]})`,
+    title: `📚 ${count === 1 ? 'שיעור אחד' : `${count} שיעורים`} היום (${dayName})`,
     body: lines.join('\n'),
     url: '/admin',
   })
