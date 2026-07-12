@@ -48,7 +48,7 @@ export async function getSlots(weekKey: string): Promise<Slot[]> {
   return getTemplate()
 }
 
-function slotsToRows(slots: Slot[], weekKey: string) {
+function slotsToRows(slots: Slot[], weekKey: string, isOverride: boolean) {
   return slots.map((s) => ({
     id: weekKey === TEMPLATE_KEY
       ? `tpl-${s.day}-${s.time.replace(':', '')}-${Math.random().toString(36).slice(2, 6)}`
@@ -59,7 +59,17 @@ function slotsToRows(slots: Slot[], weekKey: string) {
     group_type: s.groupType,
     enrolled: s.enrolled,
     week_key: weekKey,
+    is_override: isOverride,
   }))
+}
+
+// Insert payload for databases that predate the is_override column.
+function withoutOverrideColumn(rows: ReturnType<typeof slotsToRows>) {
+  return rows.map((row) => {
+    const legacy: Record<string, unknown> = { ...row }
+    delete legacy.is_override
+    return legacy
+  })
 }
 
 // Template rows get random ids, so unlike week rows the (id, week_key) primary
@@ -75,25 +85,100 @@ function dedupeTemplateSlots(slots: Slot[]): Slot[] {
   })
 }
 
-export async function saveSlots(slots: Slot[], weekKey: string): Promise<void> {
+// isOverride marks the week as deliberately edited by the admin ("שבוע
+// ספציפי" mode), which excludes it from template propagation. Weeks
+// materialised automatically (by a booking or an enrolled adjustment) save
+// with false so they keep following the template.
+export async function saveSlots(slots: Slot[], weekKey: string, isOverride = false): Promise<void> {
   const db = getSupabaseAdmin()
   const toSave = weekKey === TEMPLATE_KEY ? dedupeTemplateSlots(slots) : slots
   const { error: deleteError } = await db.from('slots').delete().eq('week_key', weekKey)
   if (deleteError) throw new Error(`Failed to clear slots for ${weekKey}: ${deleteError.message}`)
   if (toSave.length === 0) return
-  const { error: insertError } = await db.from('slots').insert(slotsToRows(toSave, weekKey))
+  const rows = slotsToRows(toSave, weekKey, isOverride && weekKey !== TEMPLATE_KEY)
+  let { error: insertError } = await db.from('slots').insert(rows)
+  if (insertError && insertError.message.includes('is_override')) {
+    // Column not migrated yet — run supabase-schema.sql. Save without the flag.
+    console.warn('is_override column missing — run supabase-schema.sql.', insertError.message)
+    ;({ error: insertError } = await db.from('slots').insert(withoutOverrideColumn(rows)))
+  }
   if (insertError) throw new Error(`Failed to save slots for ${weekKey}: ${insertError.message}`)
 }
 
+// Sunday of the current week in Israel time (YYYY-MM-DD) — mirrors the
+// client's getWeekKey(0) regardless of the serverless region's timezone.
+function currentWeekKey(): string {
+  const israelToday = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Jerusalem' })
+    .format(new Date())
+  const d = new Date(`${israelToday}T00:00:00Z`)
+  d.setUTCDate(d.getUTCDate() - d.getUTCDay())
+  return d.toISOString().slice(0, 10)
+}
+
+// Re-syncs every current/future week that still follows the template (no
+// is_override row) with the new template, keeping each slot's real enrolled
+// count. Without this, the snapshot a booking took of the old template would
+// freeze the week and silently swallow later template edits.
+async function propagateTemplateToFollowerWeeks(template: Slot[]): Promise<void> {
+  const db = getSupabaseAdmin()
+  const { data, error } = await db
+    .from('slots')
+    .select('week_key, is_override')
+    .neq('week_key', TEMPLATE_KEY)
+    .gte('week_key', currentWeekKey())
+  if (error) {
+    // is_override column missing — run supabase-schema.sql. Until then,
+    // materialised weeks keep their old snapshot.
+    console.warn('Template propagation skipped — run supabase-schema.sql.', error.message)
+    return
+  }
+
+  const weeks = new Map<string, boolean>()
+  for (const row of data ?? []) {
+    const key = row.week_key as string
+    weeks.set(key, (weeks.get(key) ?? false) || Boolean(row.is_override))
+  }
+
+  for (const [weekKey, hasOverride] of weeks) {
+    if (hasOverride) continue
+    const { data: rows } = await db
+      .from('slots').select('id, enrolled').eq('week_key', weekKey)
+    const enrolledById = new Map((rows ?? []).map((r) => [r.id as string, r.enrolled as number]))
+    const fresh = template.map((s) => ({
+      ...s,
+      // Canonical week ids, same as a booking materialisation would produce.
+      id: templateSlotId(s.day, s.time),
+      // Keep the seats already taken this week. s.id first: a slot whose time
+      // was just edited still carries its old id, so its students follow it.
+      enrolled: enrolledById.get(s.id) ?? enrolledById.get(templateSlotId(s.day, s.time)) ?? 0,
+    }))
+    await saveSlots(fresh, weekKey, false)
+  }
+}
+
 export async function saveTemplate(slots: Slot[]): Promise<void> {
-  await saveSlots(slots, TEMPLATE_KEY)
+  // The template never holds real seats — enrolled counts live on week rows.
+  // Anything else materialises as phantom students in fresh weeks.
+  const template = dedupeTemplateSlots(slots).map((s) => ({ ...s, enrolled: 0 }))
+  await saveSlots(template, TEMPLATE_KEY)
+  await propagateTemplateToFollowerWeeks(template)
 }
 
 export async function weekHasOverride(weekKey: string): Promise<boolean> {
-  const { count } = await getSupabaseAdmin()
+  const db = getSupabaseAdmin()
+  const { count, error } = await db
     .from('slots')
     .select('*', { count: 'exact', head: true })
     .eq('week_key', weekKey)
+    .eq('is_override', true)
+  if (error) {
+    // is_override column missing — legacy semantics: any rows are an override.
+    const { count: legacyCount } = await db
+      .from('slots')
+      .select('*', { count: 'exact', head: true })
+      .eq('week_key', weekKey)
+    return (legacyCount ?? 0) > 0
+  }
   return (count ?? 0) > 0
 }
 
@@ -156,8 +241,15 @@ async function ensureWeekSlots(weekKey: string): Promise<Slot[]> {
   const existing = await readWeek()
   if (existing) return existing
 
-  const template = await getTemplate()
-  const { error } = await db.from('slots').insert(slotsToRows(template, weekKey))
+  // A fresh week starts with zero seats taken — enrolled counts real bookings
+  // in that week, never leftovers stored on the template.
+  const template = (await getTemplate()).map((s) => ({ ...s, enrolled: 0 }))
+  const rows = slotsToRows(template, weekKey, false)
+  let { error } = await db.from('slots').insert(rows)
+  if (error && error.message.includes('is_override')) {
+    console.warn('is_override column missing — run supabase-schema.sql.', error.message)
+    ;({ error } = await db.from('slots').insert(withoutOverrideColumn(rows)))
+  }
   if (error) {
     // Unique violation → either a concurrent request materialised the week
     // (fine, re-read) or the DB still has the old single-column PK and the
@@ -167,6 +259,31 @@ async function ensureWeekSlots(weekKey: string): Promise<Slot[]> {
     throw new Error(`Failed to materialise week ${weekKey}: ${error.message}`)
   }
   return template
+}
+
+// Bumps a single slot's enrolled count for a week — through the atomic
+// adjust_enrolled() UPDATE — without rewriting the week's schedule, so a week
+// that follows the template keeps following it. Returns false when the slot
+// is already full.
+export async function adjustSlotEnrolled(weekKey: string, slotId: string, delta: number): Promise<boolean> {
+  const db = getSupabaseAdmin()
+  const slots = await ensureWeekSlots(weekKey)
+  if (!slots.some((s) => s.id === slotId)) throw new SlotNotFoundError('Unknown slot')
+
+  const { data: applied, error } = await db.rpc('adjust_enrolled', {
+    p_slot_id: slotId, p_week_key: weekKey, p_delta: delta, p_max: MAX_STUDENTS,
+  })
+  if (error) {
+    console.warn('adjust_enrolled() missing — run supabase-schema.sql. Using legacy path.', error.message)
+    const updated = slots.map((s) =>
+      s.id === slotId
+        ? { ...s, enrolled: Math.max(0, Math.min(MAX_STUDENTS, s.enrolled + delta)) }
+        : s
+    )
+    await saveSlots(updated, weekKey, await weekHasOverride(weekKey))
+    return true
+  }
+  return Boolean(applied)
 }
 
 function bookingRow(booking: NewBooking) {
@@ -202,7 +319,8 @@ async function createBookingLegacy(booking: NewBooking, weekKey: string): Promis
 
   if (idx !== -1) {
     slots[idx] = { ...slots[idx], enrolled: Math.min(slots[idx].enrolled + 1, MAX_STUDENTS) }
-    await saveSlots(slots, weekKey)
+    // Keep the week's override status — a booking must not flip it either way.
+    await saveSlots(slots, weekKey, await weekHasOverride(weekKey))
   }
   return rowToBooking(data)
 }

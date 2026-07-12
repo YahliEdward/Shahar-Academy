@@ -14,6 +14,7 @@ create table if not exists slots (
   group_type text not null,
   enrolled smallint not null default 0,
   week_key text not null,
+  is_override boolean not null default false,
   primary key (id, week_key)
 );
 
@@ -53,6 +54,26 @@ alter table slots add constraint slots_pkey primary key (id, week_key);
 alter table bookings alter column parent_name drop not null;
 alter table bookings alter column phone drop not null;
 alter table bookings alter column grade drop not null;
+
+-- ════════════════════════════════════════════════════════════════════════════
+-- Migration: template edits flow into booking-materialised weeks
+-- ════════════════════════════════════════════════════════════════════════════
+-- A week gets its own slot rows in two ways: automatically (the first booking
+-- copies the template so the capacity update has a real row to target) or
+-- deliberately (the admin edits that week in "שבוע ספציפי" mode). Only the
+-- second should freeze the week against later template changes, so the two are
+-- distinguished with is_override: template saves re-sync every current/future
+-- week where is_override = false, preserving each slot's enrolled count.
+-- Rows that predate this column default to false, so the next template save
+-- brings those weeks back in line with the template. Safe to re-run.
+
+alter table slots add column if not exists is_override boolean not null default false;
+
+-- The template holds the default schedule, never real seats. Stale enrolled
+-- counts left on template rows would surface as phantom students in every week
+-- that follows the template.
+
+update slots set enrolled = 0 where week_key = 'template';
 
 -- ════════════════════════════════════════════════════════════════════════════
 -- Atomic capacity updates

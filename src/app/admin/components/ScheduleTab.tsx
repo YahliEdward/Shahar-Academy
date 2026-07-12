@@ -5,7 +5,7 @@ import {
   Slot, Booking, GroupType, DayIndex, FRIDAY_DAY, MOTZASH_DAY, MAX_STUDENTS,
   addSlotToDay, removeSlot, getWeekKey, getWeekDates, formatShortDate, isSlotPast,
 } from '@/lib/types'
-import { fetchTemplate, fetchWeekSlots, putTemplate, putWeekSlots, resetWeek } from '@/lib/adminApi'
+import { adjustWeekEnrolled, fetchTemplate, fetchWeekSlots, putTemplate, putWeekSlots, resetWeek } from '@/lib/adminApi'
 import WeekMiniGrid from './WeekMiniGrid'
 import SlotEditorCard from './SlotEditorCard'
 import StudentsModal from './StudentsModal'
@@ -118,7 +118,14 @@ export default function ScheduleTab({ bookings, onChanged, defaultMode = 'defaul
   // In template mode the meter reflects (and edits) the slot's next upcoming
   // occurrence — the same week its students are managed in — not the template's
   // default enrolled, so adding a student visibly fills the X/6 meter.
+  // Either way the count is saved through a dedicated endpoint that only bumps
+  // that week's enrolled value: it never rewrites the week's schedule, so a
+  // week that follows the template keeps following it.
   const adjustEnrolled = async (slot: Slot, delta: number) => {
+    const applyDelta = (list: Slot[]) => list.map((s) =>
+      s.id === slot.id ? { ...s, enrolled: clampEnrolled(s.enrolled + delta) } : s
+    )
+    let targetKey: string
     if (mode === 'default') {
       const target = templateTargetWeek(slot)
       const weekSlots = targetWeeks[target.key]
@@ -127,23 +134,20 @@ export default function ScheduleTab({ bookings, onChanged, defaultMode = 'defaul
         toast('השעה לא קיימת בשבוע הקרוב — ערכו אותה במצב "שבוע ספציפי"', 'error')
         return
       }
-      const updated = weekSlots.map((s) =>
-        s.id === slot.id ? { ...s, enrolled: clampEnrolled(s.enrolled + delta) } : s
-      )
-      setTargetWeeks((tw) => ({ ...tw, [target.key]: updated }))
-      try {
-        await putWeekSlots(target.key, updated)
-        toast('נשמר ✓')
-        onChanged()
-      } catch {
-        toast('שגיאה בשמירה — נסו שוב', 'error')
-        setReloadKey((k) => k + 1)
-      }
-      return
+      targetKey = target.key
+      setTargetWeeks((tw) => ({ ...tw, [target.key]: applyDelta(weekSlots) }))
+    } else {
+      targetKey = weekKey
+      setSlots(applyDelta(slots))
     }
-    commit(slots.map((s) =>
-      s.id === slot.id ? { ...s, enrolled: clampEnrolled(s.enrolled + delta) } : s
-    ))
+    try {
+      await adjustWeekEnrolled(targetKey, slot.id, delta)
+      toast('נשמר ✓')
+      onChanged()
+    } catch {
+      toast('שגיאה בשמירה — נסו שוב', 'error')
+      setReloadKey((k) => k + 1)
+    }
   }
 
   // What the card shows: in template mode, overlay the target week's actual

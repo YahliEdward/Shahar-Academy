@@ -110,6 +110,16 @@ export async function putWeekSlots(weekKey: string, slots: Slot[]): Promise<void
   }))
 }
 
+// Bump one slot's enrolled count without turning the week into a schedule
+// override — the week keeps following the template.
+export async function adjustWeekEnrolled(weekKey: string, slotId: string, delta: number): Promise<void> {
+  await jsonOrThrow(await fetch('/api/admin/slots', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ weekKey, slotId, delta }),
+  }))
+}
+
 export async function resetWeek(weekKey: string): Promise<void> {
   await jsonOrThrow(await fetch(`/api/admin/slots?weekKey=${encodeURIComponent(weekKey)}`, {
     method: 'DELETE',

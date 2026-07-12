@@ -3,6 +3,7 @@ import { isAdmin } from '@/lib/auth'
 import { isAdminConfigured } from '@/lib/supabaseAdmin'
 import {
   getTemplate, getSlots, saveTemplate, saveSlots, weekHasOverride, resetWeekToDefault,
+  adjustSlotEnrolled, SlotNotFoundError,
 } from '@/lib/serverDb'
 import { Slot, GroupType, MAX_STUDENTS } from '@/lib/types'
 
@@ -70,11 +71,52 @@ export async function PUT(request: NextRequest) {
       if (!/^\d{4}-\d{2}-\d{2}$/.test(body.weekKey ?? '')) {
         return NextResponse.json({ error: 'Invalid weekKey' }, { status: 400 })
       }
-      await saveSlots(slots, body.weekKey!)
+      // An explicit week edit is a deliberate override — the week stops
+      // following the template until it's reset.
+      await saveSlots(slots, body.weekKey!, true)
     }
     return NextResponse.json({ ok: true })
   } catch {
     return NextResponse.json({ error: 'Failed to save slots' }, { status: 500 })
+  }
+}
+
+// PATCH body: { weekKey, slotId, delta } — bump one slot's enrolled count.
+// Unlike PUT this never rewrites the week's schedule, so a week that follows
+// the template keeps following it.
+export async function PATCH(request: NextRequest) {
+  if (!(await isAdmin())) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  if (!isAdminConfigured) {
+    return NextResponse.json({ error: 'Server not configured' }, { status: 503 })
+  }
+  let body: { weekKey?: unknown; slotId?: unknown; delta?: unknown }
+  try {
+    body = await request.json()
+  } catch {
+    return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
+  }
+  const { weekKey, slotId, delta } = body
+  if (
+    typeof weekKey !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(weekKey) ||
+    typeof slotId !== 'string' || slotId.length === 0 || slotId.length > 100 ||
+    typeof delta !== 'number' || !Number.isInteger(delta) ||
+    delta === 0 || Math.abs(delta) > MAX_STUDENTS
+  ) {
+    return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
+  }
+  try {
+    const applied = await adjustSlotEnrolled(weekKey, slotId, delta)
+    if (!applied) {
+      return NextResponse.json({ error: 'אין מקום פנוי בשעה זו' }, { status: 409 })
+    }
+    return NextResponse.json({ ok: true })
+  } catch (err) {
+    if (err instanceof SlotNotFoundError) {
+      return NextResponse.json({ error: 'השעה לא קיימת בשבוע זה' }, { status: 404 })
+    }
+    return NextResponse.json({ error: 'Failed to update slot' }, { status: 500 })
   }
 }
 
