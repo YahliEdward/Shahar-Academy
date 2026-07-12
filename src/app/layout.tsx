@@ -12,7 +12,7 @@ const heebo = Heebo({
   display: "swap",
 })
 
-const TITLE = "האקדמיה למתמטיקה של שחר"
+const TITLE = "שחר מורה פרטי"
 const DESCRIPTION = "הדרך שלכם ל-5 יחידות מתחילה כאן. קבוצות למידה קטנות ואישיות — עד 6 תלמידים בקבוצה."
 
 export const metadata: Metadata = {

@@ -6,7 +6,7 @@ export default function ShaharLogo({ size = 48, className = '' }: { size?: numbe
   return (
     <Image
       src="/logo.png"
-      alt="לוגו האקדמיה למתמטיקה של שחר"
+      alt="לוגו שחר מורה פרטי"
       width={size}
       height={size}
       className={className}

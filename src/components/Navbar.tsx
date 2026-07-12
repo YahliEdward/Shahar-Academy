@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import ShaharLogo from './ShaharLogo'
 import { WHATSAPP_URL } from '@/lib/constants'
+import { adminSession } from '@/lib/adminApi'
 
 const LINKS = [
   { id: 'features', label: 'היתרונות שלנו', href: '/#features' },
@@ -17,6 +18,11 @@ const LINKS = [
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
+
+  useEffect(() => {
+    adminSession().then(setIsAdmin)
+  }, [])
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20)
@@ -52,7 +58,7 @@ export default function Navbar() {
         <Link href="/" className="flex items-center gap-2 shrink-0">
           <ShaharLogo size={44} />
           <span className="hidden sm:inline text-sm font-black text-white tracking-tight">
-            אקדמיית <span className="text-yellow-400">שחר</span>
+            שחר <span className="text-yellow-400">מורה פרטי</span>
           </span>
         </Link>
 
@@ -70,6 +76,15 @@ export default function Navbar() {
         </ul>
 
         <div className="flex items-center gap-3">
+          {isAdmin && (
+            <Link
+              href="/admin"
+              className="hidden md:inline-flex px-4 py-2.5 bg-zinc-800 text-zinc-400 font-bold text-sm rounded-lg hover:text-white hover:bg-zinc-700 transition-all"
+            >
+              ניהול
+            </Link>
+          )}
+
           <Link
             href="/schedule"
             className="hidden md:inline-flex px-5 py-2.5 bg-yellow-400 text-black font-black text-sm rounded-lg hover:bg-yellow-300 transition-all shadow-lg shadow-yellow-400/20"
@@ -120,6 +135,15 @@ export default function Navbar() {
         </ul>
 
         <div className="flex flex-col gap-3 px-6 mt-8">
+          {isAdmin && (
+            <Link
+              href="/admin"
+              onClick={() => setMenuOpen(false)}
+              className="w-full text-center px-8 py-4 bg-zinc-800 text-zinc-300 font-bold text-lg rounded-xl"
+            >
+              ניהול
+            </Link>
+          )}
           <Link
             href="/schedule"
             onClick={() => setMenuOpen(false)}

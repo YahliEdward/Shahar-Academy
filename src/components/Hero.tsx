@@ -31,7 +31,7 @@ export default function Hero() {
 
   return (
     <section
-      className="relative min-h-0 sm:min-h-[90vh] flex items-start sm:items-center justify-center px-4 pt-20 sm:pt-24 md:pt-32 pb-20 overflow-hidden"
+      className="relative min-h-0 sm:min-h-[90vh] flex items-start sm:items-center justify-center px-4 pt-20 sm:pt-24 md:pt-32 pb-20 overflow-x-hidden"
     >
       <div className="relative z-10 w-full max-w-6xl mx-auto grid lg:grid-cols-[1.15fr_1fr] gap-10 items-center">
         <div className="flex flex-col items-center text-center lg:items-start lg:text-right">
@@ -40,7 +40,7 @@ export default function Hero() {
               <ShaharLogo size={60} className="drop-shadow-lg" />
             </Link>
             <span className="text-2xl font-black text-white tracking-tight">
-              האקדמיה למתמטיקה <span className="text-yellow-400">של שחר</span>
+              שחר <span className="text-yellow-400">מורה פרטי</span>
             </span>
           </div>
 

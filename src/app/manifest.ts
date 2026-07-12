@@ -4,10 +4,10 @@ import type { MetadataRoute } from 'next'
 // which is what enables push notifications on iOS (16.4+) for the admin.
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'האקדמיה למתמטיקה של שחר',
-    short_name: 'שחר אקדמיה',
+    name: 'שחר מורה פרטי',
+    short_name: 'שחר',
     description: 'הדרך שלכם ל-5 יחידות מתחילה כאן',
-    start_url: '/',
+    start_url: '/admin',
     display: 'standalone',
     dir: 'rtl',
     lang: 'he',

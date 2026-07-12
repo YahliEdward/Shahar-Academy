@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Slot, GroupType, GROUP_LABELS, DAYS, formatShortDate } from '@/lib/types'
+import { Slot, GroupType, GROUP_LABELS, dayLabel, formatShortDate } from '@/lib/types'
 import { submitBooking } from '@/lib/adminApi'
 import { WHATSAPP_NUMBER } from '@/lib/constants'
 import { buildLessonIcs, downloadIcs } from '@/lib/ics'
@@ -101,7 +101,7 @@ export default function BookingModal({ slot, weekKey, weekDates, onClose, onBook
       return
     }
     const dayDate = weekDates[slot.day]
-    const slotLabel = `יום ${DAYS[slot.day]} ${formatShortDate(dayDate)} | ${slot.time}–${slot.endTime}`
+    const slotLabel = `יום ${dayLabel(slot.day)} ${formatShortDate(dayDate)} | ${slot.time}–${slot.endTime}`
 
     setLoading(true)
     setSubmitError('')
@@ -117,7 +117,7 @@ export default function BookingModal({ slot, weekKey, weekDates, onClose, onBook
     }
   }
 
-  const dayName = DAYS[slot.day]
+  const dayName = dayLabel(slot.day)
   const dayDate = weekDates[slot.day]
 
   return (

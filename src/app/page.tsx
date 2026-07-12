@@ -1,4 +1,3 @@
-import { redirect } from 'next/navigation'
 import Navbar from '@/components/Navbar'
 import Hero from '@/components/Hero'
 import TrustBar from '@/components/TrustBar'
@@ -9,13 +8,10 @@ import Testimonials from '@/components/Testimonials'
 import FAQ from '@/components/FAQ'
 import FinalCTA from '@/components/FinalCTA'
 import Footer from '@/components/Footer'
-import { isAdmin } from '@/lib/auth'
 
-export default async function HomePage() {
-  if (await isAdmin()) {
-    redirect('/admin')
-  }
-
+// Note: an admin session no longer auto-redirects "/" to /admin — the admin
+// header's "לאתר" link (and the logo) must be able to reach the public site.
+export default function HomePage() {
   return (
     <main>
       <Navbar />
