@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse, after } from 'next/server'
 import { isAdminConfigured } from '@/lib/supabaseAdmin'
 import { createBooking, SlotFullError, SlotNotFoundError, SlotPastError, NewBooking } from '@/lib/serverDb'
 import { sendPushToAll } from '@/lib/webPush'
@@ -50,13 +50,14 @@ export async function POST(request: NextRequest) {
 
   try {
     const booking = await createBooking(newBooking)
-    // Notify Shahar's phone. Must finish before the response is returned
-    // (serverless), and never fails the booking itself.
-    await sendPushToAll({
+    // Notify Shahar's phone after the response is flushed (after() keeps the
+    // serverless function alive), so the student never waits on push
+    // round-trips. sendPushToAll never throws.
+    after(() => sendPushToAll({
       title: 'הרשמה חדשה! 📚',
       body: `${studentName} (${grade})\n${slotLabel}\nטלפון הורה: ${phone}`,
       url: '/admin',
-    })
+    }))
     return NextResponse.json({ booking })
   } catch (err) {
     if (err instanceof SlotFullError) {

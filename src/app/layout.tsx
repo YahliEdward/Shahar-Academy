@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import { Heebo } from "next/font/google"
+import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
 import MathBackground from "@/components/MathBackground"
 import { PHONE, SITE_URL } from "@/lib/constants"
@@ -59,6 +60,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
         <MathBackground />
         {children}
+        <Analytics />
       </body>
     </html>
   )
