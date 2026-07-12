@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Slot, GroupType, GROUP_LABELS, DAYS, formatShortDate } from '@/lib/types'
 import { submitBooking } from '@/lib/adminApi'
 import { WHATSAPP_NUMBER } from '@/lib/constants'
+import { buildLessonIcs, downloadIcs } from '@/lib/ics'
 
 const adminWhatsappUrl = (studentName: string, grade: string, slotLabel: string, phone: string) => {
   const msg = encodeURIComponent(
@@ -150,19 +151,39 @@ export default function BookingModal({ slot, weekKey, weekDates, onClose, onBook
         </div>
 
         {submitted ? (
-          <div className="p-8 text-center">
+          <div className="p-6 sm:p-8 text-center">
             <div className="w-16 h-16 rounded-full bg-yellow-400/20 flex items-center justify-center text-4xl mx-auto mb-4">
               ✓
             </div>
             <h4 className="text-xl font-black text-white mb-2">הבקשה נשלחה!</h4>
-            <p className="text-slate-400 mb-6 leading-relaxed">
+            <p className="text-slate-400 mb-4 leading-relaxed">
               שחר יחזור אליכם בהקדם לאישור המקום ותיאום הפרטים.
             </p>
+
+            <div className="bg-[#1e2535] border border-white/10 rounded-xl p-4 mb-3 text-sm text-right space-y-2">
+              <SummaryRow label="תלמיד" value={`${form.studentName} · ${form.grade}`} />
+              <SummaryRow
+                label="מועד"
+                value={<>יום {dayName} {formatShortDate(dayDate)} · <span dir="ltr">{slot.time}–{slot.endTime}</span></>}
+              />
+              <SummaryRow label="קבוצה" value={GROUP_LABELS[form.groupPreference]} />
+              <SummaryRow label="טלפון" value={<span dir="ltr">{form.phone}</span>} />
+            </div>
+
+            <div className="bg-yellow-400/10 border border-yellow-400/30 rounded-xl p-3 mb-4 text-xs text-yellow-200 leading-relaxed text-right">
+              <strong>שימו לב:</strong> השריון זמני עד לאישור טלפוני של שחר.
+            </div>
+
             <button
-              onClick={onBooked}
-              className="px-6 py-3 bg-yellow-400 text-black font-bold rounded-xl hover:bg-yellow-300 transition-colors"
+              onClick={() => downloadIcs('shahar-lesson.ics', buildLessonIcs({
+                date: dayDate,
+                time: slot.time,
+                endTime: slot.endTime,
+                studentName: form.studentName,
+              }))}
+              className="flex items-center justify-center gap-2 w-full py-3 bg-[#1e2535] hover:bg-[#252d42] border border-white/10 text-white font-bold rounded-xl transition-colors text-sm"
             >
-              סגור
+              📅 הוסיפו ליומן
             </button>
             <a
               href={adminWhatsappUrl(form.studentName, form.grade, submittedSlotLabel, form.phone)}
@@ -172,6 +193,12 @@ export default function BookingModal({ slot, weekKey, weekDates, onClose, onBook
             >
               💬 שלח הודעה לשחר
             </a>
+            <button
+              onClick={onBooked}
+              className="mt-3 w-full py-3 bg-yellow-400 text-black font-bold rounded-xl hover:bg-yellow-300 transition-colors"
+            >
+              סגור
+            </button>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="p-5 space-y-4">
@@ -272,6 +299,15 @@ export default function BookingModal({ slot, weekKey, weekDates, onClose, onBook
           color: #f1f5f9;
         }
       `}</style>
+    </div>
+  )
+}
+
+function SummaryRow({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="flex items-baseline justify-between gap-3">
+      <span className="text-slate-400 shrink-0">{label}</span>
+      <span className="text-slate-100 font-semibold">{value}</span>
     </div>
   )
 }
