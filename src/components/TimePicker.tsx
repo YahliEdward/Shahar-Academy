@@ -41,10 +41,19 @@ export default function TimePicker({
     setOpen(false)
   }
 
+  // Opening the popover decides up front whether the minutes column shows,
+  // so the effect below only handles scroll-centering and outside-click.
+  const toggleOpen = () => {
+    if (open) {
+      setOpen(false)
+      return
+    }
+    setDetailed(mm !== 0)
+    setOpen(true)
+  }
+
   useEffect(() => {
     if (!open) return
-    setDetailed(mm !== 0)
-
     // Center the hour column on its selected value when the popover opens
     const selected = hourColRef.current?.querySelector<HTMLElement>('[data-selected="true"]')
     if (hourColRef.current && selected) {
@@ -80,7 +89,7 @@ export default function TimePicker({
     <div ref={containerRef} className="relative inline-block" style={{ direction: 'ltr' }}>
       <button
         type="button"
-        onClick={() => setOpen((o) => !o)}
+        onClick={toggleOpen}
         className={`flex items-center bg-zinc-800 border rounded-lg px-3 py-1.5 text-sm outline-none transition-colors ${
           open
             ? 'border-yellow-400 ring-1 ring-yellow-400/20'

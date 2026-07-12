@@ -152,12 +152,19 @@ export default function ScheduleGrid() {
   const weekKey = getWeekKey(weekOffset)
   const weekDates = getWeekDates(weekOffset)
 
-  useEffect(() => {
-    let cancelled = false
-    // Show the skeleton on week changes too — stale slots under new dates are misleading.
-    // Reloads triggered by 'slotsUpdated' keep the current data visible instead.
+  // Show the skeleton on week changes too — stale slots under new dates are
+  // misleading. Adjusted during render (not in the effect) so the skeleton
+  // paints in the same pass that switches weeks. Reloads triggered by
+  // 'slotsUpdated' keep the current data visible instead.
+  const [loadedWeekKey, setLoadedWeekKey] = useState(weekKey)
+  if (loadedWeekKey !== weekKey) {
+    setLoadedWeekKey(weekKey)
     setSlots(null)
     setLoadError(false)
+  }
+
+  useEffect(() => {
+    let cancelled = false
     const load = async () => {
       try {
         const data = await getSlots(weekKey)
