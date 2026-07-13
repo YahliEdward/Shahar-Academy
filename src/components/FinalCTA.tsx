@@ -1,12 +1,18 @@
 import Link from 'next/link'
 import { WHATSAPP_URL } from '@/lib/constants'
+import MarkerUnderline from './MarkerUnderline'
 
 export default function FinalCTA() {
   return (
     <section id="cta" className="relative py-20 px-4 overflow-hidden">
       <div className="max-w-3xl mx-auto text-center bg-gradient-to-b from-blue-50 to-white border border-blue-200 rounded-3xl p-10 sm:p-14 shadow-sm">
-        <h2 className="text-3xl sm:text-4xl font-black text-slate-900 mb-4">
-          מוכנים להתחיל את הדרך ל־<span className="text-blue-600">5 יחידות</span>?
+        <h2 className="text-3xl sm:text-4xl font-black leading-snug text-slate-900 mb-4">
+          מוכנים להתחיל את הדרך להצלחה{' '}
+          <span className="relative inline-block whitespace-nowrap text-blue-600">
+            במתמטיקה
+            <MarkerUnderline className="absolute -bottom-1.5 md:-bottom-2 right-0 w-full h-2.5 md:h-3" />
+          </span>
+          ?
         </h2>
         <p className="text-slate-700 mb-8 max-w-xl mx-auto leading-relaxed">
           המקומות בכל קבוצה מוגבלים ל־6 תלמידים בלבד. בחרו שעה פנויה עכשיו — לפני שהיא נתפסת.

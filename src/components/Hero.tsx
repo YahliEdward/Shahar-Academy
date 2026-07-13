@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import ShaharLogo from './ShaharLogo'
 import HeroVisual from './HeroVisual'
+import MarkerUnderline from './MarkerUnderline'
 import { PHONE, WHATSAPP_URL } from '@/lib/constants'
 
 export default function Hero() {
@@ -45,15 +46,13 @@ export default function Hero() {
           </div>
 
           <h1
-            className="hero-heading fade-in-up text-4xl sm:text-5xl md:text-6xl font-black leading-tight mb-6 text-slate-900"
+            className="hero-heading fade-in-up text-4xl sm:text-5xl md:text-6xl font-black leading-snug mb-6 text-slate-900"
             style={{ animationDelay: '0.08s' }}
           >
-            הדרך שלכם ל‑
-            <span className="text-blue-600 relative">
-              5 יחידות
-              <svg className="absolute bottom-1 right-0 w-full" viewBox="0 0 200 8" fill="none">
-                <path d="M0 6 Q100 0 200 6" stroke="#2563eb" strokeWidth="2.5" strokeLinecap="round" />
-              </svg>
+            הדרך שלכם להצלחה{' '}
+            <span className="relative inline-block whitespace-nowrap text-blue-600">
+              במתמטיקה
+              <MarkerUnderline className="absolute -bottom-2 md:-bottom-3 right-0 w-full h-3 md:h-4" />
             </span>{' '}
             מתחילה כאן
           </h1>

@@ -11,9 +11,8 @@ const heebo = Heebo({
   variable: "--font-heebo",
   display: "swap",
 })
-
 const TITLE = "שחר מורה פרטי"
-const DESCRIPTION = "הדרך שלכם ל-5 יחידות מתחילה כאן. קבוצות למידה קטנות ואישיות — עד 6 תלמידים בקבוצה."
+const DESCRIPTION = "הדרך שלכם להצלחה במתמטיקה מתחילה כאן. קבוצות למידה קטנות ואישיות — עד 6 תלמידים בקבוצה."
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
