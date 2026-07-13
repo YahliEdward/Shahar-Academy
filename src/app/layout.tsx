@@ -53,7 +53,7 @@ const jsonLd = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="he" dir="rtl" className={heebo.variable}>
-      <body className="min-h-screen bg-[#fafbfc] text-slate-800 font-[family-name:var(--font-heebo)]">
+      <body className="min-h-screen bg-[#ece8db] text-slate-800 font-[family-name:var(--font-heebo)]">
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

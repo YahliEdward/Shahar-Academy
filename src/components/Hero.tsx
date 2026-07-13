@@ -101,7 +101,7 @@ export default function Hero() {
             <div ref={contactRef} className="relative flex-1 sm:flex-none">
               <button
                 onClick={() => setContactOpen(o => !o)}
-                className="w-full sm:w-auto justify-center whitespace-nowrap px-4 sm:px-8 py-4 border border-slate-300 text-slate-700 font-bold text-lg rounded-xl hover:bg-slate-100 transition-all flex items-center gap-1.5"
+                className="w-full sm:w-auto justify-center whitespace-nowrap px-4 sm:px-8 py-4 bg-white border border-slate-300 text-slate-700 font-bold text-lg rounded-xl shadow-sm hover:bg-slate-50 transition-all flex items-center gap-1.5"
               >
                 יצירת קשר
                 <svg className={`w-3.5 h-3.5 transition-transform ${contactOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
