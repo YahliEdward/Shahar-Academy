@@ -3,7 +3,7 @@ import { isAdmin } from '@/lib/auth'
 import { isAdminConfigured } from '@/lib/supabaseAdmin'
 import {
   getTemplate, getSlots, saveTemplate, saveSlots, weekHasOverride, resetWeekToDefault,
-  adjustSlotEnrolled, SlotNotFoundError,
+  adjustSlotEnrolled, SlotNotFoundError, syncStandingBookings,
 } from '@/lib/serverDb'
 import { Slot, GroupType, MAX_STUDENTS } from '@/lib/types'
 
@@ -36,6 +36,9 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   try {
     if (searchParams.get('mode') === 'template') {
+      // Opportunistic self-heal: a week that just entered the browsable
+      // range picks up the standing roster without needing a background job.
+      await syncStandingBookings()
       return NextResponse.json({ slots: await getTemplate() })
     }
     const weekKey = searchParams.get('weekKey') ?? ''

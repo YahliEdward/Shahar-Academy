@@ -45,10 +45,13 @@ function validatePhone(phone: string): string | null {
   return /^0\d{8,9}$/.test(phone.replace(/[-\s]/g, '')) ? null : 'מספר לא תקין'
 }
 
-export default function StudentsModal({ slot, weekKey, date, bookings, onClose, onChanged }: {
+export default function StudentsModal({ slot, weekKey, date, standing = false, bookings, onClose, onChanged }: {
   slot: Slot
   weekKey: string
   date?: Date
+  // True for "לוח קבוע": students managed here are standing (recurring)
+  // enrollments that repeat every week until removed, not a one-time roster.
+  standing?: boolean
   bookings: Booking[]
   onClose: () => void
   onChanged: () => void
@@ -88,7 +91,9 @@ export default function StudentsModal({ slot, weekKey, date, bookings, onClose, 
   const remove = async (b: Booking) => {
     if (!(await confirmDialog({
       title: 'להסיר את התלמיד מהשיעור?',
-      message: `${b.studentName} יוסר מהשיעור.`,
+      message: standing
+        ? `${b.studentName} יוסר מהשעה הזו בכל שבוע (תלמיד קבוע).`
+        : `${b.studentName} יוסר מהשיעור.`,
       confirmLabel: 'הסר',
       danger: true,
     }))) return
@@ -193,6 +198,9 @@ export default function StudentsModal({ slot, weekKey, date, bookings, onClose, 
             <p className="text-sm text-zinc-400 mt-0.5">
               יום {dayLabel(slot.day)}{date ? ` ${formatShortDate(date)}` : ''} | <span dir="ltr">{slot.time}–{slot.endTime}</span> | {GROUP_LABELS[slot.groupType]}
             </p>
+            {standing && (
+              <p className="text-xs text-yellow-300/80 mt-1">🔁 תלמידים קבועים — יופיעו אוטומטית בכל שבוע עד שיוסרו</p>
+            )}
           </div>
           <button
             onClick={onClose}

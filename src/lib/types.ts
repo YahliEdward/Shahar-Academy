@@ -25,6 +25,9 @@ export interface Booking {
   status: 'pending' | 'confirmed'
   price?: string
   createdAt: string
+  // Set only on week-level clones of a standing (recurring) student: points
+  // back to the master booking (weekKey === TEMPLATE_KEY) it was cloned from.
+  templateId?: string
 }
 
 export const MAX_STUDENTS = 6
@@ -172,6 +175,7 @@ export function rowToBooking(row: Record<string, unknown>): Booking {
     status: row.status as 'pending' | 'confirmed',
     price: row.price as string | undefined,
     createdAt: row.created_at as string,
+    templateId: row.template_id as string | undefined,
   }
 }
 

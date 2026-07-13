@@ -162,6 +162,9 @@ export async function saveTemplate(slots: Slot[]): Promise<void> {
   const template = dedupeTemplateSlots(slots).map((s) => ({ ...s, enrolled: 0 }))
   await saveSlots(template, TEMPLATE_KEY)
   await propagateTemplateToFollowerWeeks(template)
+  // A slot that just reappeared (or changed shape) should pick its standing
+  // roster back up rather than waiting for the next add/remove.
+  await syncStandingBookings()
 }
 
 export async function weekHasOverride(weekKey: string): Promise<boolean> {
@@ -300,6 +303,7 @@ function bookingRow(booking: NewBooking) {
     status: booking.status ?? 'pending',
     price: booking.price,
     created_at: new Date().toISOString(),
+    template_id: booking.templateId,
   }
 }
 
@@ -394,6 +398,136 @@ export async function createBookingAsAdmin(input: NewAdminBooking): Promise<Book
     groupPreference: input.groupPreference ?? fallbackGroup,
     status: 'confirmed',
   })
+}
+
+// ─── Standing (recurring) students ──────────────────────────────────────────
+// A student added while managing "לוח קבוע" is a standing enrollment: one
+// master booking (week_key === TEMPLATE_KEY) cloned into every week within
+// the admin/public browsable range (this week + the next few, matching
+// ScheduleTab/ScheduleGrid's MAX_WEEK_OFFSET), so it shows up automatically
+// every week without being re-added. A clone's template_id points back to its
+// master row, which is how removal finds every clone to delete.
+
+const STANDING_WEEK_RANGE = 4 // this week + 3 ahead
+
+export async function getStandingBookings(): Promise<Booking[]> {
+  const { data, error } = await getSupabaseAdmin()
+    .from('bookings')
+    .select('*')
+    .eq('week_key', TEMPLATE_KEY)
+    .order('created_at', { ascending: false })
+  if (error || !data) return []
+  return data.map(rowToBooking)
+}
+
+function followerWeekKeys(): string[] {
+  const base = new Date(`${currentWeekKey()}T00:00:00Z`)
+  return Array.from({ length: STANDING_WEEK_RANGE }, (_, i) => {
+    const d = new Date(base)
+    d.setUTCDate(d.getUTCDate() + i * 7)
+    return d.toISOString().slice(0, 10)
+  })
+}
+
+// Clones the given standing bookings into one week — skipping any that
+// already have a clone there, whose slot doesn't exist that week, or whose
+// slot is already full. Best-effort per student: one full slot doesn't stop
+// the rest of the roster from syncing.
+async function syncStandingBookingsIntoWeek(weekKey: string, standing: Booking[]): Promise<void> {
+  if (standing.length === 0) return
+  const db = getSupabaseAdmin()
+  const slots = await ensureWeekSlots(weekKey)
+  const { data: weekRows } = await db.from('bookings').select('template_id').eq('week_key', weekKey)
+  const alreadyCloned = new Set((weekRows ?? []).map((r) => r.template_id as string).filter(Boolean))
+
+  for (const master of standing) {
+    if (alreadyCloned.has(master.id)) continue
+    if (!slots.some((s) => s.id === master.slotId)) continue
+    const { data: seatTaken } = await db.rpc('adjust_enrolled', {
+      p_slot_id: master.slotId, p_week_key: weekKey, p_delta: 1, p_max: MAX_STUDENTS,
+    })
+    if (!seatTaken) continue
+    // The alreadyCloned check above is only a fast path, not a guarantee —
+    // an overlapping sync (React's dev-mode double effect, two admin tabs)
+    // can race past it before either has committed. The unique index on
+    // (template_id, week_key) is the real guard: if this insert loses the
+    // race, release the seat we just took instead of double-booking it.
+    const { error: insertError } = await db.from('bookings').insert(bookingRow({
+      slotId: master.slotId,
+      weekKey,
+      slotLabel: master.slotLabel,
+      studentName: master.studentName,
+      parentName: master.parentName,
+      phone: master.phone,
+      grade: master.grade,
+      groupPreference: master.groupPreference,
+      status: 'confirmed',
+      templateId: master.id,
+    }))
+    if (insertError) {
+      await db.rpc('adjust_enrolled', {
+        p_slot_id: master.slotId, p_week_key: weekKey, p_delta: -1, p_max: MAX_STUDENTS,
+      })
+    }
+  }
+}
+
+// Re-syncs every standing student into every week in the browsable range.
+// Called after the template's hours change (a slot that just reappeared
+// should pick its roster back up) and opportunistically whenever the admin
+// opens "לוח קבוע", so a week that just entered the range self-heals without
+// needing a background job.
+export async function syncStandingBookings(): Promise<void> {
+  const standing = await getStandingBookings()
+  if (standing.length === 0) return
+  for (const weekKey of followerWeekKeys()) {
+    await syncStandingBookingsIntoWeek(weekKey, standing)
+  }
+}
+
+export async function createStandingBookingAsAdmin(input: NewAdminBooking): Promise<Booking> {
+  const template = await getTemplate()
+  const slot = template.find((s) => s.id === input.slotId)
+  const fallbackGroup: GroupType = slot && slot.groupType !== 'empty' ? slot.groupType : 'middle-school'
+
+  const row = bookingRow({
+    slotId: input.slotId,
+    weekKey: TEMPLATE_KEY,
+    slotLabel: input.slotLabel ?? '',
+    studentName: input.studentName,
+    parentName: input.parentName ?? '',
+    phone: input.phone ?? '',
+    grade: input.grade ?? '',
+    groupPreference: input.groupPreference ?? fallbackGroup,
+    status: 'confirmed',
+  })
+  const { data, error } = await getSupabaseAdmin().from('bookings').insert(row).select().single()
+  if (error || !data) throw new Error('Failed to save standing booking')
+  const master = rowToBooking(data)
+  for (const weekKey of followerWeekKeys()) {
+    await syncStandingBookingsIntoWeek(weekKey, [master])
+  }
+  return master
+}
+
+export async function isStandingBooking(id: string): Promise<boolean> {
+  const { data } = await getSupabaseAdmin().from('bookings').select('week_key').eq('id', id).single()
+  return data?.week_key === TEMPLATE_KEY
+}
+
+// Removes a standing student everywhere: the master row plus every week's
+// clone, releasing each of those weeks' seats.
+export async function removeStandingBooking(masterId: string): Promise<void> {
+  const db = getSupabaseAdmin()
+  const { data: clones } = await db.from('bookings').select('id, slot_id, week_key').eq('template_id', masterId)
+  for (const clone of clones ?? []) {
+    await db.from('bookings').delete().eq('id', clone.id as string)
+    const { error } = await db.rpc('adjust_enrolled', {
+      p_slot_id: clone.slot_id as string, p_week_key: clone.week_key as string, p_delta: -1, p_max: MAX_STUDENTS,
+    })
+    if (error) console.warn('adjust_enrolled() missing on standing removal — run supabase-schema.sql.', error.message)
+  }
+  await db.from('bookings').delete().eq('id', masterId)
 }
 
 export async function updateBooking(id: string, updates: Partial<Booking>): Promise<void> {

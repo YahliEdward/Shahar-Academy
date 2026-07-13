@@ -76,6 +76,23 @@ alter table slots add column if not exists is_override boolean not null default 
 update slots set enrolled = 0 where week_key = 'template';
 
 -- ════════════════════════════════════════════════════════════════════════════
+-- Migration: standing (recurring) students
+-- ════════════════════════════════════════════════════════════════════════════
+-- A student added from "לוח קבוע" is a standing enrollment: one master booking
+-- row with week_key = 'template', cloned into every current/future week that
+-- follows the template. template_id links a week's clone back to its master
+-- row so removing the master can find and remove every clone. Safe to re-run.
+
+alter table bookings add column if not exists template_id text;
+
+-- A master can have at most one clone per week — without this, two
+-- overlapping syncs (e.g. React's dev-mode double effect, or two admin tabs)
+-- can each pass the "not already cloned" check before either has committed,
+-- doubling up a student's seat in that week.
+create unique index if not exists bookings_template_clone_uq
+  on bookings (template_id, week_key) where template_id is not null;
+
+-- ════════════════════════════════════════════════════════════════════════════
 -- Atomic capacity updates
 -- ════════════════════════════════════════════════════════════════════════════
 -- Single conditional UPDATE so two parallel bookings can never both take the

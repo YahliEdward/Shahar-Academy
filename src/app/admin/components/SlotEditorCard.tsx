@@ -5,11 +5,12 @@ import TimePicker from '@/components/TimePicker'
 
 const GROUP_OPTIONS: GroupType[] = ['middle-school', 'high-4', 'high-5', 'mixed', 'empty']
 
-export default function SlotEditorCard({ slot, students, showStudents, canRemove, onTimeChange, onGroupChange, onAdjustEnrolled, onRemove, onShowStudents }: {
+export default function SlotEditorCard({ slot, students, showStudents, canRemove, showAdjustButtons = true, onTimeChange, onGroupChange, onAdjustEnrolled, onRemove, onShowStudents }: {
   slot: Slot
   students: Booking[]
   showStudents: boolean
   canRemove: boolean
+  showAdjustButtons?: boolean
   onTimeChange: (field: 'time' | 'endTime', value: string) => void
   onGroupChange: (g: GroupType) => void
   onAdjustEnrolled: (delta: number) => void
@@ -64,13 +65,15 @@ export default function SlotEditorCard({ slot, students, showStudents, canRemove
         </select>
 
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => onAdjustEnrolled(-1)}
-            disabled={slot.enrolled <= 0}
-            className="w-8 h-8 rounded-lg bg-zinc-700 hover:bg-zinc-600 disabled:opacity-30 text-white font-bold transition-colors text-lg"
-          >
-            −
-          </button>
+          {showAdjustButtons && (
+            <button
+              onClick={() => onAdjustEnrolled(-1)}
+              disabled={slot.enrolled <= 0}
+              className="w-8 h-8 rounded-lg bg-zinc-700 hover:bg-zinc-600 disabled:opacity-30 text-white font-bold transition-colors text-lg"
+            >
+              −
+            </button>
+          )}
           <div className="text-center min-w-[70px]">
             <div className="text-white font-black text-lg">{slot.enrolled}/{MAX_STUDENTS}</div>
             <div className="flex gap-0.5 mt-1">
@@ -79,13 +82,15 @@ export default function SlotEditorCard({ slot, students, showStudents, canRemove
               ))}
             </div>
           </div>
-          <button
-            onClick={() => onAdjustEnrolled(1)}
-            disabled={slot.enrolled >= MAX_STUDENTS}
-            className="w-8 h-8 rounded-lg bg-yellow-400 hover:bg-yellow-300 disabled:opacity-30 text-black font-bold transition-colors text-lg"
-          >
-            +
-          </button>
+          {showAdjustButtons && (
+            <button
+              onClick={() => onAdjustEnrolled(1)}
+              disabled={slot.enrolled >= MAX_STUDENTS}
+              className="w-8 h-8 rounded-lg bg-yellow-400 hover:bg-yellow-300 disabled:opacity-30 text-black font-bold transition-colors text-lg"
+            >
+              +
+            </button>
+          )}
 
           {canRemove && (
             <button

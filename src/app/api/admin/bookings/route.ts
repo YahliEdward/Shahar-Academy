@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isAdmin } from '@/lib/auth'
 import { isAdminConfigured } from '@/lib/supabaseAdmin'
-import { getBookings, createBookingAsAdmin, SlotFullError, SlotNotFoundError, SlotPastError } from '@/lib/serverDb'
-import { GroupType } from '@/lib/types'
+import {
+  getBookings, createBookingAsAdmin, createStandingBookingAsAdmin,
+  SlotFullError, SlotNotFoundError, SlotPastError,
+} from '@/lib/serverDb'
+import { GroupType, TEMPLATE_KEY } from '@/lib/types'
 
 const GROUP_TYPES: GroupType[] = ['middle-school', 'high-4', 'high-5', 'mixed', 'empty']
 
@@ -51,7 +54,8 @@ export async function POST(request: NextRequest) {
   if (!studentName || !slotId || !weekKey) {
     return NextResponse.json({ error: 'חסרים פרטים' }, { status: 400 })
   }
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(weekKey)) {
+  const isStanding = weekKey === TEMPLATE_KEY
+  if (!isStanding && !/^\d{4}-\d{2}-\d{2}$/.test(weekKey)) {
     return NextResponse.json({ error: 'שבוע לא תקין' }, { status: 400 })
   }
   if (phone && !/^0\d{8,9}$/.test(phone.replace(/[-\s]/g, ''))) {
@@ -62,7 +66,8 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const booking = await createBookingAsAdmin({
+    const create = isStanding ? createStandingBookingAsAdmin : createBookingAsAdmin
+    const booking = await create({
       slotId,
       weekKey,
       slotLabel,
