@@ -49,7 +49,7 @@ export default function Navbar() {
     <header
       className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 flex items-center ${
         scrolled
-          ? 'bg-[rgba(11,15,25,0.8)] backdrop-blur-md border-b border-white/10'
+          ? 'bg-white/85 backdrop-blur-md border-b border-slate-200 shadow-sm'
           : 'bg-transparent'
       }`}
       style={{ height: scrolled ? '58px' : 'var(--nav-height)' }}
@@ -57,8 +57,8 @@ export default function Navbar() {
       <nav className="w-full max-w-6xl mx-auto px-4 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 shrink-0">
           <ShaharLogo size={44} />
-          <span className="hidden sm:inline text-sm font-black text-white tracking-tight">
-            שחר <span className="text-yellow-400">מורה פרטי</span>
+          <span className="hidden sm:inline text-sm font-black text-slate-900 tracking-tight">
+            שחר <span className="text-blue-600">מורה פרטי</span>
           </span>
         </Link>
 
@@ -67,7 +67,7 @@ export default function Navbar() {
             <li key={link.id}>
               <Link
                 href={link.href}
-                className="text-sm font-semibold text-slate-300 hover:text-yellow-400 transition-colors"
+                className="text-sm font-semibold text-slate-600 hover:text-blue-600 transition-colors"
               >
                 {link.label}
               </Link>
@@ -79,7 +79,7 @@ export default function Navbar() {
           {isAdmin && (
             <Link
               href="/admin"
-              className="hidden md:inline-flex px-4 py-2.5 bg-zinc-800 text-zinc-400 font-bold text-sm rounded-lg hover:text-white hover:bg-zinc-700 transition-all"
+              className="hidden md:inline-flex px-4 py-2.5 bg-slate-100 text-slate-500 font-bold text-sm rounded-lg hover:text-slate-900 hover:bg-slate-200 transition-all"
             >
               ניהול
             </Link>
@@ -87,7 +87,7 @@ export default function Navbar() {
 
           <Link
             href="/schedule"
-            className="hidden md:inline-flex px-5 py-2.5 bg-yellow-400 text-black font-black text-sm rounded-lg hover:bg-yellow-300 transition-all shadow-lg shadow-yellow-400/20"
+            className="hidden md:inline-flex px-5 py-2.5 bg-blue-600 text-white font-black text-sm rounded-lg hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20"
           >
             בחרו שעה
           </Link>
@@ -96,7 +96,7 @@ export default function Navbar() {
             onClick={() => setMenuOpen((o) => !o)}
             aria-label="תפריט"
             aria-expanded={menuOpen}
-            className="md:hidden w-10 h-10 flex items-center justify-center rounded-lg border border-white/15 text-white"
+            className="md:hidden w-10 h-10 flex items-center justify-center rounded-lg border border-slate-300 text-slate-700"
           >
             {menuOpen ? (
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -114,7 +114,7 @@ export default function Navbar() {
 
       {/* Mobile drawer */}
       <div
-        className={`md:hidden fixed inset-x-0 bottom-0 z-50 bg-[rgba(11,15,25,1)] backdrop-blur-md transition-opacity duration-300 ${
+        className={`md:hidden fixed inset-x-0 bottom-0 z-50 bg-white transition-opacity duration-300 ${
           menuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
         }`}
         style={{ top: scrolled ? '58px' : 'var(--nav-height)' }}
@@ -126,7 +126,7 @@ export default function Navbar() {
               <Link
                 href={link.href}
                 onClick={() => setMenuOpen(false)}
-                className="block w-full text-center py-4 text-lg font-bold text-slate-200 hover:text-yellow-400 transition-colors border-b border-white/5"
+                className="block w-full text-center py-4 text-lg font-bold text-slate-700 hover:text-blue-600 transition-colors border-b border-slate-100"
               >
                 {link.label}
               </Link>
@@ -139,7 +139,7 @@ export default function Navbar() {
             <Link
               href="/admin"
               onClick={() => setMenuOpen(false)}
-              className="w-full text-center px-8 py-4 bg-zinc-800 text-zinc-300 font-bold text-lg rounded-xl"
+              className="w-full text-center px-8 py-4 bg-slate-100 text-slate-700 font-bold text-lg rounded-xl"
             >
               ניהול
             </Link>
@@ -147,7 +147,7 @@ export default function Navbar() {
           <Link
             href="/schedule"
             onClick={() => setMenuOpen(false)}
-            className="w-full text-center px-8 py-4 bg-yellow-400 text-black font-black text-lg rounded-xl"
+            className="w-full text-center px-8 py-4 bg-blue-600 text-white font-black text-lg rounded-xl"
           >
             בחרו שעה עכשיו
           </Link>
@@ -156,7 +156,7 @@ export default function Navbar() {
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => setMenuOpen(false)}
-            className="w-full text-center px-8 py-4 border border-white/20 text-white font-bold text-lg rounded-xl"
+            className="w-full text-center px-8 py-4 border border-slate-300 text-slate-700 font-bold text-lg rounded-xl"
           >
             WhatsApp
           </a>

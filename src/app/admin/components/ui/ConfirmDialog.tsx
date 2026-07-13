@@ -50,18 +50,18 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
       {children}
       {pending && (
         <div
-          className="fixed inset-0 z-[55] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+          className="fixed inset-0 z-[55] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm"
           onClick={(e) => { if (e.target === e.currentTarget) close(false) }}
         >
           <div
             role="alertdialog"
             aria-modal="true"
             aria-label={pending.opts.title}
-            className="w-full max-w-sm bg-[#131827] rounded-2xl border border-zinc-700/50 shadow-2xl p-5 fade-in-up"
+            className="w-full max-w-sm bg-white rounded-2xl border border-slate-200 shadow-2xl p-5 fade-in-up"
           >
-            <h3 className="font-black text-white text-lg">{pending.opts.title}</h3>
+            <h3 className="font-black text-slate-900 text-lg">{pending.opts.title}</h3>
             {pending.opts.message && (
-              <p className="text-sm text-zinc-400 mt-2 leading-relaxed">{pending.opts.message}</p>
+              <p className="text-sm text-slate-500 mt-2 leading-relaxed">{pending.opts.message}</p>
             )}
             <div className="flex gap-2 mt-5">
               <button
@@ -69,15 +69,15 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
                 autoFocus
                 className={`flex-1 py-2.5 rounded-xl font-bold text-sm transition-colors ${
                   pending.opts.danger
-                    ? 'bg-red-900/40 hover:bg-red-800/60 text-red-400 border border-red-800/40'
-                    : 'bg-yellow-400 hover:bg-yellow-300 text-black'
+                    ? 'bg-red-50 hover:bg-red-100 text-red-600 border border-red-200'
+                    : 'bg-blue-600 hover:bg-blue-700 text-white'
                 }`}
               >
                 {pending.opts.confirmLabel ?? 'אישור'}
               </button>
               <button
                 onClick={() => close(false)}
-                className="flex-1 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-semibold text-sm transition-colors"
+                className="flex-1 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-sm transition-colors"
               >
                 ביטול
               </button>

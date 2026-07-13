@@ -13,20 +13,20 @@ function AvailabilityBadge({ enrolled }: { enrolled: number }) {
   const free = MAX_STUDENTS - enrolled
   if (enrolled >= MAX_STUDENTS) {
     return (
-      <span className="text-xs px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-500 font-semibold border border-zinc-700">
+      <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-400 font-semibold border border-slate-200">
         מלא לחלוטין
       </span>
     )
   }
   if (free === 1) {
     return (
-      <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-400/20 text-yellow-300 font-bold border border-yellow-400/40 pulse-gold">
+      <span className="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-bold border border-blue-300 pulse-badge">
         רק מקום 1 פנוי!
       </span>
     )
   }
   return (
-    <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/20 text-green-300 font-semibold border border-green-500/30">
+    <span className="text-xs px-2 py-0.5 rounded-full bg-green-50 text-green-700 font-semibold border border-green-200">
       {free} מקומות פנויים
     </span>
   )
@@ -40,7 +40,7 @@ function SlotCard({ slot, isPast, onClick }: { slot: Slot; isPast: boolean; onCl
   if (isEmpty) {
     if (isPast) {
       return (
-        <div className="w-full rounded-xl border border-dashed border-zinc-800/60 p-3 text-center text-zinc-700 text-xs opacity-50">
+        <div className="w-full rounded-xl border border-dashed border-slate-200 p-3 text-center text-slate-300 text-xs opacity-70">
           <div className="font-semibold" dir="ltr">
             {slot.time}–{slot.endTime}
           </div>
@@ -51,13 +51,13 @@ function SlotCard({ slot, isPast, onClick }: { slot: Slot; isPast: boolean; onCl
     return (
       <button
         onClick={onClick}
-        className="w-full rounded-xl border border-dashed border-zinc-700/50 p-3 text-center text-zinc-600 text-xs transition-all hover:border-yellow-400/40 hover:bg-zinc-800/40 hover:-translate-y-0.5 cursor-pointer group"
+        className="w-full rounded-xl border border-dashed border-slate-300 p-3 text-center text-slate-400 text-xs transition-all hover:border-blue-400 hover:bg-blue-50/50 hover:-translate-y-0.5 cursor-pointer group"
       >
-        <div className="font-semibold text-zinc-500" dir="ltr">
+        <div className="font-semibold text-slate-500" dir="ltr">
           {slot.time}–{slot.endTime}
         </div>
         <div className="mt-1">פנוי</div>
-        <div className="mt-1.5 text-yellow-400/0 group-hover:text-yellow-400/70 transition-colors font-semibold">
+        <div className="mt-1.5 text-blue-600/0 group-hover:text-blue-600/80 transition-colors font-semibold">
           לחץ לשריון מקום ←
         </div>
       </button>
@@ -70,12 +70,12 @@ function SlotCard({ slot, isPast, onClick }: { slot: Slot; isPast: boolean; onCl
       disabled={disabled}
       className={`w-full text-right rounded-xl border p-3 transition-all group ${
         disabled
-          ? 'border-zinc-700/50 bg-zinc-800/30 cursor-not-allowed opacity-60'
-          : 'border-zinc-700/50 bg-zinc-800/40 hover:border-yellow-400/50 hover:bg-zinc-800/80 hover:-translate-y-0.5 cursor-pointer'
+          ? 'border-slate-200 bg-slate-50 cursor-not-allowed opacity-60'
+          : 'border-slate-200 bg-white shadow-sm hover:border-blue-400 hover:shadow-md hover:-translate-y-0.5 cursor-pointer'
       }`}
     >
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xs font-mono text-slate-400" dir="ltr">
+        <span className="text-xs font-mono text-slate-500" dir="ltr">
           {slot.time}–{slot.endTime}
         </span>
         <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${GROUP_BADGE[slot.groupType]}`}>
@@ -89,18 +89,18 @@ function SlotCard({ slot, isPast, onClick }: { slot: Slot; isPast: boolean; onCl
             <div
               key={i}
               className={`h-1.5 flex-1 rounded-full ${
-                i < slot.enrolled ? 'bg-yellow-400' : 'bg-zinc-700'
+                i < slot.enrolled ? 'bg-blue-500' : 'bg-slate-200'
               }`}
             />
           ))}
         </div>
-        <div className="text-xs text-zinc-500 mt-1">
+        <div className="text-xs text-slate-400 mt-1">
           {slot.enrolled}/{MAX_STUDENTS} תלמידים
         </div>
       </div>
 
       {isPast ? (
-        <span className="text-xs px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-500 font-semibold border border-zinc-700">
+        <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-400 font-semibold border border-slate-200">
           הסתיים
         </span>
       ) : (
@@ -108,7 +108,7 @@ function SlotCard({ slot, isPast, onClick }: { slot: Slot; isPast: boolean; onCl
       )}
 
       {!disabled && (
-        <div className="mt-2 text-xs text-yellow-400/70 group-hover:text-yellow-400 transition-colors font-semibold">
+        <div className="mt-2 text-xs text-blue-600/70 group-hover:text-blue-600 transition-colors font-semibold">
           לחץ לשריון מקום ←
         </div>
       )}
@@ -118,21 +118,21 @@ function SlotCard({ slot, isPast, onClick }: { slot: Slot; isPast: boolean; onCl
 
 function SkeletonCard() {
   return (
-    <div className="w-full rounded-xl border border-zinc-700/50 bg-zinc-800/40 p-3 animate-pulse">
+    <div className="w-full rounded-xl border border-slate-200 bg-white p-3 animate-pulse">
       <div className="flex items-center justify-between mb-2">
-        <div className="h-3 w-16 rounded bg-zinc-700/70" />
-        <div className="h-4 w-14 rounded-full bg-zinc-700/70" />
+        <div className="h-3 w-16 rounded bg-slate-200/70" />
+        <div className="h-4 w-14 rounded-full bg-slate-200/70" />
       </div>
-      <div className="h-1.5 rounded-full bg-zinc-700/70 mb-2" />
-      <div className="h-3 w-20 rounded bg-zinc-700/70 mb-2" />
-      <div className="h-5 w-24 rounded-full bg-zinc-700/70" />
+      <div className="h-1.5 rounded-full bg-slate-200/70 mb-2" />
+      <div className="h-3 w-20 rounded bg-slate-200/70 mb-2" />
+      <div className="h-5 w-24 rounded-full bg-slate-200/70" />
     </div>
   )
 }
 
 function EmptyDay() {
   return (
-    <div className="rounded-xl border border-dashed border-zinc-800 p-6 text-center text-sm text-zinc-600">
+    <div className="rounded-xl border border-dashed border-slate-300 p-6 text-center text-sm text-slate-400">
       אין שיעורים ביום זה
     </div>
   )
@@ -200,10 +200,10 @@ export default function ScheduleGrid() {
   return (
     <section id="schedule" className="pt-6 pb-16 px-4 max-w-6xl mx-auto">
       <div className="text-center mb-10">
-        <h2 className="text-3xl font-black text-white mb-2">
+        <h2 className="text-3xl font-black text-slate-900 mb-2">
           לוח השעות השבועי
         </h2>
-        <p className="text-slate-400">בחרו יום ושעה שמתאימים לכם — לחצו לשריון מקום</p>
+        <p className="text-slate-500">בחרו יום ושעה שמתאימים לכם — לחצו לשריון מקום</p>
       </div>
 
       {/* Week navigation */}
@@ -211,17 +211,17 @@ export default function ScheduleGrid() {
         <button
           onClick={() => setWeekOffset((w) => Math.max(0, w - 1))}
           disabled={weekOffset === 0}
-          className="w-9 h-9 rounded-lg bg-zinc-800 text-slate-400 hover:bg-zinc-700 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all font-bold text-lg flex items-center justify-center"
+          className="w-9 h-9 rounded-lg bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-900 disabled:opacity-30 disabled:cursor-not-allowed transition-all font-bold text-lg flex items-center justify-center"
         >
           →
         </button>
-        <span className="text-sm font-semibold text-slate-300 min-w-[200px] text-center">
+        <span className="text-sm font-semibold text-slate-700 min-w-[200px] text-center">
           {weekOffset === 0 ? 'שבוע נוכחי' : 'שבוע'} (<span dir="ltr">{weekRange}</span>)
         </span>
         <button
           onClick={() => setWeekOffset((w) => Math.min(MAX_WEEK_OFFSET, w + 1))}
           disabled={weekOffset === MAX_WEEK_OFFSET}
-          className="w-9 h-9 rounded-lg bg-zinc-800 text-slate-400 hover:bg-zinc-700 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all font-bold text-lg flex items-center justify-center"
+          className="w-9 h-9 rounded-lg bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-900 disabled:opacity-30 disabled:cursor-not-allowed transition-all font-bold text-lg flex items-center justify-center"
         >
           ←
         </button>
@@ -235,12 +235,12 @@ export default function ScheduleGrid() {
             onClick={() => setActiveDay(i)}
             className={`flex flex-col items-center justify-center rounded-lg py-2 px-1 font-bold transition-all ${
               activeDay === i
-                ? 'bg-yellow-400 text-black shadow-lg shadow-yellow-400/20'
-                : 'bg-zinc-800 text-slate-400 hover:bg-zinc-700 hover:text-white'
+                ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
+                : 'bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-900'
             }`}
           >
             <span className="text-xs leading-tight">{dayLabel(i)}</span>
-            <span className={`text-[10px] font-normal mt-0.5 ${activeDay === i ? 'text-black/70' : 'text-slate-500'}`}>
+            <span className={`text-[10px] font-normal mt-0.5 ${activeDay === i ? 'text-white/80' : 'text-slate-400'}`}>
               {formatShortDate(weekDates[i])}
             </span>
           </button>
@@ -248,7 +248,7 @@ export default function ScheduleGrid() {
       </div>
 
       {loadError && (
-        <p className="text-center text-red-400 py-10 text-sm">שגיאה בטעינת הלוח — נסו לרענן</p>
+        <p className="text-center text-red-600 py-10 text-sm">שגיאה בטעינת הלוח — נסו לרענן</p>
       )}
 
       {/* Mobile: single day view */}
@@ -275,9 +275,9 @@ export default function ScheduleGrid() {
       <div className={`hidden md:grid ${hasMotzash ? 'grid-cols-7' : 'grid-cols-6'} gap-4`}>
         {visibleDays.map((d) => (
           <div key={d}>
-            <div className="text-center font-bold text-slate-300 mb-3 pb-2 border-b border-zinc-700/50">
+            <div className="text-center font-bold text-slate-700 mb-3 pb-2 border-b border-slate-200">
               <div>יום {dayLabel(d)}</div>
-              <div className="text-xs text-slate-500 font-normal">{formatShortDate(weekDates[d])}</div>
+              <div className="text-xs text-slate-400 font-normal">{formatShortDate(weekDates[d])}</div>
             </div>
             <div className="space-y-3">
               {loading ? (

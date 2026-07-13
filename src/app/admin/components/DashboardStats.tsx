@@ -14,13 +14,13 @@ function StatCard({ value, label, sub, accent, onClick, children }: {
   return (
     <button
       onClick={onClick}
-      className="bg-zinc-800/50 border border-zinc-700/50 rounded-xl p-3 text-center transition-all hover:border-yellow-400/40 hover:bg-zinc-800 active:scale-[0.98]"
+      className="bg-white border border-slate-200 rounded-xl p-3 text-center shadow-sm transition-all hover:border-blue-300 hover:shadow-md active:scale-[0.98]"
     >
-      <div className={`text-2xl font-black ${accent ? 'text-yellow-400' : 'text-white'}`} dir="ltr">
+      <div className={`text-2xl font-black ${accent ? 'text-blue-600' : 'text-slate-900'}`} dir="ltr">
         {value}
       </div>
-      <div className="text-[11px] text-zinc-400 font-semibold mt-0.5">{label}</div>
-      {sub && <div className="text-[10px] text-zinc-500 mt-0.5" dir="ltr">{sub}</div>}
+      <div className="text-[11px] text-slate-500 font-semibold mt-0.5">{label}</div>
+      {sub && <div className="text-[10px] text-slate-400 mt-0.5" dir="ltr">{sub}</div>}
       {children}
     </button>
   )
@@ -70,9 +70,9 @@ export default function DashboardStats({ bookings, slots, onPendingClick, onToda
         label="תפוסה השבוע"
         onClick={onOccupancyClick}
       >
-        <div className="mt-1.5 h-1 rounded-full bg-zinc-700 overflow-hidden">
+        <div className="mt-1.5 h-1 rounded-full bg-slate-200 overflow-hidden">
           <div
-            className="h-full rounded-full bg-yellow-400 transition-all"
+            className="h-full rounded-full bg-blue-500 transition-all"
             style={{ width: capacity === 0 ? '0%' : `${Math.round((enrolled / capacity) * 100)}%` }}
           />
         </div>

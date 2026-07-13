@@ -43,7 +43,7 @@ export default function BookingsTab({ bookings, slots, filter, onFilterChange, o
   ]
 
   if (bookings.length === 0) {
-    return <p className="text-center text-zinc-500 py-10">אין בקשות רישום עדיין</p>
+    return <p className="text-center text-slate-400 py-10">אין בקשות רישום עדיין</p>
   }
 
   const renderCards = (list: Booking[]) => list.map((b) => (
@@ -62,7 +62,7 @@ export default function BookingsTab({ bookings, slots, filter, onFilterChange, o
           placeholder="חיפוש לפי שם או טלפון…"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="w-full bg-zinc-800/70 border border-zinc-700 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-yellow-400 transition-colors placeholder:text-zinc-500"
+          className="w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-slate-900 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-colors placeholder:text-slate-400"
         />
         <div className="flex gap-2">
           {chips.map((c) => (
@@ -70,7 +70,7 @@ export default function BookingsTab({ bookings, slots, filter, onFilterChange, o
               key={c.key}
               onClick={() => onFilterChange(c.key)}
               className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all ${
-                filter === c.key ? 'bg-yellow-400 text-black' : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-white'
+                filter === c.key ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-900'
               }`}
             >
               {c.label}
@@ -80,14 +80,14 @@ export default function BookingsTab({ bookings, slots, filter, onFilterChange, o
       </div>
 
       {filtered.length === 0 ? (
-        <p className="text-center text-zinc-500 py-10 text-sm">אין תוצאות ל&quot;{query}&quot;</p>
+        <p className="text-center text-slate-400 py-10 text-sm">אין תוצאות ל&quot;{query}&quot;</p>
       ) : visible ? (
         <div className="space-y-3">{renderCards(visible)}</div>
       ) : (
         <div className="space-y-6">
           {pending.length > 0 && (
             <div>
-              <h3 className="text-sm font-bold text-yellow-400 mb-3 uppercase tracking-wider">
+              <h3 className="text-sm font-bold text-blue-600 mb-3 uppercase tracking-wider">
                 ממתין לאישור ({pending.length})
               </h3>
               <div className="space-y-3">{renderCards(pending)}</div>
@@ -95,7 +95,7 @@ export default function BookingsTab({ bookings, slots, filter, onFilterChange, o
           )}
           {confirmed.length > 0 && (
             <div>
-              <h3 className="text-sm font-bold text-green-400 mb-3 uppercase tracking-wider">
+              <h3 className="text-sm font-bold text-green-600 mb-3 uppercase tracking-wider">
                 מאושר ({confirmed.length})
               </h3>
               <div className="space-y-3">{renderCards(confirmed)}</div>

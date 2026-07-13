@@ -23,32 +23,29 @@ export default function MathBackground() {
 
   return (
     <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none select-none" aria-hidden="true">
-      {/* Base color + grid texture */}
-      <div className="absolute inset-0 bg-[#1c2440] math-bg" />
+      {/* Whiteboard base + graph-paper grid texture */}
+      <div className="absolute inset-0 bg-[#fafbfc] math-bg" />
 
-      {/* Soft gold glow blobs — radial-gradient instead of filter:blur, which is expensive to
+      {/* Soft blue glow blobs — radial-gradient instead of filter:blur, which is expensive to
           rasterize on mobile GPUs at this size and can visibly delay first paint */}
       <div
         className="absolute -top-32 left-1/2 -translate-x-1/2 w-[700px] h-[500px]"
-        style={{ background: 'radial-gradient(closest-side, rgba(250,204,21,0.10), transparent 70%)' }}
+        style={{ background: 'radial-gradient(closest-side, rgba(37,99,235,0.07), transparent 70%)' }}
       />
       <div
         className="absolute top-1/2 -right-40 w-[500px] h-[500px]"
-        style={{ background: 'radial-gradient(closest-side, rgba(234,179,8,0.06), transparent 70%)' }}
+        style={{ background: 'radial-gradient(closest-side, rgba(59,130,246,0.05), transparent 70%)' }}
       />
       <div
         className="absolute bottom-0 -left-40 w-[500px] h-[500px]"
-        style={{ background: 'radial-gradient(closest-side, rgba(245,158,11,0.05), transparent 70%)' }}
+        style={{ background: 'radial-gradient(closest-side, rgba(37,99,235,0.04), transparent 70%)' }}
       />
 
-      {/* Subtle radial vignette to deepen edges */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_45%,rgba(0,0,0,0.3)_100%)]" />
-
-      {/* Floating math symbols */}
+      {/* Floating math symbols — faint blue marker strokes */}
       {symbols.map((s, i) => (
         <span
           key={i}
-          className={`absolute ${s.size} font-black text-yellow-400/[0.05] math-float`}
+          className={`absolute ${s.size} font-black text-blue-600/[0.14] math-float`}
           style={{ top: s.top, left: s.left, animationDelay: s.delay }}
         >
           {s.char}
@@ -59,7 +56,7 @@ export default function MathBackground() {
       {formulas.map((f, i) => (
         <span
           key={i}
-          className="absolute text-2xl font-mono font-semibold text-yellow-400/[0.04] math-float whitespace-nowrap"
+          className="absolute text-2xl font-mono font-semibold text-blue-600/[0.12] math-float whitespace-nowrap"
           style={{ top: f.top, left: f.left, animationDelay: f.delay }}
         >
           {f.text}

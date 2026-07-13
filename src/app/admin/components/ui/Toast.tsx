@@ -33,8 +33,8 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
           <div
             key={toast.id}
             role="status"
-            className={`toast-in bg-zinc-900 border border-zinc-700 rounded-full px-5 py-2.5 text-sm font-bold shadow-2xl ${
-              toast.type === 'success' ? 'text-green-400' : 'text-red-400'
+            className={`toast-in bg-white border border-slate-200 rounded-full px-5 py-2.5 text-sm font-bold shadow-xl ${
+              toast.type === 'success' ? 'text-green-600' : 'text-red-600'
             }`}
           >
             {toast.message}

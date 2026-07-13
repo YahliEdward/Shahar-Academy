@@ -7,7 +7,7 @@ const MINUTES = Array.from({ length: 12 }, (_, i) => i * 5)
 
 const colScrollStyle: React.CSSProperties = {
   scrollbarWidth: 'thin',
-  scrollbarColor: '#52525b transparent',
+  scrollbarColor: '#cbd5e1 transparent',
 }
 
 export default function TimePicker({
@@ -90,35 +90,35 @@ export default function TimePicker({
       <button
         type="button"
         onClick={toggleOpen}
-        className={`flex items-center bg-zinc-800 border rounded-lg px-3 py-1.5 text-sm outline-none transition-colors ${
+        className={`flex items-center bg-white border rounded-lg px-3 py-1.5 text-sm outline-none transition-colors ${
           open
-            ? 'border-yellow-400 ring-1 ring-yellow-400/20'
-            : 'border-zinc-700 hover:border-zinc-500'
+            ? 'border-blue-500 ring-1 ring-blue-500/20'
+            : 'border-slate-300 hover:border-slate-400'
         }`}
       >
-        <span className={`tabular-nums font-medium ${open ? 'text-yellow-400' : 'text-zinc-200'}`}>
+        <span className={`tabular-nums font-medium ${open ? 'text-blue-600' : 'text-slate-700'}`}>
           {pad(hh)}:{pad(mm)}
         </span>
       </button>
 
       {open && (
         <div
-          className="absolute top-full left-0 mt-1.5 bg-zinc-800 border border-zinc-600 rounded-xl shadow-xl shadow-black/40 overflow-hidden"
+          className="absolute top-full left-0 mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden"
           style={{ zIndex: 50 }}
         >
-          <div className="flex items-center justify-between text-[11px] text-zinc-400 border-b border-zinc-700 pr-1">
+          <div className="flex items-center justify-between text-[11px] text-slate-500 border-b border-slate-200 pr-1">
             <span className="w-14 py-1.5 text-center">שעה</span>
             <button
               type="button"
               onClick={() => setDetailed((d) => !d)}
               aria-label="ערוך דקות"
-              className={`p-1 rounded transition-colors ${detailed ? 'text-yellow-400' : 'text-zinc-500 hover:text-zinc-300'}`}
+              className={`p-1 rounded transition-colors ${detailed ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600'}`}
             >
               <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
                 <path d="M9.5 1.5 L12.5 4.5 L4.5 12.5 L1.5 12.5 L1.5 9.5 Z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" />
               </svg>
             </button>
-            {detailed && <span className="w-14 py-1.5 text-center border-l border-zinc-700">דקות</span>}
+            {detailed && <span className="w-14 py-1.5 text-center border-l border-slate-200">דקות</span>}
           </div>
           <div className="flex">
             <div ref={hourColRef} className="flex flex-col h-44 overflow-y-auto w-14 p-1" style={colScrollStyle}>
@@ -130,8 +130,8 @@ export default function TimePicker({
                   onClick={() => (detailed ? setHour(h) : pickWholeHour(h))}
                   className={`tabular-nums text-sm rounded-md px-2 py-1 text-center shrink-0 transition-colors ${
                     (detailed ? h === hh : h === hh && mm === 0)
-                      ? 'bg-yellow-400/15 text-yellow-400 font-medium'
-                      : 'text-zinc-300 hover:bg-zinc-700'
+                      ? 'bg-blue-50 text-blue-600 font-medium'
+                      : 'text-slate-600 hover:bg-slate-100'
                   }`}
                 >
                   {pad(h)}
@@ -139,7 +139,7 @@ export default function TimePicker({
               ))}
             </div>
             {detailed && (
-              <div ref={minuteColRef} className="flex flex-col h-44 overflow-y-auto w-14 p-1 border-l border-zinc-700" style={colScrollStyle}>
+              <div ref={minuteColRef} className="flex flex-col h-44 overflow-y-auto w-14 p-1 border-l border-slate-200" style={colScrollStyle}>
                 {MINUTES.map((m) => (
                   <button
                     key={m}
@@ -148,8 +148,8 @@ export default function TimePicker({
                     onClick={() => setMinute(m)}
                     className={`tabular-nums text-sm rounded-md px-2 py-1 text-center shrink-0 transition-colors ${
                       m === mm
-                        ? 'bg-yellow-400/15 text-yellow-400 font-medium'
-                        : 'text-zinc-300 hover:bg-zinc-700'
+                        ? 'bg-blue-50 text-blue-600 font-medium'
+                        : 'text-slate-600 hover:bg-slate-100'
                     }`}
                   >
                     {pad(m)}

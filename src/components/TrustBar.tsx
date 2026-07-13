@@ -43,7 +43,7 @@ export default function TrustBar({ stats = DEFAULT_STATS }: { stats?: Stat[] }) 
   }, { scope })
 
   return (
-    <section className="px-4 py-10 border-y border-white/5">
+    <section className="px-4 py-10 border-y border-slate-200">
       <div ref={scope} className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
         {stats.map((s, i) => (
           <div key={i}>
@@ -53,11 +53,11 @@ export default function TrustBar({ stats = DEFAULT_STATS }: { stats?: Stat[] }) 
               data-value={s.value}
               data-prefix={s.prefix ?? ''}
               data-suffix={s.suffix ?? ''}
-              className="text-3xl sm:text-4xl font-black text-yellow-400"
+              className="text-3xl sm:text-4xl font-black text-blue-600"
             >
               {s.prefix}{s.value}{s.suffix}
             </div>
-            <div className="text-xs sm:text-sm text-slate-400 mt-1">{s.label}</div>
+            <div className="text-xs sm:text-sm text-slate-500 mt-1">{s.label}</div>
           </div>
         ))}
       </div>

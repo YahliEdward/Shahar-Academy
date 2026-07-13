@@ -1,12 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --bg-primary: #1c2440;
-  --bg-card: #131827;
-  --gold: #facc15;
-  --gold-dark: #d97706;
-  --text-main: #f1f5f9;
-  --text-muted: #94a3b8;
+  --bg-primary: #fafbfc;
+  --text-main: #1e293b;
   --nav-height: 72px;
 }
 
@@ -20,7 +16,7 @@ html {
 
 @media (prefers-reduced-motion: reduce) {
   .math-float,
-  .pulse-gold,
+  .pulse-badge,
   .fade-in-up,
   .toast-in {
     animation: none !important;
@@ -38,11 +34,11 @@ body {
   font-family: 'Heebo', 'Assistant', sans-serif;
 }
 
-/* Math grid texture overlay */
+/* Whiteboard graph-paper texture overlay */
 .math-bg {
   background-image:
-    linear-gradient(rgba(250, 204, 21, 0.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(250, 204, 21, 0.025) 1px, transparent 1px);
+    linear-gradient(rgba(37, 99, 235, 0.12) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(37, 99, 235, 0.12) 1px, transparent 1px);
   background-size: 44px 44px;
 }
 
@@ -56,13 +52,13 @@ body {
   animation: math-float 12s ease-in-out infinite;
 }
 
-@keyframes pulse-gold {
+@keyframes pulse-badge {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.5; }
 }
 
-.pulse-gold {
-  animation: pulse-gold 1.4s ease-in-out infinite;
+.pulse-badge {
+  animation: pulse-badge 1.4s ease-in-out infinite;
 }
 
 @keyframes toast-in {

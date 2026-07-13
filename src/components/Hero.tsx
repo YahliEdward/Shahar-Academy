@@ -39,51 +39,51 @@ export default function Hero() {
             <Link href="/" aria-label="חזרה לדף הבית">
               <ShaharLogo size={60} className="drop-shadow-lg" />
             </Link>
-            <span className="text-2xl font-black text-white tracking-tight">
-              שחר <span className="text-yellow-400">מורה פרטי</span>
+            <span className="text-2xl font-black text-slate-900 tracking-tight">
+              שחר <span className="text-blue-600">מורה פרטי</span>
             </span>
           </div>
 
           <h1
-            className="hero-heading fade-in-up text-4xl sm:text-5xl md:text-6xl font-black leading-tight mb-6 text-white"
+            className="hero-heading fade-in-up text-4xl sm:text-5xl md:text-6xl font-black leading-tight mb-6 text-slate-900"
             style={{ animationDelay: '0.08s' }}
           >
             הדרך שלכם ל‑
-            <span className="text-yellow-400 relative">
+            <span className="text-blue-600 relative">
               5 יחידות
               <svg className="absolute bottom-1 right-0 w-full" viewBox="0 0 200 8" fill="none">
-                <path d="M0 6 Q100 0 200 6" stroke="#facc15" strokeWidth="2.5" strokeLinecap="round" />
+                <path d="M0 6 Q100 0 200 6" stroke="#2563eb" strokeWidth="2.5" strokeLinecap="round" />
               </svg>
             </span>{' '}
             מתחילה כאן
           </h1>
 
           <p
-            className="hero-tagline fade-in-up text-lg text-slate-300 mb-4 leading-relaxed max-w-lg"
+            className="hero-tagline fade-in-up text-lg text-slate-700 mb-4 leading-relaxed max-w-lg"
             style={{ animationDelay: '0.14s' }}
           >
-            קבוצות למידה קטנות ואישיות בבית שחר — עד <strong className="text-yellow-400">6 תלמידים בלבד</strong> לכל קבוצה.
+            קבוצות למידה קטנות ואישיות בבית שחר — עד <strong className="text-blue-600">6 תלמידים בלבד</strong> לכל קבוצה.
             תשומת לב מקסימלית, תוצאות אמיתיות.
           </p>
 
           <div
-            className="hero-badges fade-in-up flex flex-wrap justify-center lg:justify-start gap-4 mb-10 text-sm text-slate-400"
+            className="hero-badges fade-in-up flex flex-wrap justify-center lg:justify-start gap-4 mb-10 text-sm text-slate-500"
             style={{ animationDelay: '0.2s' }}
           >
             <span className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-green-400 inline-block" />
+              <span className="w-2 h-2 rounded-full bg-green-500 inline-block" />
               חטיבת ביניים
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-yellow-400 inline-block" />
+              <span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />
               תיכון 4 יח&apos;
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-purple-400 inline-block" />
+              <span className="w-2 h-2 rounded-full bg-purple-500 inline-block" />
               תיכון 5 יח&apos;
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-blue-400 inline-block" />
+              <span className="w-2 h-2 rounded-full bg-blue-500 inline-block" />
               קבוצות מעורבות
             </span>
           </div>
@@ -94,14 +94,14 @@ export default function Hero() {
           >
             <Link
               href="/schedule"
-              className="flex-1 sm:flex-none whitespace-nowrap px-4 sm:px-8 py-4 bg-yellow-400 text-black font-black text-lg rounded-xl hover:bg-yellow-300 transition-all shadow-lg shadow-yellow-400/20 hover:shadow-yellow-400/40 hover:-translate-y-0.5 text-center"
+              className="flex-1 sm:flex-none whitespace-nowrap px-4 sm:px-8 py-4 bg-blue-600 text-white font-black text-lg rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 hover:shadow-blue-600/30 hover:-translate-y-0.5 text-center"
             >
               בחרו שעה עכשיו ←
             </Link>
             <div ref={contactRef} className="relative flex-1 sm:flex-none">
               <button
                 onClick={() => setContactOpen(o => !o)}
-                className="w-full sm:w-auto justify-center whitespace-nowrap px-4 sm:px-8 py-4 border border-white/20 text-white font-bold text-lg rounded-xl hover:bg-white/5 transition-all flex items-center gap-1.5"
+                className="w-full sm:w-auto justify-center whitespace-nowrap px-4 sm:px-8 py-4 border border-slate-300 text-slate-700 font-bold text-lg rounded-xl hover:bg-slate-100 transition-all flex items-center gap-1.5"
               >
                 יצירת קשר
                 <svg className={`w-3.5 h-3.5 transition-transform ${contactOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -110,10 +110,10 @@ export default function Hero() {
               </button>
 
               {contactOpen && (
-                <div className="absolute top-full mt-2 right-0 bg-slate-800 border border-white/10 rounded-xl overflow-hidden shadow-xl z-50 min-w-full">
+                <div className="absolute top-full mt-2 right-0 bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xl z-50 min-w-full">
                   <a
                     href={`tel:${PHONE}`}
-                    className="flex items-center gap-3 px-5 py-3 text-white hover:bg-white/10 transition-colors text-base font-semibold"
+                    className="flex items-center gap-3 px-5 py-3 text-slate-700 hover:bg-slate-100 transition-colors text-base font-semibold"
                     onClick={() => setContactOpen(false)}
                   >
                     📞 שיחה
@@ -122,7 +122,7 @@ export default function Hero() {
                     href={WHATSAPP_URL}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-3 px-5 py-3 text-white hover:bg-white/10 transition-colors text-base font-semibold border-t border-white/10"
+                    className="flex items-center gap-3 px-5 py-3 text-slate-700 hover:bg-slate-100 transition-colors text-base font-semibold border-t border-slate-200"
                     onClick={() => setContactOpen(false)}
                   >
                     <svg viewBox="0 0 24 24" className="w-5 h-5 fill-[#25D366] shrink-0" xmlns="http://www.w3.org/2000/svg">
@@ -142,7 +142,7 @@ export default function Hero() {
       </div>
 
       {/* Scroll indicator */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 text-slate-500 text-xs">
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 text-slate-400 text-xs">
         <span>גללו להכיר אותנו</span>
         <svg className="w-4 h-4 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />

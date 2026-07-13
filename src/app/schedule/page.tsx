@@ -17,7 +17,7 @@ export default function SchedulePage() {
         <div className="max-w-6xl mx-auto px-4 pt-4">
           <Link
             href="/"
-            className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-400 hover:text-yellow-400 transition-colors"
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-blue-600 transition-colors"
           >
             <span aria-hidden>→</span> חזרה לדף הבית
           </Link>

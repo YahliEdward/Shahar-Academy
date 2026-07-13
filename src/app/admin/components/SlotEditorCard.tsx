@@ -18,23 +18,23 @@ export default function SlotEditorCard({ slot, students, showStudents, canRemove
   onShowStudents: () => void
 }) {
   return (
-    <div className={`rounded-xl border p-4 ${GROUP_COLORS[slot.groupType]}`}>
+    <div className={`rounded-xl border p-4 shadow-sm ${GROUP_COLORS[slot.groupType]}`}>
       {showStudents && (
         <div
           role="button"
           tabIndex={0}
           onClick={onShowStudents}
           onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onShowStudents() }}
-          className="mb-3 pb-3 border-b border-white/10 cursor-pointer rounded-lg -mx-1 px-1 hover:bg-white/5 transition-colors"
+          className="mb-3 pb-3 border-b border-slate-900/10 cursor-pointer rounded-lg -mx-1 px-1 hover:bg-slate-900/5 transition-colors"
         >
           {students.length > 0 ? (
             <>
-              <p className="text-xs text-zinc-400 mb-1.5">תלמידים רשומים (לחצו לפרטים):</p>
+              <p className="text-xs text-slate-500 mb-1.5">תלמידים רשומים (לחצו לפרטים):</p>
               <div className="flex flex-wrap gap-1">
                 {students.map((b) => (
                   <span
                     key={b.id}
-                    className={`text-xs rounded px-2 py-0.5 ${b.status === 'confirmed' ? 'bg-green-900/50 text-green-300 border border-green-700/40' : 'bg-zinc-700 text-zinc-200'}`}
+                    className={`text-xs rounded px-2 py-0.5 ${b.status === 'confirmed' ? 'bg-green-50 text-green-700 border border-green-300' : 'bg-white text-slate-600 border border-slate-300'}`}
                   >
                     {b.studentName}
                   </span>
@@ -42,7 +42,7 @@ export default function SlotEditorCard({ slot, students, showStudents, canRemove
               </div>
             </>
           ) : (
-            <p className="text-xs text-zinc-500">אין תלמידים עדיין — לחצו להוספה</p>
+            <p className="text-xs text-slate-400">אין תלמידים עדיין — לחצו להוספה</p>
           )}
         </div>
       )}
@@ -50,14 +50,14 @@ export default function SlotEditorCard({ slot, students, showStudents, canRemove
         {/* Time inputs */}
         <div className="flex items-center gap-2 text-sm" style={{ direction: 'ltr' }}>
           <TimePicker value={slot.time} onChange={(v) => onTimeChange('time', v)} />
-          <span className="text-zinc-500">–</span>
+          <span className="text-slate-400">–</span>
           <TimePicker value={slot.endTime} onChange={(v) => onTimeChange('endTime', v)} />
         </div>
 
         <select
           value={slot.groupType}
           onChange={(e) => onGroupChange(e.target.value as GroupType)}
-          className="bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-1.5 text-white text-sm outline-none focus:border-yellow-400 transition-colors"
+          className="bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-slate-900 text-sm outline-none focus:border-blue-500 transition-colors"
         >
           {GROUP_OPTIONS.map((g) => (
             <option key={g} value={g}>{GROUP_LABELS[g]}</option>
@@ -69,16 +69,16 @@ export default function SlotEditorCard({ slot, students, showStudents, canRemove
             <button
               onClick={() => onAdjustEnrolled(-1)}
               disabled={slot.enrolled <= 0}
-              className="w-8 h-8 rounded-lg bg-zinc-700 hover:bg-zinc-600 disabled:opacity-30 text-white font-bold transition-colors text-lg"
+              className="w-8 h-8 rounded-lg bg-white border border-slate-300 hover:bg-slate-100 disabled:opacity-30 text-slate-700 font-bold transition-colors text-lg"
             >
               −
             </button>
           )}
           <div className="text-center min-w-[70px]">
-            <div className="text-white font-black text-lg">{slot.enrolled}/{MAX_STUDENTS}</div>
+            <div className="text-slate-900 font-black text-lg">{slot.enrolled}/{MAX_STUDENTS}</div>
             <div className="flex gap-0.5 mt-1">
               {Array.from({ length: MAX_STUDENTS }).map((_, i) => (
-                <div key={i} className={`h-1 flex-1 rounded-full ${i < slot.enrolled ? 'bg-yellow-400' : 'bg-zinc-600'}`} />
+                <div key={i} className={`h-1 flex-1 rounded-full ${i < slot.enrolled ? 'bg-blue-500' : 'bg-slate-300'}`} />
               ))}
             </div>
           </div>
@@ -86,7 +86,7 @@ export default function SlotEditorCard({ slot, students, showStudents, canRemove
             <button
               onClick={() => onAdjustEnrolled(1)}
               disabled={slot.enrolled >= MAX_STUDENTS}
-              className="w-8 h-8 rounded-lg bg-yellow-400 hover:bg-yellow-300 disabled:opacity-30 text-black font-bold transition-colors text-lg"
+              className="w-8 h-8 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-30 text-white font-bold transition-colors text-lg"
             >
               +
             </button>
@@ -96,7 +96,7 @@ export default function SlotEditorCard({ slot, students, showStudents, canRemove
             <button
               onClick={onRemove}
               title="הסר שעה"
-              className="w-8 h-8 rounded-lg bg-red-900/40 hover:bg-red-800/60 text-red-400 font-bold transition-colors text-sm border border-red-800/40"
+              className="w-8 h-8 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 font-bold transition-colors text-sm border border-red-200"
             >
               ×
             </button>

@@ -68,19 +68,19 @@ export const GROUP_LABELS: Record<GroupType, string> = {
 // Compact chip/badge styling per group type (used on the public schedule and
 // in the admin dashboard).
 export const GROUP_BADGE: Record<GroupType, string> = {
-  'middle-school': 'bg-blue-500/20 text-blue-300 border border-blue-500/30',
-  'high-4': 'bg-purple-500/20 text-purple-300 border border-purple-500/30',
-  'high-5': 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30',
-  'mixed': 'bg-green-500/20 text-green-300 border border-green-500/30',
-  'empty': 'bg-zinc-700/20 text-zinc-400 border border-zinc-600/30',
+  'middle-school': 'bg-blue-50 text-blue-700 border border-blue-200',
+  'high-4': 'bg-purple-50 text-purple-700 border border-purple-200',
+  'high-5': 'bg-amber-50 text-amber-700 border border-amber-200',
+  'mixed': 'bg-green-50 text-green-700 border border-green-200',
+  'empty': 'bg-slate-50 text-slate-400 border border-slate-200',
 }
 
 export const GROUP_COLORS: Record<GroupType, string> = {
-  'middle-school': 'bg-blue-900/40 border-blue-500/40',
-  'high-4': 'bg-purple-900/40 border-purple-500/40',
-  'high-5': 'bg-yellow-900/40 border-yellow-500/40',
-  'mixed': 'bg-green-900/40 border-green-500/40',
-  'empty': 'bg-zinc-800/40 border-zinc-600/40',
+  'middle-school': 'bg-blue-50 border-blue-300',
+  'high-4': 'bg-purple-50 border-purple-300',
+  'high-5': 'bg-amber-50 border-amber-300',
+  'mixed': 'bg-green-50 border-green-300',
+  'empty': 'bg-white border-slate-200',
 }
 
 // ─── Week utilities ───────────────────────────────────────────────────────────

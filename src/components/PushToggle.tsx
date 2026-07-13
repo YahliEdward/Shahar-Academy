@@ -86,8 +86,8 @@ export default function PushToggle() {
 
   if (state === 'needs-install') {
     return (
-      <div className="mb-6 bg-zinc-900 border border-zinc-700/50 rounded-xl p-4 text-sm text-zinc-400 leading-relaxed">
-        <span className="font-bold text-white">🔔 רוצים התראות על הרשמות חדשות?</span>{' '}
+      <div className="mb-6 bg-white border border-slate-200 rounded-xl p-4 text-sm text-slate-500 leading-relaxed shadow-sm">
+        <span className="font-bold text-slate-900">🔔 רוצים התראות על הרשמות חדשות?</span>{' '}
         הוסיפו את האתר למסך הבית: לחצו על כפתור השיתוף בספארי ← &quot;הוספה למסך הבית&quot;,
         ואז פתחו את האפליקציה והפעילו כאן את ההתראות.
       </div>
@@ -96,7 +96,7 @@ export default function PushToggle() {
 
   if (state === 'denied') {
     return (
-      <div className="mb-6 bg-zinc-900 border border-zinc-700/50 rounded-xl p-4 text-sm text-zinc-400">
+      <div className="mb-6 bg-white border border-slate-200 rounded-xl p-4 text-sm text-slate-500 shadow-sm">
         🔕 ההתראות חסומות במכשיר הזה — אפשרו התראות לאתר בהגדרות ורעננו את הדף.
       </div>
     )
@@ -104,14 +104,14 @@ export default function PushToggle() {
 
   if (state === 'off') {
     return (
-      <div className="mb-6 bg-yellow-400/10 border border-yellow-400/30 rounded-xl p-4 flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-yellow-100 font-bold">🔔 קבלו התראה לנייד על כל הרשמה חדשה</p>
+      <div className="mb-6 bg-blue-50 border border-blue-200 rounded-xl p-4 flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-blue-800 font-bold">🔔 קבלו התראה לנייד על כל הרשמה חדשה</p>
         <div className="flex items-center gap-3">
-          {error && <span className="text-xs text-red-400">{error}</span>}
+          {error && <span className="text-xs text-red-600">{error}</span>}
           <button
             onClick={enable}
             disabled={busy}
-            className="px-4 py-2 bg-yellow-400 text-black text-sm font-black rounded-lg hover:bg-yellow-300 transition-colors disabled:opacity-60"
+            className="px-4 py-2 bg-blue-600 text-white text-sm font-black rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-60"
           >
             {busy ? 'מפעיל…' : 'הפעל התראות'}
           </button>
@@ -121,14 +121,14 @@ export default function PushToggle() {
   }
 
   return (
-    <div className="mb-6 flex items-center justify-between text-xs text-zinc-500 px-1">
+    <div className="mb-6 flex items-center justify-between text-xs text-slate-400 px-1">
       <span>🔔 התראות על הרשמות חדשות פעילות במכשיר הזה</span>
       <div className="flex items-center gap-3">
-        {error && <span className="text-red-400">{error}</span>}
+        {error && <span className="text-red-600">{error}</span>}
         <button
           onClick={disable}
           disabled={busy}
-          className="text-zinc-600 hover:text-zinc-300 transition-colors disabled:opacity-60"
+          className="text-slate-400 hover:text-slate-600 transition-colors disabled:opacity-60"
         >
           {busy ? 'מכבה…' : 'כבה'}
         </button>

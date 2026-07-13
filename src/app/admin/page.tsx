@@ -65,7 +65,7 @@ export default function AdminPage() {
   if (authed === null) {
     return (
       <div className="min-h-screen flex items-center justify-center math-bg">
-        <p className="text-zinc-500 text-sm">טוען…</p>
+        <p className="text-slate-400 text-sm">טוען…</p>
       </div>
     )
   }
@@ -120,7 +120,7 @@ export default function AdminPage() {
               <button
                 onClick={() => setTab('bookings')}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${
-                  tab === 'bookings' ? 'bg-yellow-400 text-black' : 'bg-zinc-800 text-slate-400 hover:bg-zinc-700'
+                  tab === 'bookings' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
                 }`}
               >
                 בקשות רישום
@@ -133,7 +133,7 @@ export default function AdminPage() {
               <button
                 onClick={() => setTab('schedule')}
                 className={`px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${
-                  tab === 'schedule' ? 'bg-yellow-400 text-black' : 'bg-zinc-800 text-slate-400 hover:bg-zinc-700'
+                  tab === 'schedule' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
                 }`}
               >
                 ניהול לוח שעות

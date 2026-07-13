@@ -14,7 +14,7 @@ const GRADE_OPTIONS = [
 
 const GROUP_OPTIONS: GroupType[] = ['middle-school', 'high-4', 'high-5', 'mixed']
 
-const inputClass = 'w-full bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-yellow-400 transition-colors'
+const inputClass = 'w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-slate-900 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-colors'
 
 type StudentDraft = {
   studentName: string
@@ -181,7 +181,7 @@ export default function StudentsModal({ slot, weekKey, date, standing = false, b
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm"
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
       <div
@@ -190,22 +190,22 @@ export default function StudentsModal({ slot, weekKey, date, standing = false, b
         aria-modal="true"
         aria-label="תלמידים רשומים"
         tabIndex={-1}
-        className="w-full max-w-md max-h-[85vh] overflow-y-auto bg-[#131827] rounded-2xl border border-zinc-700/50 shadow-2xl outline-none"
+        className="w-full max-w-md max-h-[85vh] overflow-y-auto bg-white rounded-2xl border border-slate-200 shadow-2xl outline-none"
       >
-        <div className="bg-zinc-800/60 px-5 py-4 flex items-center justify-between border-b border-zinc-700/50 sticky top-0">
+        <div className="bg-slate-50 px-5 py-4 flex items-center justify-between border-b border-slate-200 sticky top-0">
           <div>
-            <h3 className="font-black text-white text-lg">תלמידים רשומים</h3>
-            <p className="text-sm text-zinc-400 mt-0.5">
+            <h3 className="font-black text-slate-900 text-lg">תלמידים רשומים</h3>
+            <p className="text-sm text-slate-500 mt-0.5">
               יום {dayLabel(slot.day)}{date ? ` ${formatShortDate(date)}` : ''} | <span dir="ltr">{slot.time}–{slot.endTime}</span> | {GROUP_LABELS[slot.groupType]}
             </p>
             {standing && (
-              <p className="text-xs text-yellow-300/80 mt-1">🔁 תלמידים קבועים — יופיעו אוטומטית בכל שבוע עד שיוסרו</p>
+              <p className="text-xs text-blue-700 mt-1">🔁 תלמידים קבועים — יופיעו אוטומטית בכל שבוע עד שיוסרו</p>
             )}
           </div>
           <button
             onClick={onClose}
             aria-label="סגירה"
-            className="w-8 h-8 rounded-lg bg-zinc-700 hover:bg-zinc-600 flex items-center justify-center text-zinc-300 text-lg transition-colors"
+            className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 text-lg transition-colors"
           >
             ×
           </button>
@@ -213,13 +213,13 @@ export default function StudentsModal({ slot, weekKey, date, standing = false, b
 
         <div className="p-5 space-y-3">
           {students.length === 0 && !adding && (
-            <p className="text-center text-zinc-500 py-8 text-sm">אין תלמידים רשומים עדיין</p>
+            <p className="text-center text-slate-400 py-8 text-sm">אין תלמידים רשומים עדיין</p>
           )}
 
           {students.map((b) => (
             <div
               key={b.id}
-              className={`rounded-xl border p-4 ${b.status === 'confirmed' ? 'border-green-500/30 bg-green-900/10' : 'border-zinc-700/50 bg-zinc-800/40'}`}
+              className={`rounded-xl border p-4 ${b.status === 'confirmed' ? 'border-green-300 bg-green-50/60' : 'border-slate-200 bg-slate-50'}`}
             >
               {editingId === b.id && editDraft ? (
                 <div className="space-y-2.5">
@@ -272,14 +272,14 @@ export default function StudentsModal({ slot, weekKey, date, standing = false, b
                     <button
                       onClick={() => saveEdit(b.id)}
                       disabled={editLoading}
-                      className="flex-1 py-2 bg-yellow-400 hover:bg-yellow-300 disabled:opacity-60 text-black font-bold rounded-lg text-sm transition-colors"
+                      className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-bold rounded-lg text-sm transition-colors"
                     >
                       {editLoading ? 'שומר…' : 'שמור'}
                     </button>
                     <button
                       onClick={cancelEdit}
                       disabled={editLoading}
-                      className="flex-1 py-2 bg-zinc-700 hover:bg-zinc-600 text-zinc-200 font-semibold rounded-lg text-sm transition-colors"
+                      className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg text-sm transition-colors"
                     >
                       בטול
                     </button>
@@ -289,9 +289,9 @@ export default function StudentsModal({ slot, weekKey, date, standing = false, b
                 <>
                   <div className="flex items-start justify-between gap-3 flex-wrap">
                     <div>
-                      <div className="font-bold text-white">{b.studentName}</div>
-                      <div className="text-xs text-zinc-400">{b.grade || 'כיתה לא צוינה'} | {GROUP_LABELS[b.groupPreference]}</div>
-                      <span className={`inline-block mt-1 text-xs rounded px-2 py-0.5 ${b.status === 'confirmed' ? 'bg-green-900/50 text-green-300 border border-green-700/40' : 'bg-zinc-700 text-zinc-200'}`}>
+                      <div className="font-bold text-slate-900">{b.studentName}</div>
+                      <div className="text-xs text-slate-500">{b.grade || 'כיתה לא צוינה'} | {GROUP_LABELS[b.groupPreference]}</div>
+                      <span className={`inline-block mt-1 text-xs rounded px-2 py-0.5 ${b.status === 'confirmed' ? 'bg-green-50 text-green-700 border border-green-300' : 'bg-white text-slate-600 border border-slate-300'}`}>
                         {b.status === 'confirmed' ? 'מאושר' : 'ממתין לאישור'}
                       </span>
                     </div>
@@ -299,7 +299,7 @@ export default function StudentsModal({ slot, weekKey, date, standing = false, b
                       <div className="flex gap-2 flex-wrap">
                         <a
                           href={`tel:${b.phone}`}
-                          className="min-h-10 px-3 inline-flex items-center bg-zinc-700 hover:bg-zinc-600 rounded-lg text-xs font-semibold text-white transition-colors"
+                          className="min-h-10 px-3 inline-flex items-center bg-slate-100 hover:bg-slate-200 rounded-lg text-xs font-semibold text-slate-700 transition-colors"
                           dir="ltr"
                         >
                           📞 {b.phone}
@@ -308,7 +308,7 @@ export default function StudentsModal({ slot, weekKey, date, standing = false, b
                           href={whatsappUrl(b.phone, b.studentName)}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="min-h-10 px-3 inline-flex items-center bg-green-700 hover:bg-green-600 rounded-lg text-xs font-semibold text-white transition-colors"
+                          className="min-h-10 px-3 inline-flex items-center bg-green-600 hover:bg-green-700 rounded-lg text-xs font-semibold text-white transition-colors"
                         >
                           וואטסאפ
                         </a>
@@ -316,20 +316,20 @@ export default function StudentsModal({ slot, weekKey, date, standing = false, b
                     )}
                   </div>
                   {b.price && (
-                    <div className="text-xs text-zinc-400 mt-2">מחיר: {b.price}</div>
+                    <div className="text-xs text-slate-500 mt-2">מחיר: {b.price}</div>
                   )}
-                  <div className="text-xs text-zinc-600 mt-2 flex items-center justify-between gap-3 flex-wrap">
+                  <div className="text-xs text-slate-400 mt-2 flex items-center justify-between gap-3 flex-wrap">
                     <span>הורה: {b.parentName || 'לא צוין'} | נשלח: {new Date(b.createdAt).toLocaleString('he-IL')}</span>
                     <div className="flex gap-2">
                       <button
                         onClick={() => startEdit(b)}
-                        className="px-3 py-1.5 bg-zinc-700 hover:bg-zinc-600 text-zinc-200 rounded-lg text-xs transition-colors border border-zinc-600/60"
+                        className="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 rounded-lg text-xs transition-colors border border-slate-300"
                       >
                         ערוך
                       </button>
                       <button
                         onClick={() => remove(b)}
-                        className="px-3 py-1.5 bg-red-900/40 hover:bg-red-800/60 text-red-400 rounded-lg text-xs transition-colors border border-red-800/40"
+                        className="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-xs transition-colors border border-red-200"
                       >
                         הסר תלמיד
                       </button>
@@ -341,8 +341,8 @@ export default function StudentsModal({ slot, weekKey, date, standing = false, b
           ))}
 
           {adding ? (
-            <div className="rounded-xl border border-yellow-400/30 bg-yellow-400/5 p-4 space-y-2.5">
-              <p className="text-sm font-bold text-yellow-200 mb-1">הוספת תלמיד</p>
+            <div className="rounded-xl border border-blue-200 bg-blue-50/50 p-4 space-y-2.5">
+              <p className="text-sm font-bold text-blue-800 mb-1">הוספת תלמיד</p>
               <Field label="שם התלמיד" error={addError.studentName}>
                 <input
                   className={inputClass}
@@ -394,14 +394,14 @@ export default function StudentsModal({ slot, weekKey, date, standing = false, b
                 <button
                   onClick={submitAdd}
                   disabled={addLoading}
-                  className="flex-1 py-2 bg-yellow-400 hover:bg-yellow-300 disabled:opacity-60 text-black font-bold rounded-lg text-sm transition-colors"
+                  className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-bold rounded-lg text-sm transition-colors"
                 >
                   {addLoading ? 'מוסיף…' : 'הוסף תלמיד'}
                 </button>
                 <button
                   onClick={() => { setAdding(false); setAddError({}) }}
                   disabled={addLoading}
-                  className="flex-1 py-2 bg-zinc-700 hover:bg-zinc-600 text-zinc-200 font-semibold rounded-lg text-sm transition-colors"
+                  className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg text-sm transition-colors"
                 >
                   בטול
                 </button>
@@ -410,7 +410,7 @@ export default function StudentsModal({ slot, weekKey, date, standing = false, b
           ) : (
             <button
               onClick={() => setAdding(true)}
-              className="w-full py-2.5 rounded-xl border border-dashed border-zinc-600 text-zinc-400 hover:border-yellow-400/50 hover:text-yellow-400 transition-all text-sm font-semibold"
+              className="w-full py-2.5 rounded-xl border border-dashed border-slate-300 text-slate-500 hover:border-blue-400 hover:text-blue-600 transition-all text-sm font-semibold"
             >
               + הוסף תלמיד
             </button>
@@ -424,9 +424,9 @@ export default function StudentsModal({ slot, weekKey, date, standing = false, b
 function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-xs font-semibold text-zinc-400 mb-1">{label}</label>
+      <label className="block text-xs font-semibold text-slate-500 mb-1">{label}</label>
       {children}
-      {error && <p className="text-xs text-red-400 mt-1">{error}</p>}
+      {error && <p className="text-xs text-red-600 mt-1">{error}</p>}
     </div>
   )
 }

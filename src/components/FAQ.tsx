@@ -55,16 +55,16 @@ function FaqItem({
   }, [isOpen])
 
   return (
-    <div className="border border-zinc-700/50 rounded-xl bg-zinc-800/40 overflow-hidden">
+    <div className="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden">
       <button
         onClick={onToggle}
         className="w-full flex items-center justify-between gap-4 px-5 py-4 text-right"
         aria-expanded={isOpen}
       >
-        <span className="font-bold text-white">{q}</span>
+        <span className="font-bold text-slate-900">{q}</span>
         <svg
           ref={chevronRef}
-          className="w-5 h-5 text-yellow-400 shrink-0"
+          className="w-5 h-5 text-blue-600 shrink-0"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -74,7 +74,7 @@ function FaqItem({
       </button>
       <div className={`faq-answer-wrap ${isOpen ? 'is-open' : ''}`}>
         <div className="faq-answer-inner">
-          <div ref={answerRef} className="px-5 pb-4 text-sm text-slate-400 leading-relaxed">
+          <div ref={answerRef} className="px-5 pb-4 text-sm text-slate-600 leading-relaxed">
             {a}
           </div>
         </div>
@@ -89,8 +89,8 @@ export default function FAQ() {
   return (
     <section id="faq" className="py-16 px-4 max-w-3xl mx-auto">
       <div className="text-center mb-10">
-        <h2 className="text-3xl font-black text-white mb-2">שאלות נפוצות</h2>
-        <p className="text-slate-400">כל מה שהורים ותלמידים שואלים לפני שמתחילים</p>
+        <h2 className="text-3xl font-black text-slate-900 mb-2">שאלות נפוצות</h2>
+        <p className="text-slate-500">כל מה שהורים ותלמידים שואלים לפני שמתחילים</p>
       </div>
 
       <div className="space-y-3">

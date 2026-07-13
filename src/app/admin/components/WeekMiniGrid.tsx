@@ -35,20 +35,20 @@ export default function WeekMiniGrid({ slots, activeDay, onSelectDay, onAddMotza
         onClick={() => onSelectDay(i)}
         className={`rounded-xl p-2 border transition-all text-center ${
           isActive
-            ? 'bg-zinc-800 border-transparent ring-2 ring-yellow-400'
-            : 'bg-zinc-800/40 border-zinc-700/40 hover:bg-zinc-800 hover:border-zinc-600'
+            ? 'bg-white border-transparent ring-2 ring-blue-500 shadow-sm'
+            : 'bg-white border-slate-200 hover:bg-slate-50 hover:border-slate-300'
         }`}
       >
-        <div className={`text-xs font-bold flex items-center justify-center gap-1 ${isActive ? 'text-white' : 'text-zinc-400'}`}>
+        <div className={`text-xs font-bold flex items-center justify-center gap-1 ${isActive ? 'text-slate-900' : 'text-slate-500'}`}>
           {dayLabel(i)}
-          {isToday && <span className="w-1.5 h-1.5 rounded-full bg-yellow-400" aria-label="היום" />}
+          {isToday && <span className="w-1.5 h-1.5 rounded-full bg-blue-600" aria-label="היום" />}
         </div>
         {mode === 'week' && (
-          <div className="text-[10px] text-zinc-500 mt-0.5">{formatShortDate(weekDates[i])}</div>
+          <div className="text-[10px] text-slate-400 mt-0.5">{formatShortDate(weekDates[i])}</div>
         )}
         <div className="mt-1.5 space-y-1 min-h-6">
           {daySlots.length === 0 ? (
-            <div className="h-1.5 rounded-full border border-dashed border-zinc-700" />
+            <div className="h-1.5 rounded-full border border-dashed border-slate-300" />
           ) : (
             <>
               {daySlots.slice(0, MAX_BARS).map((s) => {
@@ -57,12 +57,12 @@ export default function WeekMiniGrid({ slots, activeDay, onSelectDay, onAddMotza
                 return (
                   <div key={s.id} className="flex items-center gap-0.5">
                     <div className={`h-1.5 flex-1 rounded-full border ${GROUP_COLORS[s.groupType]}`} />
-                    {hasStudents && <span className="w-1.5 h-1.5 rounded-full bg-white/70 flex-shrink-0" />}
+                    {hasStudents && <span className="w-1.5 h-1.5 rounded-full bg-blue-500/70 flex-shrink-0" />}
                   </div>
                 )
               })}
               {daySlots.length > MAX_BARS && (
-                <div className="text-[10px] text-zinc-500 leading-none">+{daySlots.length - MAX_BARS}</div>
+                <div className="text-[10px] text-slate-400 leading-none">+{daySlots.length - MAX_BARS}</div>
               )}
             </>
           )}
@@ -79,7 +79,7 @@ export default function WeekMiniGrid({ slots, activeDay, onSelectDay, onAddMotza
       ) : (
         <button
           onClick={onAddMotzash}
-          className="rounded-xl p-2 border border-dashed border-zinc-700 text-zinc-500 hover:border-yellow-400/50 hover:text-yellow-400 transition-all flex flex-col items-center justify-center gap-1"
+          className="rounded-xl p-2 border border-dashed border-slate-300 text-slate-400 hover:border-blue-400 hover:text-blue-600 transition-all flex flex-col items-center justify-center gap-1"
         >
           <span className="text-xs font-bold">+ מוצ״ש</span>
         </button>

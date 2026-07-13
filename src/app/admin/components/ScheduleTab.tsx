@@ -176,7 +176,7 @@ export default function ScheduleTab({ bookings, onChanged, defaultMode = 'defaul
   return (
     <div>
       {/* Mode segmented control */}
-      <div className="flex gap-2 mb-4 bg-zinc-800/50 p-1 rounded-xl">
+      <div className="flex gap-2 mb-4 bg-slate-100 p-1 rounded-xl">
         {([
           { key: 'default', label: 'לוח קבוע', sub: 'חל על כל שבוע' },
           { key: 'week', label: 'שבוע ספציפי', sub: 'חריגה חד-פעמית' },
@@ -185,18 +185,18 @@ export default function ScheduleTab({ bookings, onChanged, defaultMode = 'defaul
             key={opt.key}
             onClick={() => setMode(opt.key)}
             className={`flex-1 px-4 py-2 rounded-lg transition-all ${
-              mode === opt.key ? 'bg-yellow-400 text-black' : 'text-slate-400 hover:text-white'
+              mode === opt.key ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-900'
             }`}
           >
             <div className="font-bold text-sm">{opt.label}</div>
-            <div className={`text-[10px] ${mode === opt.key ? 'text-black/60' : 'text-zinc-600'}`}>{opt.sub}</div>
+            <div className={`text-[10px] ${mode === opt.key ? 'text-white/80' : 'text-slate-400'}`}>{opt.sub}</div>
           </button>
         ))}
       </div>
 
       {/* Context banner */}
       {mode === 'default' ? (
-        <div className="mb-4 rounded-xl bg-yellow-400/10 border border-yellow-400/30 px-4 py-2.5 text-xs text-yellow-200">
+        <div className="mb-4 rounded-xl bg-blue-50 border border-blue-200 px-4 py-2.5 text-xs text-blue-800">
           שינויים כאן חלים אוטומטית על כל שבוע שלא שונה ידנית. תלמיד שנוסיף לשעה כאן הוא תלמיד קבוע — הוא יופיע אוטומטית בכל שבוע (השבוע הנוכחי וקדימה), עד שיוסר.
         </div>
       ) : (
@@ -206,34 +206,34 @@ export default function ScheduleTab({ bookings, onChanged, defaultMode = 'defaul
             <button
               onClick={() => setWeekOffset((w) => Math.max(0, w - 1))}
               disabled={weekOffset === 0}
-              className="w-9 h-9 rounded-lg bg-zinc-800 text-slate-400 hover:bg-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all font-bold flex items-center justify-center"
+              className="w-9 h-9 rounded-lg bg-slate-100 text-slate-500 hover:bg-slate-200 disabled:opacity-30 disabled:cursor-not-allowed transition-all font-bold flex items-center justify-center"
             >
               →
             </button>
-            <span className="text-sm font-semibold text-slate-300 flex-1 text-center">
+            <span className="text-sm font-semibold text-slate-700 flex-1 text-center">
               {weekOffset === 0 ? 'שבוע נוכחי' : 'שבוע'} (<span dir="ltr">{weekRange}</span>)
             </span>
             <button
               onClick={() => setWeekOffset((w) => Math.min(MAX_WEEK_OFFSET, w + 1))}
               disabled={weekOffset === MAX_WEEK_OFFSET}
-              className="w-9 h-9 rounded-lg bg-zinc-800 text-slate-400 hover:bg-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all font-bold flex items-center justify-center"
+              className="w-9 h-9 rounded-lg bg-slate-100 text-slate-500 hover:bg-slate-200 disabled:opacity-30 disabled:cursor-not-allowed transition-all font-bold flex items-center justify-center"
             >
               ←
             </button>
           </div>
 
           {isOverride ? (
-            <div className="mb-4 rounded-xl bg-blue-500/10 border border-blue-500/30 px-4 py-2.5 flex items-center justify-between gap-3 flex-wrap">
-              <p className="text-xs text-blue-200">✏️ שבוע זה שונה מהלוח הקבוע.</p>
+            <div className="mb-4 rounded-xl bg-blue-50 border border-blue-200 px-4 py-2.5 flex items-center justify-between gap-3 flex-wrap">
+              <p className="text-xs text-blue-800">✏️ שבוע זה שונה מהלוח הקבוע.</p>
               <button
                 onClick={handleResetWeek}
-                className="text-xs px-3 py-1.5 rounded-lg bg-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors font-semibold whitespace-nowrap"
+                className="text-xs px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors font-semibold whitespace-nowrap"
               >
                 החזר לברירת מחדל
               </button>
             </div>
           ) : (
-            <div className="mb-4 rounded-xl bg-zinc-800/40 border border-zinc-700/40 px-4 py-2.5 text-xs text-zinc-400">
+            <div className="mb-4 rounded-xl bg-slate-50 border border-slate-200 px-4 py-2.5 text-xs text-slate-500">
               📋 שבוע זה עוקב אחרי הלוח הקבוע — כל שינוי ייצור גרסה לשבוע זה בלבד.
             </div>
           )}
@@ -255,9 +255,9 @@ export default function ScheduleTab({ bookings, onChanged, defaultMode = 'defaul
 
       {/* Slot list */}
       {loading ? (
-        <p className="text-center text-zinc-500 py-8 text-sm">טוען…</p>
+        <p className="text-center text-slate-400 py-8 text-sm">טוען…</p>
       ) : loadError ? (
-        <p className="text-center text-red-400 py-8 text-sm">שגיאה בטעינת הלוח — נסו לרענן</p>
+        <p className="text-center text-red-600 py-8 text-sm">שגיאה בטעינת הלוח — נסו לרענן</p>
       ) : (
         <div className="space-y-3">
           {daySlots.map((slot) => (
@@ -281,7 +281,7 @@ export default function ScheduleTab({ bookings, onChanged, defaultMode = 'defaul
 
           <button
             onClick={handleAddSlot}
-            className="mt-1 w-full py-2.5 rounded-xl border border-dashed border-zinc-600 text-zinc-400 hover:border-yellow-400/50 hover:text-yellow-400 transition-all text-sm font-semibold"
+            className="mt-1 w-full py-2.5 rounded-xl border border-dashed border-slate-300 text-slate-500 hover:border-blue-400 hover:text-blue-600 transition-all text-sm font-semibold"
           >
             + הוסף שעה ליום זה
           </button>

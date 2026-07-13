@@ -43,18 +43,18 @@ export default function WhyChooseUs() {
   return (
     <section id="why-us" className="py-16 px-4 max-w-6xl mx-auto">
       <div className="text-center mb-10">
-        <h2 className="text-3xl font-black text-white mb-2">למה דווקא שחר</h2>
-        <p className="text-slate-400">ארבע סיבות שבזכותן הורים ותלמידים ממליצים הלאה</p>
+        <h2 className="text-3xl font-black text-slate-900 mb-2">למה דווקא שחר</h2>
+        <p className="text-slate-500">ארבע סיבות שבזכותן הורים ותלמידים ממליצים הלאה</p>
       </div>
 
       <ScrollReveal selector=":scope > div" className="grid grid-cols-2 lg:grid-cols-4 gap-6 text-center">
         {REASONS.map((r, i) => (
           <div key={i} className="flex flex-col items-center">
-            <div className="w-14 h-14 rounded-full bg-zinc-800/60 border border-zinc-700/50 flex items-center justify-center text-yellow-400 mb-4">
+            <div className="w-14 h-14 rounded-full bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600 mb-4">
               {r.icon}
             </div>
-            <h3 className="font-bold text-white mb-2">{r.title}</h3>
-            <p className="text-xs text-slate-400 leading-relaxed">{r.text}</p>
+            <h3 className="font-bold text-slate-900 mb-2">{r.title}</h3>
+            <p className="text-xs text-slate-500 leading-relaxed">{r.text}</p>
           </div>
         ))}
       </ScrollReveal>
