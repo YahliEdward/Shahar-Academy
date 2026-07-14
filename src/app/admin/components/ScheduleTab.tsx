@@ -270,6 +270,7 @@ export default function ScheduleTab({ bookings, onChanged, defaultMode = 'defaul
               })}
               showStudents
               showAdjustButtons={mode !== 'default'}
+              showOrigin={mode !== 'default'}
               canRemove={activeDay === MOTZASH_DAY || activeDay === FRIDAY_DAY ? true : daySlots.length > 1}
               onTimeChange={(field, value) => updateSlotTime(slot.id, field, value)}
               onGroupChange={(g) => setGroupType(slot.id, g)}

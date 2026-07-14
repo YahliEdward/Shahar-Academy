@@ -83,6 +83,23 @@ export const GROUP_COLORS: Record<GroupType, string> = {
   'empty': 'bg-white border-slate-200',
 }
 
+// True when a week-scoped booking is a clone of a standing/fixed student
+// (templateId points back to its template master). Only meaningful for real
+// week bookings — template master rows are fixed by definition.
+export function isFixedBooking(b: Booking): boolean {
+  return Boolean(b.templateId)
+}
+
+export const ORIGIN_BADGE = {
+  fixed: 'bg-indigo-50 text-indigo-700 border border-indigo-200',
+  oneTime: 'bg-orange-50 text-orange-700 border border-orange-200',
+}
+
+export const ORIGIN_LABEL = {
+  fixed: 'קבוע',
+  oneTime: 'חד פעמי',
+}
+
 // ─── Week utilities ───────────────────────────────────────────────────────────
 
 export function getWeekStart(offsetWeeks: number): Date {

@@ -1,22 +1,39 @@
 'use client'
 
-import { Slot, Booking, GroupType, GROUP_LABELS, GROUP_COLORS, MAX_STUDENTS } from '@/lib/types'
+import { Slot, Booking, GroupType, GROUP_LABELS, GROUP_COLORS, MAX_STUDENTS, isFixedBooking } from '@/lib/types'
 import TimePicker from '@/components/TimePicker'
 
 const GROUP_OPTIONS: GroupType[] = ['middle-school', 'high-4', 'high-5', 'mixed', 'empty']
 
-export default function SlotEditorCard({ slot, students, showStudents, canRemove, showAdjustButtons = true, onTimeChange, onGroupChange, onAdjustEnrolled, onRemove, onShowStudents }: {
+function StudentChip({ b }: { b: Booking }) {
+  return (
+    <span
+      className={`text-xs rounded px-2 py-0.5 ${b.status === 'confirmed' ? 'bg-green-50 text-green-700 border border-green-300' : 'bg-white text-slate-600 border border-slate-300'}`}
+    >
+      {b.studentName}
+    </span>
+  )
+}
+
+export default function SlotEditorCard({ slot, students, showStudents, canRemove, showAdjustButtons = true, showOrigin = false, onTimeChange, onGroupChange, onAdjustEnrolled, onRemove, onShowStudents }: {
   slot: Slot
   students: Booking[]
   showStudents: boolean
   canRemove: boolean
   showAdjustButtons?: boolean
+  // True in "week" mode, where students can be a mix of standing (fixed) and
+  // one-time additions — false in "template" mode, where every row shown is
+  // a standing master and the split would be meaningless.
+  showOrigin?: boolean
   onTimeChange: (field: 'time' | 'endTime', value: string) => void
   onGroupChange: (g: GroupType) => void
   onAdjustEnrolled: (delta: number) => void
   onRemove: () => void
   onShowStudents: () => void
 }) {
+  const fixedStudents = showOrigin ? students.filter(isFixedBooking) : []
+  const oneTimeStudents = showOrigin ? students.filter((b) => !isFixedBooking(b)) : students
+
   return (
     <div className={`rounded-xl border p-4 shadow-sm ${GROUP_COLORS[slot.groupType]}`}>
       {showStudents && (
@@ -30,16 +47,30 @@ export default function SlotEditorCard({ slot, students, showStudents, canRemove
           {students.length > 0 ? (
             <>
               <p className="text-xs text-slate-500 mb-1.5">תלמידים רשומים (לחצו לפרטים):</p>
-              <div className="flex flex-wrap gap-1">
-                {students.map((b) => (
-                  <span
-                    key={b.id}
-                    className={`text-xs rounded px-2 py-0.5 ${b.status === 'confirmed' ? 'bg-green-50 text-green-700 border border-green-300' : 'bg-white text-slate-600 border border-slate-300'}`}
-                  >
-                    {b.studentName}
-                  </span>
-                ))}
-              </div>
+              {showOrigin ? (
+                <div className="space-y-1.5">
+                  {fixedStudents.length > 0 && (
+                    <div>
+                      <p className="text-[11px] text-indigo-600 font-semibold mb-1">🔁 קבועים</p>
+                      <div className="flex flex-wrap gap-1">
+                        {fixedStudents.map((b) => <StudentChip key={b.id} b={b} />)}
+                      </div>
+                    </div>
+                  )}
+                  {oneTimeStudents.length > 0 && (
+                    <div>
+                      <p className="text-[11px] text-orange-600 font-semibold mb-1">חד-פעמיים</p>
+                      <div className="flex flex-wrap gap-1">
+                        {oneTimeStudents.map((b) => <StudentChip key={b.id} b={b} />)}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-1">
+                  {students.map((b) => <StudentChip key={b.id} b={b} />)}
+                </div>
+              )}
             </>
           ) : (
             <p className="text-xs text-slate-400">אין תלמידים עדיין — לחצו להוספה</p>

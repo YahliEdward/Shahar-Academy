@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import {
   Slot, Booking, DayIndex, dayLabel, GROUP_LABELS, GROUP_BADGE,
   getWeekKey, getWeekDates, formatShortDate, isSlotPast,
+  isFixedBooking, ORIGIN_BADGE, ORIGIN_LABEL,
 } from '@/lib/types'
 import { getTodayInfo, whatsappUrl } from '../lib'
 import WhatsAppIcon from './WhatsAppIcon'
@@ -104,6 +105,9 @@ export default function TodayPanel({ slots, bookings, open, onToggle, panelRef }
                             />
                             <span className="text-sm text-slate-700 truncate">{b.studentName}</span>
                             <span className="text-xs text-slate-400 flex-shrink-0">{b.grade}</span>
+                            <span className={`text-[10px] rounded-full px-1.5 py-0.5 flex-shrink-0 ${isFixedBooking(b) ? ORIGIN_BADGE.fixed : ORIGIN_BADGE.oneTime}`}>
+                              {isFixedBooking(b) ? ORIGIN_LABEL.fixed : ORIGIN_LABEL.oneTime}
+                            </span>
                           </div>
                           <div className="flex gap-1.5 flex-shrink-0">
                             <a

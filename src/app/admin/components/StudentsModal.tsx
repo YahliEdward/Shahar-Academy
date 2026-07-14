@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Slot, Booking, GroupType, dayLabel, formatShortDate, GROUP_LABELS, formatPrice } from '@/lib/types'
+import { Slot, Booking, GroupType, dayLabel, formatShortDate, GROUP_LABELS, formatPrice, isFixedBooking } from '@/lib/types'
 import { pricePerStudent } from '@/lib/pricing'
 import { removeBooking, patchBooking, adminCreateBooking } from '@/lib/adminApi'
 import { whatsappUrl } from '../lib'
@@ -77,6 +77,11 @@ export default function StudentsModal({ slot, weekKey, date, standing = false, b
   const defaultGroup: GroupType = slot.groupType === 'empty' ? 'middle-school' : slot.groupType
 
   const students = bookings.filter((b) => b.slotId === slot.id && b.weekKey === weekKey)
+  // In "standing" (template) view every row is already a fixed master, so the
+  // split is meaningless there — only separate fixed vs. one-time when
+  // looking at a specific real week.
+  const fixedStudents = standing ? [] : students.filter(isFixedBooking)
+  const oneTimeStudents = standing ? students : students.filter((b) => !isFixedBooking(b))
 
   // Suggested per-student rate from the project pricing rules, based on how many
   // students share the slot. Adding a student grows the group by one; editing an
@@ -211,6 +216,144 @@ export default function StudentsModal({ slot, weekKey, date, standing = false, b
     }
   }
 
+  const renderStudentCard = (b: Booking) => (
+    <div
+      key={b.id}
+      className={`rounded-xl border p-4 ${b.status === 'confirmed' ? 'border-green-300 bg-green-50/60' : 'border-slate-200 bg-slate-50'}`}
+    >
+      {editingId === b.id && editDraft ? (
+        <div className="space-y-2.5">
+          <Field label="שם התלמיד" error={editError.studentName}>
+            <input
+              className={inputClass}
+              value={editDraft.studentName}
+              onChange={(e) => setEditDraft({ ...editDraft, studentName: e.target.value })}
+            />
+          </Field>
+          <Field label="שם ההורה">
+            <input
+              className={inputClass}
+              value={editDraft.parentName}
+              onChange={(e) => setEditDraft({ ...editDraft, parentName: e.target.value })}
+            />
+          </Field>
+          <Field label="טלפון" error={editError.phone}>
+            <input
+              className={inputClass}
+              dir="ltr"
+              value={editDraft.phone}
+              onChange={(e) => setEditDraft({ ...editDraft, phone: e.target.value })}
+            />
+          </Field>
+          <Field label="כיתה">
+            <select
+              className={inputClass}
+              value={editDraft.grade}
+              onChange={(e) => setEditDraft({ ...editDraft, grade: e.target.value })}
+            >
+              <option value="">לא צוין</option>
+              {GRADE_OPTIONS.map((g) => (
+                <option key={g} value={g}>{g}</option>
+              ))}
+            </select>
+          </Field>
+          <Field label="סוג קבוצה">
+            <select
+              className={inputClass}
+              value={editDraft.groupPreference}
+              onChange={(e) => setEditDraft({ ...editDraft, groupPreference: e.target.value as GroupType })}
+            >
+              {GROUP_OPTIONS.map((g) => (
+                <option key={g} value={g}>{GROUP_LABELS[g]}</option>
+              ))}
+            </select>
+          </Field>
+          <Field label="מחיר לשיעור (₪ לתלמיד)">
+            <input
+              className={inputClass}
+              type="number"
+              min="0"
+              dir="ltr"
+              value={editDraft.price}
+              onChange={(e) => setEditDraft({ ...editDraft, price: e.target.value })}
+            />
+            <p className="text-xs text-slate-400 mt-1">
+              מומלץ: {formatPrice(suggestedForSize(students.length))} ({students.length} תלמידים)
+            </p>
+          </Field>
+          <div className="flex gap-2 pt-1">
+            <button
+              onClick={() => saveEdit(b.id)}
+              disabled={editLoading}
+              className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-bold rounded-lg text-sm transition-colors"
+            >
+              {editLoading ? 'שומר…' : 'שמור'}
+            </button>
+            <button
+              onClick={cancelEdit}
+              disabled={editLoading}
+              className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg text-sm transition-colors"
+            >
+              בטול
+            </button>
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className="flex items-start justify-between gap-3 flex-wrap">
+            <div>
+              <div className="font-bold text-slate-900">{b.studentName}</div>
+              <div className="text-xs text-slate-500">{b.grade || 'כיתה לא צוינה'} | {GROUP_LABELS[b.groupPreference]}</div>
+              <span className={`inline-block mt-1 text-xs rounded px-2 py-0.5 ${b.status === 'confirmed' ? 'bg-green-50 text-green-700 border border-green-300' : 'bg-white text-slate-600 border border-slate-300'}`}>
+                {b.status === 'confirmed' ? 'מאושר' : 'ממתין לאישור'}
+              </span>
+            </div>
+            {b.phone && (
+              <div className="flex gap-2 flex-wrap">
+                <a
+                  href={`tel:${b.phone}`}
+                  className="min-h-10 px-3 inline-flex items-center bg-slate-100 hover:bg-slate-200 rounded-lg text-xs font-semibold text-slate-700 transition-colors"
+                  dir="ltr"
+                >
+                  📞 {b.phone}
+                </a>
+                <a
+                  href={whatsappUrl(b.phone, b.studentName)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="min-h-10 px-3 inline-flex items-center bg-green-600 hover:bg-green-700 rounded-lg text-xs font-semibold text-white transition-colors"
+                >
+                  וואטסאפ
+                </a>
+              </div>
+            )}
+          </div>
+          <div className="text-xs text-slate-500 mt-2">
+            מחיר: {formatPrice(b.price ?? suggestedForSize(students.length))}
+            {b.price == null && <span className="text-slate-400"> (מוצע)</span>}
+          </div>
+          <div className="text-xs text-slate-400 mt-2 flex items-center justify-between gap-3 flex-wrap">
+            <span>הורה: {b.parentName || 'לא צוין'} | נשלח: {new Date(b.createdAt).toLocaleString('he-IL')}</span>
+            <div className="flex gap-2">
+              <button
+                onClick={() => startEdit(b)}
+                className="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 rounded-lg text-xs transition-colors border border-slate-300"
+              >
+                ערוך
+              </button>
+              <button
+                onClick={() => remove(b)}
+                className="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-xs transition-colors border border-red-200"
+              >
+                הסר תלמיד
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  )
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm"
@@ -248,143 +391,24 @@ export default function StudentsModal({ slot, weekKey, date, standing = false, b
             <p className="text-center text-slate-400 py-8 text-sm">אין תלמידים רשומים עדיין</p>
           )}
 
-          {students.map((b) => (
-            <div
-              key={b.id}
-              className={`rounded-xl border p-4 ${b.status === 'confirmed' ? 'border-green-300 bg-green-50/60' : 'border-slate-200 bg-slate-50'}`}
-            >
-              {editingId === b.id && editDraft ? (
-                <div className="space-y-2.5">
-                  <Field label="שם התלמיד" error={editError.studentName}>
-                    <input
-                      className={inputClass}
-                      value={editDraft.studentName}
-                      onChange={(e) => setEditDraft({ ...editDraft, studentName: e.target.value })}
-                    />
-                  </Field>
-                  <Field label="שם ההורה">
-                    <input
-                      className={inputClass}
-                      value={editDraft.parentName}
-                      onChange={(e) => setEditDraft({ ...editDraft, parentName: e.target.value })}
-                    />
-                  </Field>
-                  <Field label="טלפון" error={editError.phone}>
-                    <input
-                      className={inputClass}
-                      dir="ltr"
-                      value={editDraft.phone}
-                      onChange={(e) => setEditDraft({ ...editDraft, phone: e.target.value })}
-                    />
-                  </Field>
-                  <Field label="כיתה">
-                    <select
-                      className={inputClass}
-                      value={editDraft.grade}
-                      onChange={(e) => setEditDraft({ ...editDraft, grade: e.target.value })}
-                    >
-                      <option value="">לא צוין</option>
-                      {GRADE_OPTIONS.map((g) => (
-                        <option key={g} value={g}>{g}</option>
-                      ))}
-                    </select>
-                  </Field>
-                  <Field label="סוג קבוצה">
-                    <select
-                      className={inputClass}
-                      value={editDraft.groupPreference}
-                      onChange={(e) => setEditDraft({ ...editDraft, groupPreference: e.target.value as GroupType })}
-                    >
-                      {GROUP_OPTIONS.map((g) => (
-                        <option key={g} value={g}>{GROUP_LABELS[g]}</option>
-                      ))}
-                    </select>
-                  </Field>
-                  <Field label="מחיר לשיעור (₪ לתלמיד)">
-                    <input
-                      className={inputClass}
-                      type="number"
-                      min="0"
-                      dir="ltr"
-                      value={editDraft.price}
-                      onChange={(e) => setEditDraft({ ...editDraft, price: e.target.value })}
-                    />
-                    <p className="text-xs text-slate-400 mt-1">
-                      מומלץ: {formatPrice(suggestedForSize(students.length))} ({students.length} תלמידים)
-                    </p>
-                  </Field>
-                  <div className="flex gap-2 pt-1">
-                    <button
-                      onClick={() => saveEdit(b.id)}
-                      disabled={editLoading}
-                      className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-bold rounded-lg text-sm transition-colors"
-                    >
-                      {editLoading ? 'שומר…' : 'שמור'}
-                    </button>
-                    <button
-                      onClick={cancelEdit}
-                      disabled={editLoading}
-                      className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg text-sm transition-colors"
-                    >
-                      בטול
-                    </button>
-                  </div>
+          {standing ? (
+            students.map(renderStudentCard)
+          ) : (
+            <>
+              {fixedStudents.length > 0 && (
+                <div className="space-y-3">
+                  <p className="text-xs font-bold text-indigo-700">🔁 תלמידים קבועים ({fixedStudents.length})</p>
+                  {fixedStudents.map(renderStudentCard)}
                 </div>
-              ) : (
-                <>
-                  <div className="flex items-start justify-between gap-3 flex-wrap">
-                    <div>
-                      <div className="font-bold text-slate-900">{b.studentName}</div>
-                      <div className="text-xs text-slate-500">{b.grade || 'כיתה לא צוינה'} | {GROUP_LABELS[b.groupPreference]}</div>
-                      <span className={`inline-block mt-1 text-xs rounded px-2 py-0.5 ${b.status === 'confirmed' ? 'bg-green-50 text-green-700 border border-green-300' : 'bg-white text-slate-600 border border-slate-300'}`}>
-                        {b.status === 'confirmed' ? 'מאושר' : 'ממתין לאישור'}
-                      </span>
-                    </div>
-                    {b.phone && (
-                      <div className="flex gap-2 flex-wrap">
-                        <a
-                          href={`tel:${b.phone}`}
-                          className="min-h-10 px-3 inline-flex items-center bg-slate-100 hover:bg-slate-200 rounded-lg text-xs font-semibold text-slate-700 transition-colors"
-                          dir="ltr"
-                        >
-                          📞 {b.phone}
-                        </a>
-                        <a
-                          href={whatsappUrl(b.phone, b.studentName)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="min-h-10 px-3 inline-flex items-center bg-green-600 hover:bg-green-700 rounded-lg text-xs font-semibold text-white transition-colors"
-                        >
-                          וואטסאפ
-                        </a>
-                      </div>
-                    )}
-                  </div>
-                  <div className="text-xs text-slate-500 mt-2">
-                    מחיר: {formatPrice(b.price ?? suggestedForSize(students.length))}
-                    {b.price == null && <span className="text-slate-400"> (מוצע)</span>}
-                  </div>
-                  <div className="text-xs text-slate-400 mt-2 flex items-center justify-between gap-3 flex-wrap">
-                    <span>הורה: {b.parentName || 'לא צוין'} | נשלח: {new Date(b.createdAt).toLocaleString('he-IL')}</span>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => startEdit(b)}
-                        className="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 rounded-lg text-xs transition-colors border border-slate-300"
-                      >
-                        ערוך
-                      </button>
-                      <button
-                        onClick={() => remove(b)}
-                        className="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-xs transition-colors border border-red-200"
-                      >
-                        הסר תלמיד
-                      </button>
-                    </div>
-                  </div>
-                </>
               )}
-            </div>
-          ))}
+              {oneTimeStudents.length > 0 && (
+                <div className="space-y-3">
+                  <p className="text-xs font-bold text-orange-700">תלמידים חד-פעמיים ({oneTimeStudents.length})</p>
+                  {oneTimeStudents.map(renderStudentCard)}
+                </div>
+              )}
+            </>
+          )}
 
           {adding ? (
             <div className="rounded-xl border border-blue-200 bg-blue-50/50 p-4 space-y-2.5">
