@@ -16,7 +16,7 @@ const MAX_WEEK_OFFSET = 3
 
 type EditMode = 'default' | 'week'
 
-export default function ScheduleTab({ bookings, onChanged, defaultMode = 'default' }: {
+export default function ScheduleTab({ bookings, onChanged, defaultMode = 'week' }: {
   bookings: Booking[]
   onChanged: () => void
   defaultMode?: EditMode
@@ -178,8 +178,8 @@ export default function ScheduleTab({ bookings, onChanged, defaultMode = 'defaul
       {/* Mode segmented control */}
       <div className="flex gap-2 mb-4 bg-slate-100 p-1 rounded-xl">
         {([
-          { key: 'default', label: 'לוח קבוע', sub: 'חל על כל שבוע' },
           { key: 'week', label: 'שבוע ספציפי', sub: 'חריגה חד-פעמית' },
+          { key: 'default', label: 'לוח קבוע', sub: 'חל על כל שבוע' },
         ] as { key: EditMode; label: string; sub: string }[]).map((opt) => (
           <button
             key={opt.key}

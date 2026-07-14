@@ -27,7 +27,7 @@ export default function AdminPage() {
   const [todayOpen, setTodayOpen] = useState<boolean | null>(null)
   // Bumped when the occupancy stat is clicked so ScheduleTab remounts in week mode.
   const [scheduleKey, setScheduleKey] = useState(0)
-  const [scheduleMode, setScheduleMode] = useState<'default' | 'week'>('default')
+  const [scheduleMode, setScheduleMode] = useState<'default' | 'week'>('week')
   const todayRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
