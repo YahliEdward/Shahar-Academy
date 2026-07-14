@@ -31,7 +31,7 @@ create table if not exists bookings (
   grade text not null,
   group_preference text not null,
   status text not null default 'pending',
-  price text,
+  price integer,
   created_at timestamptz not null default now()
 );
 
@@ -167,3 +167,20 @@ create table if not exists push_subscriptions (
 );
 
 alter table push_subscriptions enable row level security;
+
+-- ════════════════════════════════════════════════════════════════════════════
+-- Migration: bookings.price becomes a real integer (₪, whole shekels)
+-- ════════════════════════════════════════════════════════════════════════════
+-- price used to be freeform text typed by hand (e.g. "350₪ לחודש"), which the
+-- revenue reports can't sum. It's now a plain integer. Existing values are
+-- cleared (not parsed) — a handful of historical rows, safe to re-enter from
+-- the booking card. Guarded so re-running this file after the column is
+-- already integer is a no-op, same as the other migrations in this file.
+
+do $$
+begin
+  if (select data_type from information_schema.columns
+      where table_name = 'bookings' and column_name = 'price') = 'text' then
+    alter table bookings alter column price type integer using null::integer;
+  end if;
+end $$;

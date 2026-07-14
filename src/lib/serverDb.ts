@@ -463,6 +463,9 @@ async function syncStandingBookingsIntoWeek(weekKey: string, standing: Booking[]
       groupPreference: master.groupPreference,
       status: 'confirmed',
       templateId: master.id,
+      // Starting default for a week that didn't exist before — this lesson's
+      // price can be edited independently afterward without affecting others.
+      price: master.price,
     }))
     if (insertError) {
       await db.rpc('adjust_enrolled', {
@@ -541,7 +544,8 @@ export async function updateBooking(id: string, updates: Partial<Booking>): Prom
   if (updates.phone !== undefined) row.phone = updates.phone
   if (updates.grade !== undefined) row.grade = updates.grade
   if (updates.groupPreference !== undefined) row.group_preference = updates.groupPreference
-  await getSupabaseAdmin().from('bookings').update(row).eq('id', id)
+  const { error } = await getSupabaseAdmin().from('bookings').update(row).eq('id', id)
+  if (error) throw new Error(`Failed to update booking ${id}: ${error.message}`)
 }
 
 export async function deleteBooking(id: string): Promise<void> {

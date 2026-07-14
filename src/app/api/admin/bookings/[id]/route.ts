@@ -18,6 +18,9 @@ export async function PATCH(request: NextRequest, ctx: { params: Promise<{ id: s
   } catch {
     return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
   }
+  if (updates.price !== undefined && updates.price !== null && typeof updates.price !== 'number') {
+    return NextResponse.json({ error: 'מחיר לא תקין' }, { status: 400 })
+  }
   try {
     await updateBooking(id, updates)
     return NextResponse.json({ ok: true })

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Slot, Booking, GroupType, dayLabel, formatShortDate, GROUP_LABELS } from '@/lib/types'
+import { Slot, Booking, GroupType, dayLabel, formatShortDate, GROUP_LABELS, formatPrice } from '@/lib/types'
 import { removeBooking, patchBooking, adminCreateBooking } from '@/lib/adminApi'
 import { whatsappUrl } from '../lib'
 import { useToast } from './ui/Toast'
@@ -315,8 +315,8 @@ export default function StudentsModal({ slot, weekKey, date, standing = false, b
                       </div>
                     )}
                   </div>
-                  {b.price && (
-                    <div className="text-xs text-slate-500 mt-2">מחיר: {b.price}</div>
+                  {b.price != null && (
+                    <div className="text-xs text-slate-500 mt-2">מחיר: {formatPrice(b.price)}</div>
                   )}
                   <div className="text-xs text-slate-400 mt-2 flex items-center justify-between gap-3 flex-wrap">
                     <span>הורה: {b.parentName || 'לא צוין'} | נשלח: {new Date(b.createdAt).toLocaleString('he-IL')}</span>

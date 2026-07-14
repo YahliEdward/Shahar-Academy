@@ -12,8 +12,9 @@ import DashboardStats from './components/DashboardStats'
 import TodayPanel from './components/TodayPanel'
 import BookingsTab, { BookingsFilter } from './components/BookingsTab'
 import ScheduleTab from './components/ScheduleTab'
+import ReportsTab from './components/ReportsTab'
 
-type Tab = 'bookings' | 'schedule'
+type Tab = 'bookings' | 'schedule' | 'reports'
 
 export default function AdminPage() {
   // null = still checking whether a previous session cookie is valid.
@@ -138,6 +139,14 @@ export default function AdminPage() {
               >
                 ניהול לוח שעות
               </button>
+              <button
+                onClick={() => setTab('reports')}
+                className={`px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${
+                  tab === 'reports' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                }`}
+              >
+                דוחות
+              </button>
             </div>
 
             {tab === 'bookings' && (
@@ -157,6 +166,7 @@ export default function AdminPage() {
                 defaultMode={scheduleMode}
               />
             )}
+            {tab === 'reports' && <ReportsTab bookings={bookings} />}
           </div>
         </div>
       </ConfirmProvider>

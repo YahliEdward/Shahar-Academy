@@ -23,7 +23,7 @@ export interface Booking {
   grade: string
   groupPreference: GroupType
   status: 'pending' | 'confirmed'
-  price?: string
+  price?: number | null
   createdAt: string
   // Set only on week-level clones of a standing (recurring) student: points
   // back to the master booking (weekKey === TEMPLATE_KEY) it was cloned from.
@@ -117,6 +117,13 @@ export function formatShortDate(date: Date): string {
   return `${date.getDate()}/${date.getMonth() + 1}`
 }
 
+export function formatPrice(price: number | null | undefined): string {
+  if (price == null) return 'לא הוגדר'
+  return new Intl.NumberFormat('he-IL', {
+    style: 'currency', currency: 'ILS', maximumFractionDigits: 0,
+  }).format(price)
+}
+
 // True when the slot's start time on its day of the given week is already gone.
 export function isSlotPast(slot: Slot, weekDates: Date[]): boolean {
   const day = weekDates[slot.day]
@@ -173,7 +180,7 @@ export function rowToBooking(row: Record<string, unknown>): Booking {
     grade: row.grade as string,
     groupPreference: row.group_preference as GroupType,
     status: row.status as 'pending' | 'confirmed',
-    price: row.price as string | undefined,
+    price: row.price == null ? null : Number(row.price),
     createdAt: row.created_at as string,
     templateId: row.template_id as string | undefined,
   }
