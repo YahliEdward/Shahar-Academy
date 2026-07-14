@@ -381,6 +381,7 @@ export type NewAdminBooking = {
   phone?: string
   grade?: string
   groupPreference?: GroupType
+  price?: number | null
 }
 
 export async function createBookingAsAdmin(input: NewAdminBooking): Promise<Booking> {
@@ -397,6 +398,7 @@ export async function createBookingAsAdmin(input: NewAdminBooking): Promise<Book
     grade: input.grade ?? '',
     groupPreference: input.groupPreference ?? fallbackGroup,
     status: 'confirmed',
+    price: input.price ?? null,
   })
 }
 
@@ -503,6 +505,7 @@ export async function createStandingBookingAsAdmin(input: NewAdminBooking): Prom
     grade: input.grade ?? '',
     groupPreference: input.groupPreference ?? fallbackGroup,
     status: 'confirmed',
+    price: input.price ?? null,
   })
   const { data, error } = await getSupabaseAdmin().from('bookings').insert(row).select().single()
   if (error || !data) throw new Error('Failed to save standing booking')

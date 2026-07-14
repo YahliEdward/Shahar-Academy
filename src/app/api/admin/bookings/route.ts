@@ -65,6 +65,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'סוג קבוצה לא תקין' }, { status: 400 })
   }
 
+  // price is optional; when present it must be a non-negative number (whole ₪).
+  let price: number | null | undefined
+  if (body.price !== undefined && body.price !== null) {
+    if (typeof body.price !== 'number' || !Number.isFinite(body.price) || body.price < 0) {
+      return NextResponse.json({ error: 'מחיר לא תקין' }, { status: 400 })
+    }
+    price = Math.round(body.price)
+  } else {
+    price = body.price as null | undefined
+  }
+
   try {
     const create = isStanding ? createStandingBookingAsAdmin : createBookingAsAdmin
     const booking = await create({
@@ -76,6 +87,7 @@ export async function POST(request: NextRequest) {
       phone: phone || undefined,
       grade: grade || undefined,
       groupPreference,
+      price,
     })
     return NextResponse.json({ booking })
   } catch (err) {

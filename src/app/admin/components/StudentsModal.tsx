@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { Slot, Booking, GroupType, dayLabel, formatShortDate, GROUP_LABELS, formatPrice } from '@/lib/types'
+import { pricePerStudent } from '@/lib/pricing'
 import { removeBooking, patchBooking, adminCreateBooking } from '@/lib/adminApi'
 import { whatsappUrl } from '../lib'
 import { useToast } from './ui/Toast'
@@ -22,6 +23,8 @@ type StudentDraft = {
   phone: string
   grade: string
   groupPreference: GroupType
+  // Kept as a string so the numeric input can be cleared; parsed on save.
+  price: string
 }
 
 function draftFromBooking(b: Booking): StudentDraft {
@@ -31,11 +34,22 @@ function draftFromBooking(b: Booking): StudentDraft {
     phone: b.phone,
     grade: b.grade,
     groupPreference: b.groupPreference,
+    price: b.price != null ? String(b.price) : '',
   }
 }
 
-function emptyDraft(defaultGroup: GroupType): StudentDraft {
-  return { studentName: '', parentName: '', phone: '', grade: '', groupPreference: defaultGroup }
+function emptyDraft(defaultGroup: GroupType, suggestedPrice: number): StudentDraft {
+  return { studentName: '', parentName: '', phone: '', grade: '', groupPreference: defaultGroup, price: String(suggestedPrice) }
+}
+
+// Parses a price string from the form into the DB shape: '' → null, otherwise a
+// non-negative whole ₪ amount. Returns undefined when the input is invalid.
+function parsePrice(raw: string): number | null | undefined {
+  const trimmed = raw.trim()
+  if (trimmed === '') return null
+  const parsed = Number(trimmed)
+  if (!Number.isFinite(parsed) || parsed < 0) return undefined
+  return Math.round(parsed)
 }
 
 // Only the name is required here — everything else is optional but still
@@ -62,8 +76,16 @@ export default function StudentsModal({ slot, weekKey, date, standing = false, b
 
   const defaultGroup: GroupType = slot.groupType === 'empty' ? 'middle-school' : slot.groupType
 
+  const students = bookings.filter((b) => b.slotId === slot.id && b.weekKey === weekKey)
+
+  // Suggested per-student rate from the project pricing rules, based on how many
+  // students share the slot. Adding a student grows the group by one; editing an
+  // existing one keeps the current size (they're already counted).
+  const suggestedForAdd = pricePerStudent(students.length + 1)
+  const suggestedForSize = (size: number) => pricePerStudent(Math.max(size, 1))
+
   const [adding, setAdding] = useState(false)
-  const [addDraft, setAddDraft] = useState<StudentDraft>(() => emptyDraft(defaultGroup))
+  const [addDraft, setAddDraft] = useState<StudentDraft>(() => emptyDraft(defaultGroup, suggestedForAdd))
   const [addError, setAddError] = useState<{ studentName?: string; phone?: string }>({})
   const [addLoading, setAddLoading] = useState(false)
 
@@ -85,8 +107,6 @@ export default function StudentsModal({ slot, weekKey, date, standing = false, b
       document.removeEventListener('keydown', onKey)
     }
   }, [onClose])
-
-  const students = bookings.filter((b) => b.slotId === slot.id && b.weekKey === weekKey)
 
   const remove = async (b: Booking) => {
     if (!(await confirmDialog({
@@ -115,6 +135,11 @@ export default function StudentsModal({ slot, weekKey, date, standing = false, b
       setAddError(errors)
       return
     }
+    const price = parsePrice(addDraft.price)
+    if (price === undefined) {
+      toast('מחיר לא תקין', 'error')
+      return
+    }
     setAddLoading(true)
     try {
       await adminCreateBooking({
@@ -125,9 +150,10 @@ export default function StudentsModal({ slot, weekKey, date, standing = false, b
         phone: addDraft.phone.trim() || undefined,
         grade: addDraft.grade || undefined,
         groupPreference: addDraft.groupPreference,
+        price,
       })
       toast('התלמיד נוסף ✓')
-      setAddDraft(emptyDraft(defaultGroup))
+      setAddDraft(emptyDraft(defaultGroup, pricePerStudent(students.length + 2)))
       setAddError({})
       setAdding(false)
       onChanged()
@@ -160,6 +186,11 @@ export default function StudentsModal({ slot, weekKey, date, standing = false, b
       setEditError(errors)
       return
     }
+    const price = parsePrice(editDraft.price)
+    if (price === undefined) {
+      toast('מחיר לא תקין', 'error')
+      return
+    }
     setEditLoading(true)
     try {
       await patchBooking(id, {
@@ -168,6 +199,7 @@ export default function StudentsModal({ slot, weekKey, date, standing = false, b
         phone: editDraft.phone.trim(),
         grade: editDraft.grade,
         groupPreference: editDraft.groupPreference,
+        price,
       })
       toast('הפרטים עודכנו ✓')
       cancelEdit()
@@ -268,6 +300,19 @@ export default function StudentsModal({ slot, weekKey, date, standing = false, b
                       ))}
                     </select>
                   </Field>
+                  <Field label="מחיר לשיעור (₪ לתלמיד)">
+                    <input
+                      className={inputClass}
+                      type="number"
+                      min="0"
+                      dir="ltr"
+                      value={editDraft.price}
+                      onChange={(e) => setEditDraft({ ...editDraft, price: e.target.value })}
+                    />
+                    <p className="text-xs text-slate-400 mt-1">
+                      מומלץ: {formatPrice(suggestedForSize(students.length))} ({students.length} תלמידים)
+                    </p>
+                  </Field>
                   <div className="flex gap-2 pt-1">
                     <button
                       onClick={() => saveEdit(b.id)}
@@ -315,9 +360,10 @@ export default function StudentsModal({ slot, weekKey, date, standing = false, b
                       </div>
                     )}
                   </div>
-                  {b.price != null && (
-                    <div className="text-xs text-slate-500 mt-2">מחיר: {formatPrice(b.price)}</div>
-                  )}
+                  <div className="text-xs text-slate-500 mt-2">
+                    מחיר: {formatPrice(b.price ?? suggestedForSize(students.length))}
+                    {b.price == null && <span className="text-slate-400"> (מוצע)</span>}
+                  </div>
                   <div className="text-xs text-slate-400 mt-2 flex items-center justify-between gap-3 flex-wrap">
                     <span>הורה: {b.parentName || 'לא צוין'} | נשלח: {new Date(b.createdAt).toLocaleString('he-IL')}</span>
                     <div className="flex gap-2">
@@ -390,6 +436,19 @@ export default function StudentsModal({ slot, weekKey, date, standing = false, b
                   ))}
                 </select>
               </Field>
+              <Field label="מחיר לשיעור (₪ לתלמיד)">
+                <input
+                  className={inputClass}
+                  type="number"
+                  min="0"
+                  dir="ltr"
+                  value={addDraft.price}
+                  onChange={(e) => setAddDraft({ ...addDraft, price: e.target.value })}
+                />
+                <p className="text-xs text-slate-400 mt-1">
+                  מומלץ: {formatPrice(suggestedForAdd)} ({students.length + 1} תלמידים)
+                </p>
+              </Field>
               <div className="flex gap-2 pt-1">
                 <button
                   onClick={submitAdd}
@@ -409,7 +468,7 @@ export default function StudentsModal({ slot, weekKey, date, standing = false, b
             </div>
           ) : (
             <button
-              onClick={() => setAdding(true)}
+              onClick={() => { setAddDraft(emptyDraft(defaultGroup, suggestedForAdd)); setAdding(true) }}
               className="w-full py-2.5 rounded-xl border border-dashed border-slate-300 text-slate-500 hover:border-blue-400 hover:text-blue-600 transition-all text-sm font-semibold"
             >
               + הוסף תלמיד

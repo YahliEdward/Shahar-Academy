@@ -70,6 +70,7 @@ export interface AdminNewBookingRequest {
   phone?: string
   grade?: string
   groupPreference?: GroupType
+  price?: number | null
 }
 
 // Admin-only creation path — only studentName is required.
