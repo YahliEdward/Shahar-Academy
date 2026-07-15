@@ -1,6 +1,6 @@
 import { getSupabaseAdmin } from './supabaseAdmin'
 import {
-  Slot, Booking, GroupType, MAX_STUDENTS, TEMPLATE_KEY,
+  Slot, Booking, MAX_STUDENTS, TEMPLATE_KEY,
   rowToSlot, rowToBooking, templateSlotId, buildDefaultSlots,
 } from './types'
 
@@ -380,14 +380,11 @@ export type NewAdminBooking = {
   parentName?: string
   phone?: string
   grade?: string
-  groupPreference?: GroupType
+  groupPreference?: string
   price?: number | null
 }
 
 export async function createBookingAsAdmin(input: NewAdminBooking): Promise<Booking> {
-  const slots = await getSlots(input.weekKey)
-  const slot = slots.find((s) => s.id === input.slotId)
-  const fallbackGroup: GroupType = slot && slot.groupType !== 'empty' ? slot.groupType : 'middle-school'
   return createBooking({
     slotId: input.slotId,
     weekKey: input.weekKey,
@@ -396,7 +393,7 @@ export async function createBookingAsAdmin(input: NewAdminBooking): Promise<Book
     parentName: input.parentName ?? '',
     phone: input.phone ?? '',
     grade: input.grade ?? '',
-    groupPreference: input.groupPreference ?? fallbackGroup,
+    groupPreference: input.groupPreference ?? '',
     status: 'confirmed',
     price: input.price ?? null,
   })
@@ -491,10 +488,6 @@ export async function syncStandingBookings(): Promise<void> {
 }
 
 export async function createStandingBookingAsAdmin(input: NewAdminBooking): Promise<Booking> {
-  const template = await getTemplate()
-  const slot = template.find((s) => s.id === input.slotId)
-  const fallbackGroup: GroupType = slot && slot.groupType !== 'empty' ? slot.groupType : 'middle-school'
-
   const row = bookingRow({
     slotId: input.slotId,
     weekKey: TEMPLATE_KEY,
@@ -503,7 +496,7 @@ export async function createStandingBookingAsAdmin(input: NewAdminBooking): Prom
     parentName: input.parentName ?? '',
     phone: input.phone ?? '',
     grade: input.grade ?? '',
-    groupPreference: input.groupPreference ?? fallbackGroup,
+    groupPreference: input.groupPreference ?? '',
     status: 'confirmed',
     price: input.price ?? null,
   })

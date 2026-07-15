@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Slot, Booking, GroupType, dayLabel, formatShortDate, GROUP_LABELS, formatPrice, isFixedBooking } from '@/lib/types'
+import { Slot, Booking, dayLabel, formatShortDate, GROUP_LABELS, formatPrice, isFixedBooking } from '@/lib/types'
 import { pricePerStudent } from '@/lib/pricing'
 import { removeBooking, patchBooking, adminCreateBooking } from '@/lib/adminApi'
 import { whatsappUrl } from '../lib'
@@ -13,7 +13,7 @@ const GRADE_OPTIONS = [
   'כיתה י\'', 'כיתה י\"א', 'כיתה י\"ב',
 ]
 
-const GROUP_OPTIONS: GroupType[] = ['middle-school', 'high-4', 'high-5', 'mixed']
+const GROUP_OPTIONS = ['ח', 'ט', '4 יחידות', '5 יחידות']
 
 const inputClass = 'w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-slate-900 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-colors'
 
@@ -22,7 +22,7 @@ type StudentDraft = {
   parentName: string
   phone: string
   grade: string
-  groupPreference: GroupType
+  groupPreference: string
   // Kept as a string so the numeric input can be cleared; parsed on save.
   price: string
 }
@@ -38,8 +38,8 @@ function draftFromBooking(b: Booking): StudentDraft {
   }
 }
 
-function emptyDraft(defaultGroup: GroupType, suggestedPrice: number): StudentDraft {
-  return { studentName: '', parentName: '', phone: '', grade: '', groupPreference: defaultGroup, price: String(suggestedPrice) }
+function emptyDraft(suggestedPrice: number): StudentDraft {
+  return { studentName: '', parentName: '', phone: '', grade: '', groupPreference: '', price: String(suggestedPrice) }
 }
 
 // Parses a price string from the form into the DB shape: '' → null, otherwise a
@@ -74,8 +74,6 @@ export default function StudentsModal({ slot, weekKey, date, standing = false, b
   const toast = useToast()
   const confirmDialog = useConfirm()
 
-  const defaultGroup: GroupType = slot.groupType === 'empty' ? 'middle-school' : slot.groupType
-
   const students = bookings.filter((b) => b.slotId === slot.id && b.weekKey === weekKey)
   // In "standing" (template) view every row is already a fixed master, so the
   // split is meaningless there — only separate fixed vs. one-time when
@@ -90,7 +88,7 @@ export default function StudentsModal({ slot, weekKey, date, standing = false, b
   const suggestedForSize = (size: number) => pricePerStudent(Math.max(size, 1))
 
   const [adding, setAdding] = useState(false)
-  const [addDraft, setAddDraft] = useState<StudentDraft>(() => emptyDraft(defaultGroup, suggestedForAdd))
+  const [addDraft, setAddDraft] = useState<StudentDraft>(() => emptyDraft(suggestedForAdd))
   const [addError, setAddError] = useState<{ studentName?: string; phone?: string }>({})
   const [addLoading, setAddLoading] = useState(false)
 
@@ -158,7 +156,7 @@ export default function StudentsModal({ slot, weekKey, date, standing = false, b
         price,
       })
       toast('התלמיד נוסף ✓')
-      setAddDraft(emptyDraft(defaultGroup, pricePerStudent(students.length + 2)))
+      setAddDraft(emptyDraft(pricePerStudent(students.length + 2)))
       setAddError({})
       setAdding(false)
       onChanged()
@@ -257,14 +255,15 @@ export default function StudentsModal({ slot, weekKey, date, standing = false, b
               ))}
             </select>
           </Field>
-          <Field label="סוג קבוצה">
+          <Field label="מסלול">
             <select
               className={inputClass}
               value={editDraft.groupPreference}
-              onChange={(e) => setEditDraft({ ...editDraft, groupPreference: e.target.value as GroupType })}
+              onChange={(e) => setEditDraft({ ...editDraft, groupPreference: e.target.value })}
             >
+              <option value="">לא צוין</option>
               {GROUP_OPTIONS.map((g) => (
-                <option key={g} value={g}>{GROUP_LABELS[g]}</option>
+                <option key={g} value={g}>{g}</option>
               ))}
             </select>
           </Field>
@@ -303,7 +302,7 @@ export default function StudentsModal({ slot, weekKey, date, standing = false, b
           <div className="flex items-start justify-between gap-3 flex-wrap">
             <div>
               <div className="font-bold text-slate-900">{b.studentName}</div>
-              <div className="text-xs text-slate-500">{b.grade || 'כיתה לא צוינה'} | {GROUP_LABELS[b.groupPreference]}</div>
+              <div className="text-xs text-slate-500">{b.grade || 'כיתה לא צוינה'} | {b.groupPreference || 'מסלול לא צוין'}</div>
               <span className={`inline-block mt-1 text-xs rounded px-2 py-0.5 ${b.status === 'confirmed' ? 'bg-green-50 text-green-700 border border-green-300' : 'bg-white text-slate-600 border border-slate-300'}`}>
                 {b.status === 'confirmed' ? 'מאושר' : 'ממתין לאישור'}
               </span>
@@ -449,14 +448,15 @@ export default function StudentsModal({ slot, weekKey, date, standing = false, b
                   ))}
                 </select>
               </Field>
-              <Field label="סוג קבוצה">
+              <Field label="מסלול (אופציונלי)">
                 <select
                   className={inputClass}
                   value={addDraft.groupPreference}
-                  onChange={(e) => setAddDraft({ ...addDraft, groupPreference: e.target.value as GroupType })}
+                  onChange={(e) => setAddDraft({ ...addDraft, groupPreference: e.target.value })}
                 >
+                  <option value="">לא צוין</option>
                   {GROUP_OPTIONS.map((g) => (
-                    <option key={g} value={g}>{GROUP_LABELS[g]}</option>
+                    <option key={g} value={g}>{g}</option>
                   ))}
                 </select>
               </Field>
@@ -492,7 +492,7 @@ export default function StudentsModal({ slot, weekKey, date, standing = false, b
             </div>
           ) : (
             <button
-              onClick={() => { setAddDraft(emptyDraft(defaultGroup, suggestedForAdd)); setAdding(true) }}
+              onClick={() => { setAddDraft(emptyDraft(suggestedForAdd)); setAdding(true) }}
               className="w-full py-2.5 rounded-xl border border-dashed border-slate-300 text-slate-500 hover:border-blue-400 hover:text-blue-600 transition-all text-sm font-semibold"
             >
               + הוסף תלמיד

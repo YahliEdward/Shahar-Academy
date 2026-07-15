@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Booking, GROUP_LABELS, formatPrice } from '@/lib/types'
+import { Booking, formatPrice } from '@/lib/types'
 import { patchBooking, removeBooking } from '@/lib/adminApi'
 import { whatsappUrl } from '../lib'
 import { useToast } from './ui/Toast'
@@ -74,7 +74,7 @@ export default function BookingCard({ booking, slotLabel, onRefresh }: {
               {isConfirmed ? 'מאושר' : 'ממתין'}
             </span>
           </div>
-          <div className="text-xs text-slate-500 mt-1">{booking.grade} | {GROUP_LABELS[booking.groupPreference]}</div>
+          <div className="text-xs text-slate-500 mt-1">{booking.grade} | {booking.groupPreference || 'מסלול לא צוין'}</div>
           <div className="text-xs text-slate-400 mt-0.5">{slotLabel}</div>
         </div>
         <div className="flex gap-2 flex-wrap">

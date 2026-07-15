@@ -21,7 +21,7 @@ export interface Booking {
   parentName: string
   phone: string
   grade: string
-  groupPreference: GroupType
+  groupPreference: string
   status: 'pending' | 'confirmed'
   price?: number | null
   createdAt: string
@@ -195,7 +195,7 @@ export function rowToBooking(row: Record<string, unknown>): Booking {
     parentName: row.parent_name as string,
     phone: row.phone as string,
     grade: row.grade as string,
-    groupPreference: row.group_preference as GroupType,
+    groupPreference: row.group_preference as string,
     status: row.status as 'pending' | 'confirmed',
     price: row.price == null ? null : Number(row.price),
     createdAt: row.created_at as string,

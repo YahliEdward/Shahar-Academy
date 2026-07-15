@@ -2,9 +2,8 @@ import { NextRequest, NextResponse, after } from 'next/server'
 import { isAdminConfigured } from '@/lib/supabaseAdmin'
 import { createBooking, SlotFullError, SlotNotFoundError, SlotPastError, NewBooking } from '@/lib/serverDb'
 import { sendPushToAll } from '@/lib/webPush'
-import { GroupType } from '@/lib/types'
 
-const GROUP_TYPES: GroupType[] = ['middle-school', 'high-4', 'high-5', 'mixed', 'empty']
+const FAVORED_TRACKS = ['ח', 'ט', '4 יחידות', '5 יחידות']
 
 // Public endpoint: anyone can submit a booking request, but it is validated and
 // written server-side so capacity is enforced and the bookings table stays
@@ -29,9 +28,9 @@ export async function POST(request: NextRequest) {
   const slotId = str(body.slotId)
   const weekKey = str(body.weekKey)
   const slotLabel = str(body.slotLabel)
-  const groupPreference = body.groupPreference as GroupType
+  const groupPreference = str(body.groupPreference)
 
-  if (!studentName || !parentName || !grade || !slotId || !weekKey) {
+  if (!studentName || !grade || !slotId || !weekKey) {
     return NextResponse.json({ error: 'חסרים פרטים' }, { status: 400 })
   }
   if (!/^\d{4}-\d{2}-\d{2}$/.test(weekKey)) {
@@ -40,8 +39,8 @@ export async function POST(request: NextRequest) {
   if (!/^0\d{8,9}$/.test(phone.replace(/[-\s]/g, ''))) {
     return NextResponse.json({ error: 'מספר טלפון לא תקין' }, { status: 400 })
   }
-  if (!GROUP_TYPES.includes(groupPreference)) {
-    return NextResponse.json({ error: 'סוג קבוצה לא תקין' }, { status: 400 })
+  if (!FAVORED_TRACKS.includes(groupPreference)) {
+    return NextResponse.json({ error: 'מסלול לא תקין' }, { status: 400 })
   }
 
   const newBooking: NewBooking = {
@@ -55,7 +54,7 @@ export async function POST(request: NextRequest) {
     // round-trips. sendPushToAll never throws.
     after(() => sendPushToAll({
       title: 'הרשמה חדשה! 📚',
-      body: `${studentName} (${grade})\n${slotLabel}\nטלפון הורה: ${phone}`,
+      body: `${studentName} (${grade})\n${slotLabel}\nטלפון: ${phone}`,
       url: '/admin',
     }))
     return NextResponse.json({ booking })

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Slot, GroupType, GROUP_LABELS, dayLabel, formatShortDate } from '@/lib/types'
+import { Slot, GROUP_LABELS, dayLabel, formatShortDate } from '@/lib/types'
 import { submitBooking } from '@/lib/adminApi'
 import { WHATSAPP_NUMBER } from '@/lib/constants'
 import { buildLessonIcs, downloadIcs } from '@/lib/ics'
@@ -11,7 +11,7 @@ const adminWhatsappUrl = (studentName: string, grade: string, slotLabel: string,
     `הרשמה חדשה! 📚\n` +
     `תלמיד: ${studentName} (${grade})\n` +
     `שיעור: ${slotLabel}\n` +
-    `טלפון הורה: ${phone}`
+    `טלפון: ${phone}`
   )
   return `https://wa.me/${WHATSAPP_NUMBER}?text=${msg}`
 }
@@ -29,13 +29,22 @@ const GRADE_OPTIONS = [
   'כיתה י\'', 'כיתה י\"א', 'כיתה י\"ב',
 ]
 
+// Grades whose favored track is unambiguous — set automatically, no follow-up question.
+const AUTO_TRACK: Record<string, string> = {
+  'כיתה ח\'': 'ח',
+  'כיתה ט\'': 'ט',
+}
+
+// Grades that require a follow-up question (4 vs 5 יחידות) to determine the favored track.
+const NEEDS_TRACK_CHOICE = ['כיתה י\'', 'כיתה י\"א', 'כיתה י\"ב']
+
 export default function BookingModal({ slot, weekKey, weekDates, onClose, onBooked }: Props) {
   const [form, setForm] = useState({
     studentName: '',
     parentName: '',
     phone: '',
     grade: '',
-    groupPreference: (slot.groupType === 'empty' ? 'middle-school' : slot.groupType) as GroupType,
+    groupPreference: '',
   })
   const [submitted, setSubmitted] = useState(false)
   const [submittedSlotLabel, setSubmittedSlotLabel] = useState('')
@@ -86,11 +95,15 @@ export default function BookingModal({ slot, weekKey, weekDates, onClose, onBook
   const validate = () => {
     const e: Record<string, string> = {}
     if (!form.studentName.trim()) e.studentName = 'שדה חובה'
-    if (!form.parentName.trim()) e.parentName = 'שדה חובה'
     if (!form.phone.trim()) e.phone = 'שדה חובה'
     else if (!/^0\d{8,9}$/.test(form.phone.replace(/[-\s]/g, ''))) e.phone = 'מספר לא תקין'
     if (!form.grade) e.grade = 'שדה חובה'
+    else if (!form.groupPreference) e.groupPreference = 'שדה חובה'
     return e
+  }
+
+  const onGradeChange = (grade: string) => {
+    setForm({ ...form, grade, groupPreference: AUTO_TRACK[grade] ?? '' })
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -100,6 +113,7 @@ export default function BookingModal({ slot, weekKey, weekDates, onClose, onBook
       setErrors(errs)
       return
     }
+    setErrors({})
     const dayDate = weekDates[slot.day]
     const slotLabel = `יום ${dayLabel(slot.day)} ${formatShortDate(dayDate)} | ${slot.time}–${slot.endTime}`
 
@@ -166,7 +180,7 @@ export default function BookingModal({ slot, weekKey, weekDates, onClose, onBook
                 label="מועד"
                 value={<>יום {dayName} {formatShortDate(dayDate)} · <span dir="ltr">{slot.time}–{slot.endTime}</span></>}
               />
-              <SummaryRow label="קבוצה" value={GROUP_LABELS[form.groupPreference]} />
+              <SummaryRow label="מסלול" value={form.groupPreference} />
               <SummaryRow label="טלפון" value={<span dir="ltr">{form.phone}</span>} />
             </div>
 
@@ -202,22 +216,12 @@ export default function BookingModal({ slot, weekKey, weekDates, onClose, onBook
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="p-5 space-y-4">
-            <Field label="שם התלמיד" error={errors.studentName}>
+            <Field label="שם מלא" error={errors.studentName}>
               <input
                 type="text"
                 placeholder="ישראל ישראלי"
                 value={form.studentName}
                 onChange={(e) => setForm({ ...form, studentName: e.target.value })}
-                className="input-field"
-              />
-            </Field>
-
-            <Field label="שם ההורה" error={errors.parentName}>
-              <input
-                type="text"
-                placeholder="שם מלא"
-                value={form.parentName}
-                onChange={(e) => setForm({ ...form, parentName: e.target.value })}
                 className="input-field"
               />
             </Field>
@@ -236,7 +240,7 @@ export default function BookingModal({ slot, weekKey, weekDates, onClose, onBook
             <Field label="כיתה" error={errors.grade}>
               <select
                 value={form.grade}
-                onChange={(e) => setForm({ ...form, grade: e.target.value })}
+                onChange={(e) => onGradeChange(e.target.value)}
                 className="input-field"
               >
                 <option value="">בחרו כיתה</option>
@@ -246,18 +250,19 @@ export default function BookingModal({ slot, weekKey, weekDates, onClose, onBook
               </select>
             </Field>
 
-            <Field label="סוג קבוצה מועדף">
-              <select
-                value={form.groupPreference}
-                onChange={(e) => setForm({ ...form, groupPreference: e.target.value as GroupType })}
-                className="input-field"
-              >
-                <option value="middle-school">{GROUP_LABELS['middle-school']}</option>
-                <option value="high-4">{GROUP_LABELS['high-4']}</option>
-                <option value="high-5">{GROUP_LABELS['high-5']}</option>
-                <option value="mixed">{GROUP_LABELS['mixed']}</option>
-              </select>
-            </Field>
+            {NEEDS_TRACK_CHOICE.includes(form.grade) && (
+              <Field label="מסלול מועדף" error={errors.groupPreference}>
+                <select
+                  value={form.groupPreference}
+                  onChange={(e) => setForm({ ...form, groupPreference: e.target.value })}
+                  className="input-field"
+                >
+                  <option value="">בחרו מסלול</option>
+                  <option value="4 יחידות">4 יחידות</option>
+                  <option value="5 יחידות">5 יחידות</option>
+                </select>
+              </Field>
+            )}
 
             <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-800 leading-relaxed">
               <strong>שימו לב:</strong> שריון המקום הוא זמני. שחר יחזור אליכם טלפונית תוך מספר שעות לתיאום המחיר המותאם עבורכם ואישור סופי של ההרשמה.

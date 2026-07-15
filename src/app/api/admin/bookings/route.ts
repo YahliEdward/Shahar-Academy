@@ -5,9 +5,7 @@ import {
   getBookings, createBookingAsAdmin, createStandingBookingAsAdmin,
   SlotFullError, SlotNotFoundError, SlotPastError,
 } from '@/lib/serverDb'
-import { GroupType, TEMPLATE_KEY } from '@/lib/types'
-
-const GROUP_TYPES: GroupType[] = ['middle-school', 'high-4', 'high-5', 'mixed', 'empty']
+import { TEMPLATE_KEY } from '@/lib/types'
 
 export async function GET() {
   if (!(await isAdmin())) {
@@ -49,7 +47,7 @@ export async function POST(request: NextRequest) {
   const slotId = str(body.slotId)
   const weekKey = str(body.weekKey)
   const slotLabel = str(body.slotLabel)
-  const groupPreference = body.groupPreference as GroupType | undefined
+  const groupPreference = body.groupPreference as string | undefined
 
   if (!studentName || !slotId || !weekKey) {
     return NextResponse.json({ error: 'חסרים פרטים' }, { status: 400 })
@@ -60,9 +58,6 @@ export async function POST(request: NextRequest) {
   }
   if (phone && !/^0\d{8,9}$/.test(phone.replace(/[-\s]/g, ''))) {
     return NextResponse.json({ error: 'מספר טלפון לא תקין' }, { status: 400 })
-  }
-  if (groupPreference !== undefined && !GROUP_TYPES.includes(groupPreference)) {
-    return NextResponse.json({ error: 'סוג קבוצה לא תקין' }, { status: 400 })
   }
 
   // price is optional; when present it must be a non-negative number (whole ₪).

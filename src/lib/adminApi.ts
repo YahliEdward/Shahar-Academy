@@ -1,7 +1,7 @@
 // Browser-side wrappers around the server route handlers. These replace the
 // old direct-to-Supabase calls so the anon key can no longer read or mutate
 // booking data from the client.
-import { Slot, Booking, GroupType } from './types'
+import { Slot, Booking } from './types'
 
 async function jsonOrThrow(res: Response) {
   if (!res.ok) {
@@ -69,7 +69,7 @@ export interface AdminNewBookingRequest {
   parentName?: string
   phone?: string
   grade?: string
-  groupPreference?: GroupType
+  groupPreference?: string
   price?: number | null
 }
 
@@ -155,7 +155,7 @@ export interface BookingRequest {
   parentName: string
   phone: string
   grade: string
-  groupPreference: GroupType
+  groupPreference: string
 }
 
 export async function submitBooking(payload: BookingRequest): Promise<void> {
