@@ -5,6 +5,7 @@ import { Slot, GROUP_LABELS, dayLabel, formatShortDate } from '@/lib/types'
 import { submitBooking } from '@/lib/adminApi'
 import { WHATSAPP_NUMBER } from '@/lib/constants'
 import { buildLessonIcs, downloadIcs } from '@/lib/ics'
+import { readSavedRegistration, saveRegistration, clearSavedRegistration } from '@/lib/lastRegistration'
 
 const adminWhatsappUrl = (studentName: string, grade: string, slotLabel: string, phone: string) => {
   const msg = encodeURIComponent(
@@ -39,13 +40,17 @@ const AUTO_TRACK: Record<string, string> = {
 const NEEDS_TRACK_CHOICE = ['כיתה י\'', 'כיתה י\"א', 'כיתה י\"ב']
 
 export default function BookingModal({ slot, weekKey, weekDates, onClose, onBooked }: Props) {
-  const [form, setForm] = useState({
-    studentName: '',
-    parentName: '',
-    phone: '',
-    grade: '',
-    groupPreference: '',
+  const [form, setForm] = useState(() => {
+    const saved = readSavedRegistration()
+    return {
+      studentName: saved?.studentName ?? '',
+      parentName: saved?.parentName ?? '',
+      phone: saved?.phone ?? '',
+      grade: saved?.grade ?? '',
+      groupPreference: saved?.grade ? (AUTO_TRACK[saved.grade] ?? '') : '',
+    }
   })
+  const [prefilled, setPrefilled] = useState(() => !!readSavedRegistration())
   const [submitted, setSubmitted] = useState(false)
   const [submittedSlotLabel, setSubmittedSlotLabel] = useState('')
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -121,6 +126,12 @@ export default function BookingModal({ slot, weekKey, weekDates, onClose, onBook
     setSubmitError('')
     try {
       await submitBooking({ slotId: slot.id, weekKey, slotLabel, ...form })
+      saveRegistration({
+        studentName: form.studentName,
+        parentName: form.parentName,
+        phone: form.phone,
+        grade: form.grade,
+      })
       setSubmittedSlotLabel(slotLabel)
       setSubmitted(true)
       window.dispatchEvent(new Event('slotsUpdated'))
@@ -129,6 +140,12 @@ export default function BookingModal({ slot, weekKey, weekDates, onClose, onBook
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleClearSaved = () => {
+    clearSavedRegistration()
+    setPrefilled(false)
+    setForm((f) => ({ ...f, studentName: '', parentName: '', phone: '', grade: '' }))
   }
 
   const dayName = dayLabel(slot.day)
@@ -216,6 +233,19 @@ export default function BookingModal({ slot, weekKey, weekDates, onClose, onBook
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="p-5 space-y-4">
+            {prefilled && (
+              <div className="flex items-center justify-between gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-600">
+                <span>הפרטים מולאו אוטומטית מהרישום הקודם שלכם</span>
+                <button
+                  type="button"
+                  onClick={handleClearSaved}
+                  className="shrink-0 text-slate-500 hover:text-slate-800 font-semibold underline underline-offset-2"
+                >
+                  ✕ נקה
+                </button>
+              </div>
+            )}
+
             <Field label="שם מלא" error={errors.studentName}>
               <input
                 type="text"
