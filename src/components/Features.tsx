@@ -2,7 +2,7 @@ import ScrollReveal from './reveal/ScrollReveal'
 
 const FEATURES = [
   {
-    title: 'קבוצות אמיתיות של עד 6 תלמידים',
+    title: 'קבוצות של עד 6 תלמידים',
     description: 'לא עוד כיתה של 30. קבוצה קטנה שבה כל שאלה נשמעת — גם זו שהיה מביך לשאול מול כולם.',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" className="w-6 h-6">
