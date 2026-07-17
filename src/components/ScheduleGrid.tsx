@@ -58,7 +58,7 @@ function SlotCard({ slot, isPast, onClick }: { slot: Slot; isPast: boolean; onCl
         </div>
         <div className="mt-1">פנוי</div>
         <div className="mt-1.5 text-blue-600/0 group-hover:text-blue-600/80 transition-colors font-semibold">
-          לחץ לשריון מקום ←
+          לחץ לבקשת שריון ←
         </div>
       </button>
     )
@@ -109,7 +109,7 @@ function SlotCard({ slot, isPast, onClick }: { slot: Slot; isPast: boolean; onCl
 
       {!disabled && (
         <div className="mt-2 text-xs text-blue-600/70 group-hover:text-blue-600 transition-colors font-semibold">
-          לחץ לשריון מקום ←
+          לחץ לבקשת שריון ←
         </div>
       )}
     </button>
@@ -203,7 +203,7 @@ export default function ScheduleGrid() {
         <h2 className="text-3xl font-black text-slate-900 mb-2">
           לוח השעות השבועי
         </h2>
-        <p className="text-slate-500">בחרו יום ושעה שמתאימים לכם — לחצו לשריון מקום</p>
+        <p className="text-slate-500">בחרו יום ושעה שמתאימים לכם — לחצו לבקשת שריון</p>
       </div>
 
       {/* Week navigation */}
