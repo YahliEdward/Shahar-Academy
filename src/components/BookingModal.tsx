@@ -5,6 +5,7 @@ import { Slot, GROUP_LABELS, dayLabel, formatShortDate } from '@/lib/types'
 import { submitBooking } from '@/lib/adminApi'
 import { WHATSAPP_NUMBER } from '@/lib/constants'
 import { buildLessonIcs, downloadIcs } from '@/lib/ics'
+import { useScrollLock } from '@/lib/useScrollLock'
 
 const adminWhatsappUrl = (studentName: string, grade: string, slotLabel: string, phone: string) => {
   const msg = encodeURIComponent(
@@ -54,8 +55,10 @@ export default function BookingModal({ slot, weekKey, weekDates, onClose, onBook
 
   const dialogRef = useRef<HTMLDivElement>(null)
 
-  // Scroll lock + Escape-to-close + focus trap: focus moves into the dialog on
-  // open, Tab cycles inside it, and focus returns to the trigger on close.
+  useScrollLock(true)
+
+  // Escape-to-close + focus trap: focus moves into the dialog on open, Tab
+  // cycles inside it, and focus returns to the trigger on close.
   useEffect(() => {
     const dialog = dialogRef.current
     const previouslyFocused = document.activeElement as HTMLElement | null
@@ -83,10 +86,8 @@ export default function BookingModal({ slot, weekKey, weekDates, onClose, onBook
       }
     }
 
-    document.body.style.overflow = 'hidden'
     document.addEventListener('keydown', onKey)
     return () => {
-      document.body.style.overflow = ''
       document.removeEventListener('keydown', onKey)
       previouslyFocused?.focus()
     }

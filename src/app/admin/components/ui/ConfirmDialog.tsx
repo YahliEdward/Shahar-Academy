@@ -1,6 +1,7 @@
 'use client'
 
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
+import { useScrollLock } from '@/lib/useScrollLock'
 
 export interface ConfirmOptions {
   title: string
@@ -32,17 +33,15 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
     })
   }, [])
 
+  useScrollLock(pending !== null)
+
   useEffect(() => {
     if (!pending) return
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') close(false)
     }
-    document.body.style.overflow = 'hidden'
     document.addEventListener('keydown', onKey)
-    return () => {
-      document.body.style.overflow = ''
-      document.removeEventListener('keydown', onKey)
-    }
+    return () => document.removeEventListener('keydown', onKey)
   }, [pending, close])
 
   return (

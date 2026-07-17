@@ -7,6 +7,7 @@ import { removeBooking, patchBooking, adminCreateBooking } from '@/lib/adminApi'
 import { whatsappUrl } from '../lib'
 import { useToast } from './ui/Toast'
 import { useConfirm } from './ui/ConfirmDialog'
+import { useScrollLock } from '@/lib/useScrollLock'
 
 const GRADE_OPTIONS = [
   'כיתה ח\'', 'כיתה ט\'',
@@ -97,18 +98,16 @@ export default function StudentsModal({ slot, weekKey, date, standing = false, b
   const [editError, setEditError] = useState<{ studentName?: string; phone?: string }>({})
   const [editLoading, setEditLoading] = useState(false)
 
+  useScrollLock(true)
+
   useEffect(() => {
     const dialog = dialogRef.current
     dialog?.focus()
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
     }
-    document.body.style.overflow = 'hidden'
     document.addEventListener('keydown', onKey)
-    return () => {
-      document.body.style.overflow = ''
-      document.removeEventListener('keydown', onKey)
-    }
+    return () => document.removeEventListener('keydown', onKey)
   }, [onClose])
 
   const remove = async (b: Booking) => {
