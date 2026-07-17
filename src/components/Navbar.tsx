@@ -5,6 +5,7 @@ import Link from 'next/link'
 import ShaharLogo from './ShaharLogo'
 import { WHATSAPP_URL } from '@/lib/constants'
 import { adminSession } from '@/lib/adminApi'
+import { useScrollLock } from '@/lib/useScrollLock'
 
 const LINKS = [
   { id: 'features', label: 'יתרונות', href: '/#features' },
@@ -30,17 +31,15 @@ export default function Navbar() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
+  useScrollLock(menuOpen)
+
   useEffect(() => {
     if (!menuOpen) return
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setMenuOpen(false)
     }
-    document.body.style.overflow = 'hidden'
     document.addEventListener('keydown', onKey)
-    return () => {
-      document.body.style.overflow = ''
-      document.removeEventListener('keydown', onKey)
-    }
+    return () => document.removeEventListener('keydown', onKey)
   }, [menuOpen])
 
   return (
