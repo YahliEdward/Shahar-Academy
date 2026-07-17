@@ -2,6 +2,7 @@ import { getSupabaseAdmin } from './supabaseAdmin'
 import {
   Slot, Booking, MAX_STUDENTS, TEMPLATE_KEY,
   rowToSlot, rowToBooking, templateSlotId, buildDefaultSlots,
+  ReportExportSummary, ReportExportRecord, rowToReportExportSummary, rowToReportExportRecord,
 } from './types'
 
 // All reads/writes here go through the service-role client, so they run
@@ -562,4 +563,47 @@ export async function deleteBooking(id: string): Promise<void> {
       console.warn('adjust_enrolled() missing on delete — run supabase-schema.sql.', error.message)
     }
   }
+}
+
+// ─── Report exports ─────────────────────────────────────────────────────────
+// The literal generated .xlsx files from the reports tab's "ייצוא לאקסל"
+// button — a permanent log, never recomputed. See supabase-schema.sql for why
+// file_base64 is base64 text rather than bytea.
+
+const REPORT_EXPORT_LIST_COLUMNS = 'id, created_at, filename, grand_total, lesson_count, byte_size'
+
+export async function saveReportExport(input: {
+  filename: string
+  buffer: Buffer
+  grandTotal: number
+  lessonCount: number
+}): Promise<ReportExportSummary> {
+  const row = {
+    id: generateId(),
+    filename: input.filename,
+    grand_total: input.grandTotal,
+    lesson_count: input.lessonCount,
+    byte_size: input.buffer.length,
+    file_base64: input.buffer.toString('base64'),
+  }
+  const { data, error } = await getSupabaseAdmin()
+    .from('report_exports').insert(row).select(REPORT_EXPORT_LIST_COLUMNS).single()
+  if (error || !data) throw new Error(`Failed to save report export: ${error?.message}`)
+  return rowToReportExportSummary(data)
+}
+
+export async function getReportExports(): Promise<ReportExportSummary[]> {
+  const { data, error } = await getSupabaseAdmin()
+    .from('report_exports')
+    .select(REPORT_EXPORT_LIST_COLUMNS)
+    .order('created_at', { ascending: false })
+  if (error || !data) return []
+  return data.map(rowToReportExportSummary)
+}
+
+export async function getReportExportById(id: string): Promise<ReportExportRecord | null> {
+  const { data, error } = await getSupabaseAdmin()
+    .from('report_exports').select('*').eq('id', id).single()
+  if (error || !data) return null
+  return rowToReportExportRecord(data)
 }
