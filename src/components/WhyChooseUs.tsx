@@ -11,7 +11,7 @@ const REASONS = [
     ),
   },
   {
-    title: 'אווירה תומכת, לא מביכה',
+    title: 'אווירה תומכת ובגובה העיניים',
     text: 'קבוצה קטנה של בני אותו גיל — אפשר לשאול כל שאלה בלי פחד להיראות "לא מבינים".',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" className="w-6 h-6">
@@ -43,8 +43,7 @@ export default function WhyChooseUs() {
   return (
     <section id="why-us" className="py-16 px-4 max-w-6xl mx-auto">
       <div className="text-center mb-10">
-        <h2 className="text-3xl font-black text-slate-900 mb-2">למה דווקא שחר</h2>
-        <p className="text-slate-500">ארבע סיבות שבזכותן הורים ותלמידים ממליצים הלאה</p>
+        <h2 className="text-3xl font-black text-slate-900 mb-2">למה דווקא שחר?</h2>
       </div>
 
       <ScrollReveal selector=":scope > div" className="grid grid-cols-2 lg:grid-cols-4 gap-6 text-center">
