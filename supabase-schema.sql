@@ -92,6 +92,13 @@ alter table bookings add column if not exists template_id text;
 create unique index if not exists bookings_template_clone_uq
   on bookings (template_id, week_key) where template_id is not null;
 
+-- Every standing-student sync filters bookings by week_key (the master lookup
+-- via week_key = 'template', and each follower week's already-cloned lookup),
+-- and the partial index above excludes null-template_id rows, so it can't
+-- serve either. Without this, both queries fall back to a sequential scan of
+-- the whole table as booking history grows. Safe to re-run.
+create index if not exists bookings_week_key_idx on bookings (week_key);
+
 -- ════════════════════════════════════════════════════════════════════════════
 -- Atomic capacity updates
 -- ════════════════════════════════════════════════════════════════════════════

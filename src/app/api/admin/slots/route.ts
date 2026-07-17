@@ -38,8 +38,10 @@ export async function GET(request: NextRequest) {
     if (searchParams.get('mode') === 'template') {
       // Opportunistic self-heal: a week that just entered the browsable
       // range picks up the standing roster without needing a background job.
-      await syncStandingBookings()
-      return NextResponse.json({ slots: await getTemplate() })
+      // Sync only touches follower weeks' rows, never the template itself,
+      // so it can run concurrently with reading the template.
+      const [, template] = await Promise.all([syncStandingBookings(), getTemplate()])
+      return NextResponse.json({ slots: template })
     }
     const weekKey = searchParams.get('weekKey') ?? ''
     const [slots, isOverride] = await Promise.all([getSlots(weekKey), weekHasOverride(weekKey)])
