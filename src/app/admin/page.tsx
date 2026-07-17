@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Slot, Booking, getWeekKey } from '@/lib/types'
-import { adminLogout, adminSession, fetchBookings, fetchWeekSlots } from '@/lib/adminApi'
+import { Slot, Booking, Testimonial, getWeekKey } from '@/lib/types'
+import { adminLogout, adminSession, fetchBookings, fetchWeekSlots, fetchTestimonials } from '@/lib/adminApi'
 import PushToggle from '@/components/PushToggle'
 import { ToastProvider } from './components/ui/Toast'
 import { ConfirmProvider } from './components/ui/ConfirmDialog'
@@ -13,8 +13,9 @@ import TodayPanel from './components/TodayPanel'
 import BookingsTab, { BookingsFilter } from './components/BookingsTab'
 import ScheduleTab from './components/ScheduleTab'
 import ReportsTab from './components/ReportsTab'
+import TestimonialsTab from './components/TestimonialsTab'
 
-type Tab = 'bookings' | 'schedule' | 'reports'
+type Tab = 'bookings' | 'schedule' | 'reports' | 'testimonials'
 
 export default function AdminPage() {
   // null = still checking whether a previous session cookie is valid.
@@ -22,6 +23,7 @@ export default function AdminPage() {
   const [tab, setTab] = useState<Tab>('bookings')
   const [slots, setSlots] = useState<Slot[]>([])
   const [bookings, setBookings] = useState<Booking[]>([])
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([])
   const [bookingsFilter, setBookingsFilter] = useState<BookingsFilter>('all')
   // null = auto (TodayPanel opens itself when there are lessons today).
   const [todayOpen, setTodayOpen] = useState<boolean | null>(null)
@@ -38,7 +40,12 @@ export default function AdminPage() {
     if (!authed) return
     fetchWeekSlots(getWeekKey(0)).then((r) => setSlots(r.slots)).catch(() => {})
     fetchBookings().then(setBookings).catch(() => {})
+    fetchTestimonials().then(setTestimonials).catch(() => {})
   }, [authed])
+
+  const refreshTestimonials = () => {
+    fetchTestimonials().then(setTestimonials).catch(() => {})
+  }
 
   useEffect(() => {
     if (!authed) return
@@ -73,6 +80,7 @@ export default function AdminPage() {
   if (!authed) return <LoginScreen onLogin={() => setAuthed(true)} />
 
   const pendingCount = bookings.filter((b) => b.status === 'pending').length
+  const pendingTestimonialsCount = testimonials.filter((t) => t.status === 'pending').length
 
   const goToPending = () => {
     setTab('bookings')
@@ -147,6 +155,19 @@ export default function AdminPage() {
               >
                 דוחות
               </button>
+              <button
+                onClick={() => setTab('testimonials')}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${
+                  tab === 'testimonials' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                }`}
+              >
+                ביקורות
+                {pendingTestimonialsCount > 0 && (
+                  <span className="w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center font-black">
+                    {pendingTestimonialsCount}
+                  </span>
+                )}
+              </button>
             </div>
 
             {tab === 'bookings' && (
@@ -167,6 +188,9 @@ export default function AdminPage() {
               />
             )}
             {tab === 'reports' && <ReportsTab bookings={bookings} />}
+            {tab === 'testimonials' && (
+              <TestimonialsTab testimonials={testimonials} onRefresh={refreshTestimonials} />
+            )}
           </div>
         </div>
       </ConfirmProvider>

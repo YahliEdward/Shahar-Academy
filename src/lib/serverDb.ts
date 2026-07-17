@@ -1,7 +1,7 @@
-import { getSupabaseAdmin } from './supabaseAdmin'
+import { getSupabaseAdmin, isAdminConfigured } from './supabaseAdmin'
 import {
-  Slot, Booking, MAX_STUDENTS, TEMPLATE_KEY,
-  rowToSlot, rowToBooking, templateSlotId, buildDefaultSlots,
+  Slot, Booking, Testimonial, MAX_STUDENTS, TEMPLATE_KEY,
+  rowToSlot, rowToBooking, rowToTestimonial, templateSlotId, buildDefaultSlots,
 } from './types'
 
 // All reads/writes here go through the service-role client, so they run
@@ -562,4 +562,59 @@ export async function deleteBooking(id: string): Promise<void> {
       console.warn('adjust_enrolled() missing on delete — run supabase-schema.sql.', error.message)
     }
   }
+}
+
+// ─── Testimonials ─────────────────────────────────────────────────────────────
+
+export interface NewTestimonial {
+  name: string
+  stars: number
+  text: string
+}
+
+// Public homepage: only reviews the admin has approved. Called directly from a
+// server component (not behind an API route), so it must not throw when
+// Supabase isn't configured — an empty list just renders the section's empty state.
+export async function getApprovedTestimonials(): Promise<Testimonial[]> {
+  if (!isAdminConfigured) return []
+  const { data, error } = await getSupabaseAdmin()
+    .from('testimonials')
+    .select('*')
+    .eq('status', 'approved')
+    .order('created_at', { ascending: false })
+  if (error || !data) return []
+  return data.map(rowToTestimonial)
+}
+
+// Admin tab: every review regardless of status.
+export async function getTestimonials(): Promise<Testimonial[]> {
+  const { data, error } = await getSupabaseAdmin()
+    .from('testimonials')
+    .select('*')
+    .order('created_at', { ascending: false })
+  if (error || !data) return []
+  return data.map(rowToTestimonial)
+}
+
+export async function createTestimonial(input: NewTestimonial): Promise<Testimonial> {
+  const row = {
+    id: generateId(),
+    name: input.name,
+    stars: input.stars,
+    text: input.text,
+    status: 'pending',
+    created_at: new Date().toISOString(),
+  }
+  const { data, error } = await getSupabaseAdmin().from('testimonials').insert(row).select().single()
+  if (error || !data) throw new Error('Failed to save testimonial')
+  return rowToTestimonial(data)
+}
+
+export async function updateTestimonialStatus(id: string, status: 'approved' | 'rejected'): Promise<void> {
+  const { error } = await getSupabaseAdmin().from('testimonials').update({ status }).eq('id', id)
+  if (error) throw new Error(`Failed to update testimonial ${id}: ${error.message}`)
+}
+
+export async function deleteTestimonial(id: string): Promise<void> {
+  await getSupabaseAdmin().from('testimonials').delete().eq('id', id)
 }

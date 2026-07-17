@@ -30,6 +30,15 @@ export interface Booking {
   templateId?: string
 }
 
+export interface Testimonial {
+  id: string
+  name: string
+  stars: number
+  text: string
+  status: 'pending' | 'approved' | 'rejected'
+  createdAt: string
+}
+
 export const MAX_STUDENTS = 6
 
 export const DAYS = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי'] as const
@@ -200,6 +209,17 @@ export function rowToBooking(row: Record<string, unknown>): Booking {
     price: row.price == null ? null : Number(row.price),
     createdAt: row.created_at as string,
     templateId: row.template_id as string | undefined,
+  }
+}
+
+export function rowToTestimonial(row: Record<string, unknown>): Testimonial {
+  return {
+    id: row.id as string,
+    name: row.name as string,
+    stars: row.stars as number,
+    text: row.text as string,
+    status: row.status as Testimonial['status'],
+    createdAt: row.created_at as string,
   }
 }
 
