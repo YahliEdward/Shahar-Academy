@@ -46,6 +46,15 @@ export interface ReportExportRecord extends ReportExportSummary {
   fileBase64: string
 }
 
+export interface Testimonial {
+  id: string
+  name: string
+  stars: number
+  text: string
+  status: 'pending' | 'approved' | 'rejected'
+  createdAt: string
+}
+
 export const MAX_STUDENTS = 6
 
 export const DAYS = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי'] as const
@@ -234,6 +243,17 @@ export function rowToReportExportRecord(row: Record<string, unknown>): ReportExp
   return {
     ...rowToReportExportSummary(row),
     fileBase64: row.file_base64 as string,
+  }
+}
+
+export function rowToTestimonial(row: Record<string, unknown>): Testimonial {
+  return {
+    id: row.id as string,
+    name: row.name as string,
+    stars: row.stars as number,
+    text: row.text as string,
+    status: row.status as Testimonial['status'],
+    createdAt: row.created_at as string,
   }
 }
 

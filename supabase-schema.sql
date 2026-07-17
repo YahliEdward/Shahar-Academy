@@ -222,3 +222,32 @@ alter table report_exports enable row level security;
 
 -- No anon policies → the anon key cannot select/insert/update/delete these
 -- rows at all. All access happens server-side via service_role.
+
+-- ════════════════════════════════════════════════════════════════════════════
+-- Testimonials
+-- ════════════════════════════════════════════════════════════════════════════
+-- Public visitors submit a review (name + stars + text), which lands as
+-- 'pending'. Only rows the admin flips to 'approved' are shown on the public
+-- site. No anon policies: all access (public submit + admin read/moderate)
+-- goes through server route handlers using the service_role key, same as
+-- bookings.
+
+create table if not exists testimonials (
+  id text primary key,
+  name text not null,
+  stars smallint not null,
+  text text not null,
+  status text not null default 'pending',
+  created_at timestamptz not null default now()
+);
+
+alter table testimonials enable row level security;
+
+-- Preserve the 4 existing placeholder testimonials as pre-approved rows so the
+-- public site isn't blank the moment this migration runs. Safe to re-run.
+insert into testimonials (id, name, stars, text, status) values
+  ('seed-1', 'מיכל ר.', 5, 'יובל עלה מ-62 ל-91 בתוך שלושה חודשים. שחר מסביר בסבלנות ויודע בדיוק איפה הילד תקוע. ממליצה בחום!', 'approved'),
+  ('seed-2', 'אבי כ.', 5, 'ניסינו מורים פרטיים רבים לפני שחר. הקבוצה הקטנה עושה הבדל עצום — נועה סוף סוף מרגישה בנוח לשאול שאלות.', 'approved'),
+  ('seed-3', 'דנה מ.', 5, 'הגעתי לשחר עם 54 בבגרות. היום אני יודעת שאני יכולה להגיש על 5 יחידות. האווירה בקבוצה מדהימה.', 'approved'),
+  ('seed-4', 'רותי ש.', 5, 'תאיר פחדה ממתמטיקה שנים. שחר הצליח להפוך אותה לאחת הטובות בכיתה. לא יאמן.', 'approved')
+on conflict (id) do nothing;

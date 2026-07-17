@@ -1,7 +1,7 @@
 // Browser-side wrappers around the server route handlers. These replace the
 // old direct-to-Supabase calls so the anon key can no longer read or mutate
 // booking data from the client.
-import { Slot, Booking, ReportExportSummary } from './types'
+import { Slot, Booking, ReportExportSummary, Testimonial } from './types'
 
 async function jsonOrThrow(res: Response) {
   if (!res.ok) {
@@ -211,4 +211,38 @@ export async function submitBooking(payload: BookingRequest): Promise<void> {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   }))
+}
+
+// ─── Testimonials ─────────────────────────────────────────────────────────────
+
+export interface TestimonialRequest {
+  name: string
+  stars: number
+  text: string
+}
+
+// Public: submit a review. Lands as 'pending' until an admin approves it.
+export async function submitTestimonial(payload: TestimonialRequest): Promise<void> {
+  await jsonOrThrow(await fetch('/api/testimonials', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  }))
+}
+
+export async function fetchTestimonials(): Promise<Testimonial[]> {
+  const data = await jsonOrThrow(await fetch('/api/admin/testimonials'))
+  return data.testimonials as Testimonial[]
+}
+
+export async function patchTestimonial(id: string, status: 'approved' | 'rejected'): Promise<void> {
+  await jsonOrThrow(await fetch(`/api/admin/testimonials/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status }),
+  }))
+}
+
+export async function removeTestimonial(id: string): Promise<void> {
+  await jsonOrThrow(await fetch(`/api/admin/testimonials/${id}`, { method: 'DELETE' }))
 }
