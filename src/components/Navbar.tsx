@@ -7,12 +7,11 @@ import { WHATSAPP_URL } from '@/lib/constants'
 import { adminSession } from '@/lib/adminApi'
 
 const LINKS = [
-  { id: 'features', label: 'היתרונות שלנו', href: '/#features' },
-  { id: 'why-us', label: 'למה דווקא אנחנו', href: '/#why-us' },
+  { id: 'features', label: 'יתרונות', href: '/#features' },
+  { id: 'why-us', label: 'למה דווקא שחר', href: '/#why-us' },
   { id: 'about', label: 'על שחר', href: '/#about' },
-  { id: 'schedule', label: 'לוח שעות', href: '/schedule' },
   { id: 'testimonials', label: 'המלצות', href: '/#testimonials' },
-  { id: 'faq', label: 'שאלות נפוצות', href: '/#faq' },
+  { id: 'faq', label: 'שאלות נוספות', href: '/#faq' },
 ]
 
 export default function Navbar() {
