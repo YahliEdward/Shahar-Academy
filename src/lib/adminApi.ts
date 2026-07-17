@@ -1,7 +1,7 @@
 // Browser-side wrappers around the server route handlers. These replace the
 // old direct-to-Supabase calls so the anon key can no longer read or mutate
 // booking data from the client.
-import { Slot, Booking } from './types'
+import { Slot, Booking, ReportExportSummary } from './types'
 
 async function jsonOrThrow(res: Response) {
   if (!res.ok) {
@@ -81,6 +81,53 @@ export async function adminCreateBooking(payload: AdminNewBookingRequest): Promi
     body: JSON.stringify(payload),
   }))
   return data.booking as Booking
+}
+
+// ─── Report exports ─────────────────────────────────────────────────────────
+
+async function blobOrThrow(res: Response): Promise<{ blob: Blob; filename: string }> {
+  if (!res.ok) {
+    let msg = 'Request failed'
+    try { msg = (await res.json()).error ?? msg } catch {}
+    throw new Error(msg)
+  }
+  const disposition = res.headers.get('Content-Disposition') ?? ''
+  const match = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(disposition)
+  const filename = match ? decodeURIComponent(match[1]) : 'report.xlsx'
+  return { blob: await res.blob(), filename }
+}
+
+// Triggers a browser file-save for a blob response — plain object-URL +
+// hidden-anchor click, no library needed.
+function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  URL.revokeObjectURL(url)
+}
+
+export async function fetchReportExports(): Promise<ReportExportSummary[]> {
+  const data = await jsonOrThrow(await fetch('/api/admin/reports/exports'))
+  return data.exports as ReportExportSummary[]
+}
+
+// Generates a new export server-side, saves it to history, and immediately
+// triggers the browser download of the same bytes.
+export async function generateReportExport(): Promise<void> {
+  const res = await fetch('/api/admin/reports/exports', { method: 'POST' })
+  const { blob, filename } = await blobOrThrow(res)
+  downloadBlob(blob, filename)
+}
+
+// Re-downloads a past export exactly as it was generated then.
+export async function downloadReportExport(id: string): Promise<void> {
+  const res = await fetch(`/api/admin/reports/exports/${id}`)
+  const { blob, filename } = await blobOrThrow(res)
+  downloadBlob(blob, filename)
 }
 
 // ─── Slots ──────────────────────────────────────────────────────────────────

@@ -184,3 +184,34 @@ begin
     alter table bookings alter column price type integer using null::integer;
   end if;
 end $$;
+
+-- ════════════════════════════════════════════════════════════════════════════
+-- Report export history
+-- ════════════════════════════════════════════════════════════════════════════
+-- A permanent log of every "ייצוא לאקסל" click on the reports tab. Each row
+-- is the literal generated .xlsx file (base64-encoded) plus a few
+-- denormalised summary fields so the history list can render without
+-- decoding the file. This is NOT a live recompute: re-downloading an old row
+-- must return exactly the bytes generated at that time, even if bookings
+-- have since changed. Base64 text (not bytea) round-trips through
+-- supabase-js/PostgREST as plain JSON with no extra encoding step. No anon
+-- access; only the server (service_role) reads or writes this table, same
+-- pattern as bookings.
+
+create table if not exists report_exports (
+  id text primary key,
+  created_at timestamptz not null default now(),
+  filename text not null,
+  grand_total integer not null,
+  lesson_count integer not null,
+  byte_size integer not null,
+  file_base64 text not null
+);
+
+create index if not exists report_exports_created_at_idx
+  on report_exports (created_at desc);
+
+alter table report_exports enable row level security;
+
+-- No anon policies → the anon key cannot select/insert/update/delete these
+-- rows at all. All access happens server-side via service_role.

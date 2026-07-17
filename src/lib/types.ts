@@ -30,6 +30,22 @@ export interface Booking {
   templateId?: string
 }
 
+// A record of one "ייצוא לאקסל" click on the reports tab — the literal
+// generated file, not a live recompute. Summary is the list/history view (no
+// file bytes); Record additionally carries the base64 file for download.
+export interface ReportExportSummary {
+  id: string
+  createdAt: string
+  filename: string
+  grandTotal: number
+  lessonCount: number
+  byteSize: number
+}
+
+export interface ReportExportRecord extends ReportExportSummary {
+  fileBase64: string
+}
+
 export const MAX_STUDENTS = 6
 
 export const DAYS = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי'] as const
@@ -200,6 +216,24 @@ export function rowToBooking(row: Record<string, unknown>): Booking {
     price: row.price == null ? null : Number(row.price),
     createdAt: row.created_at as string,
     templateId: row.template_id as string | undefined,
+  }
+}
+
+export function rowToReportExportSummary(row: Record<string, unknown>): ReportExportSummary {
+  return {
+    id: row.id as string,
+    createdAt: row.created_at as string,
+    filename: row.filename as string,
+    grandTotal: Number(row.grand_total),
+    lessonCount: Number(row.lesson_count),
+    byteSize: Number(row.byte_size),
+  }
+}
+
+export function rowToReportExportRecord(row: Record<string, unknown>): ReportExportRecord {
+  return {
+    ...rowToReportExportSummary(row),
+    fileBase64: row.file_base64 as string,
   }
 }
 

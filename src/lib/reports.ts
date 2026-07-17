@@ -46,7 +46,7 @@ function monthLabel(monthKey: string): string {
 // billable week — counting them would double-count a standing student (once
 // on the master, again on every weekly clone) and they have no real calendar
 // month to attribute to anyway.
-function isBillable(b: Booking): boolean {
+export function isBillable(b: Booking): boolean {
   return b.status === 'confirmed' && b.price != null && !!b.weekKey && b.weekKey !== TEMPLATE_KEY
 }
 
@@ -79,6 +79,34 @@ export function buildReport(bookings: Booking[]): ReportData {
     .sort((a, b) => b.total - a.total)
 
   return { byMonth, byStudent, grandTotal }
+}
+
+export interface DetailRow {
+  studentName: string
+  monthLabel: string
+  slotLabel: string
+  price: number
+}
+
+// One row per individual billable lesson — the "lesson breakdown" export
+// sheet. Reuses isBillable so this can never disagree with buildReport's
+// totals or with what's on screen.
+export function buildDetailRows(bookings: Booking[]): DetailRow[] {
+  return bookings
+    .filter(isBillable)
+    .map((b) => {
+      const monthKey = monthKeyFromWeekKey(b.weekKey as string)
+      return {
+        studentName: b.studentName || '(ללא שם)',
+        monthLabel: monthKey ? monthLabel(monthKey) : (b.weekKey as string),
+        slotLabel: b.slotLabel || '',
+        price: b.price as number,
+      }
+    })
+    .sort((a, b) =>
+      a.monthLabel.localeCompare(b.monthLabel, 'he') ||
+      a.studentName.localeCompare(b.studentName, 'he')
+    )
 }
 
 export { formatPrice }
