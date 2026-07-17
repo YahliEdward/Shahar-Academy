@@ -12,7 +12,7 @@ const FEATURES = [
   },
   {
     title: 'שריון מקום אונליין תוך דקה',
-    description: 'בוחרים שעה פנויה בלוח, ממלאים טופס קצר — והמקום שמור לכם. שחר חוזר אליכם באותו יום לאישור סופי.',
+    description: 'בוחרים שעה פנויה בלוח, ממלאים טופס קצר — והמקום משוריין לכם באופן זמני. שחר חוזר אליכם באותו יום לאישור סופי.',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" className="w-6 h-6">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M21 12c0 4.418-4.03 8-9 8a9.86 9.86 0 01-4-.8L3 20l1.3-3.9A7.93 7.93 0 013 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />

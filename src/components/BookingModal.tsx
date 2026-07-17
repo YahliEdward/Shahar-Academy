@@ -161,14 +161,14 @@ export default function BookingModal({ slot, weekKey, weekDates, onClose, onBook
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
-        aria-label="שריון מקום"
+        aria-label="בקשת שריון מקום"
         tabIndex={-1}
         className="w-full max-w-md bg-white rounded-2xl border border-slate-200 shadow-2xl fade-in-up overflow-hidden outline-none"
       >
         {/* Header */}
         <div className="bg-slate-50 px-5 py-4 flex items-center justify-between border-b border-slate-200">
           <div>
-            <h3 className="font-black text-slate-900 text-lg">שריון מקום</h3>
+            <h3 className="font-black text-slate-900 text-lg">בקשת שריון מקום</h3>
             <p className="text-sm text-slate-500 mt-0.5">
               יום {dayName} {formatShortDate(dayDate)} | <span dir="ltr">{slot.time}–{slot.endTime}</span> | {GROUP_LABELS[slot.groupType]}
             </p>
@@ -202,7 +202,7 @@ export default function BookingModal({ slot, weekKey, weekDates, onClose, onBook
               <SummaryRow label="טלפון" value={<span dir="ltr">{form.phone}</span>} />
             </div>
 
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-4 text-xs text-blue-800 leading-relaxed text-right">
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-4 text-sm text-blue-800 leading-relaxed text-right">
               <strong>שימו לב:</strong> השריון זמני עד לאישור טלפוני של שחר.
             </div>
 
@@ -223,8 +223,9 @@ export default function BookingModal({ slot, weekKey, weekDates, onClose, onBook
               rel="noopener noreferrer"
               className="mt-3 flex items-center justify-center gap-2 w-full py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl transition-colors text-sm"
             >
-              💬 שלח הודעה לשחר
+              💬 שלח הודעה לשחר (לא חובה)
             </a>
+            <p className="mt-1.5 text-[11px] text-slate-400">שחר כבר קיבל התראה על הבקשה — זו רק דרך מהירה ליצור איתו קשר ישיר.</p>
             <button
               onClick={onBooked}
               className="mt-3 w-full py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors"
@@ -295,7 +296,7 @@ export default function BookingModal({ slot, weekKey, weekDates, onClose, onBook
               </Field>
             )}
 
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-800 leading-relaxed">
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-800 leading-relaxed">
               <strong>שימו לב:</strong> שריון המקום הוא זמני. שחר יחזור אליכם טלפונית תוך מספר שעות לתיאום המחיר המותאם עבורכם ואישור סופי של ההרשמה.
             </div>
 
