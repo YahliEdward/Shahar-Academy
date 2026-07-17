@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import ShaharLogo from './ShaharLogo'
 import HeroVisual from './HeroVisual'
 import MarkerUnderline from './MarkerUnderline'
 import { PHONE, WHATSAPP_URL } from '@/lib/constants'
@@ -36,15 +35,6 @@ export default function Hero() {
     >
       <div className="relative z-10 w-full max-w-6xl mx-auto grid lg:grid-cols-[1.15fr_1fr] gap-10 items-center">
         <div className="flex flex-col items-center text-center lg:items-start lg:text-right">
-          <div className="hero-logo fade-in-up mb-6 hidden sm:flex items-center gap-3">
-            <Link href="/" aria-label="חזרה לדף הבית">
-              <ShaharLogo size={60} className="drop-shadow-lg" />
-            </Link>
-            <span className="text-2xl font-black text-slate-900 tracking-tight">
-              שחר <span className="text-blue-600">מורה פרטי</span>
-            </span>
-          </div>
-
           <h1
             className="hero-heading fade-in-up text-4xl sm:text-5xl md:text-6xl font-black leading-snug mb-6 text-slate-900"
             style={{ animationDelay: '0.08s' }}
