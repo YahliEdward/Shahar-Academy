@@ -435,8 +435,10 @@ function followerWeekKeys(): string[] {
 async function syncStandingBookingsIntoWeek(weekKey: string, standing: Booking[]): Promise<void> {
   if (standing.length === 0) return
   const db = getSupabaseAdmin()
-  const slots = await ensureWeekSlots(weekKey)
-  const { data: weekRows } = await db.from('bookings').select('template_id').eq('week_key', weekKey)
+  const [slots, { data: weekRows }] = await Promise.all([
+    ensureWeekSlots(weekKey),
+    db.from('bookings').select('template_id').eq('week_key', weekKey),
+  ])
   const alreadyCloned = new Set((weekRows ?? []).map((r) => r.template_id as string).filter(Boolean))
 
   for (const master of standing) {
@@ -482,9 +484,9 @@ async function syncStandingBookingsIntoWeek(weekKey: string, standing: Booking[]
 export async function syncStandingBookings(): Promise<void> {
   const standing = await getStandingBookings()
   if (standing.length === 0) return
-  for (const weekKey of followerWeekKeys()) {
-    await syncStandingBookingsIntoWeek(weekKey, standing)
-  }
+  // Each follower week owns disjoint rows (its own week_key), so syncing them
+  // concurrently is safe and turns what was 4x the round trips into ~1x.
+  await Promise.all(followerWeekKeys().map((weekKey) => syncStandingBookingsIntoWeek(weekKey, standing)))
 }
 
 export async function createStandingBookingAsAdmin(input: NewAdminBooking): Promise<Booking> {
@@ -503,9 +505,7 @@ export async function createStandingBookingAsAdmin(input: NewAdminBooking): Prom
   const { data, error } = await getSupabaseAdmin().from('bookings').insert(row).select().single()
   if (error || !data) throw new Error('Failed to save standing booking')
   const master = rowToBooking(data)
-  for (const weekKey of followerWeekKeys()) {
-    await syncStandingBookingsIntoWeek(weekKey, [master])
-  }
+  await Promise.all(followerWeekKeys().map((weekKey) => syncStandingBookingsIntoWeek(weekKey, [master])))
   return master
 }
 
