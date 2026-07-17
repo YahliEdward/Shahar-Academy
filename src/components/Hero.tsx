@@ -62,7 +62,7 @@ export default function Hero() {
             style={{ animationDelay: '0.14s' }}
           >
             קבוצות למידה קטנות ואישיות בבית שחר — עד <strong className="text-blue-600">6 תלמידים בלבד</strong> לכל קבוצה.
-            תשומת לב מקסימלית, תוצאות אמיתיות.
+            תשומת לב מקסימלית, שיפור מורגש בציונים.
           </p>
 
           <div
