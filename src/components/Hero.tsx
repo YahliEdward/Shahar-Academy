@@ -93,14 +93,14 @@ export default function Hero() {
           >
             <Link
               href="/schedule"
-              className="flex-1 sm:flex-none whitespace-nowrap px-4 sm:px-8 py-4 bg-blue-600 text-white font-black text-lg rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 hover:shadow-blue-600/30 hover:-translate-y-0.5 text-center"
+              className="flex-1 sm:flex-none whitespace-normal sm:whitespace-nowrap px-4 sm:px-8 py-4 bg-blue-600 text-white font-black text-lg rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 hover:shadow-blue-600/30 hover:-translate-y-0.5 text-center"
             >
               בחרו שעה עכשיו ←
             </Link>
             <div ref={contactRef} className="relative flex-1 sm:flex-none">
               <button
                 onClick={() => setContactOpen(o => !o)}
-                className="w-full sm:w-auto justify-center whitespace-nowrap px-4 sm:px-8 py-4 bg-white border border-slate-300 text-slate-700 font-bold text-lg rounded-xl shadow-sm hover:bg-slate-50 transition-all flex items-center gap-1.5"
+                className="w-full sm:w-auto justify-center whitespace-normal sm:whitespace-nowrap px-4 sm:px-8 py-4 bg-white border border-slate-300 text-slate-700 font-bold text-lg rounded-xl shadow-sm hover:bg-slate-50 transition-all flex items-center gap-1.5"
               >
                 יצירת קשר
                 <svg className={`w-3.5 h-3.5 transition-transform ${contactOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -109,7 +109,7 @@ export default function Hero() {
               </button>
 
               {contactOpen && (
-                <div className="absolute top-full mt-2 right-0 bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xl z-50 min-w-full">
+                <div className="absolute top-full mt-2 left-0 bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xl z-50 min-w-full">
                   <a
                     href={`tel:${PHONE}`}
                     className="flex items-center gap-3 px-5 py-3 text-slate-700 hover:bg-slate-100 transition-colors text-base font-semibold"
