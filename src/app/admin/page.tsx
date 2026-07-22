@@ -105,7 +105,7 @@ export default function AdminPage() {
         <div className="min-h-screen math-bg">
           <AdminHeader onLogout={handleLogout} />
 
-          <div className="max-w-4xl mx-auto px-4 py-6">
+          <div className="max-w-4xl xl:max-w-6xl 2xl:max-w-7xl mx-auto px-4 lg:px-6 py-6">
             <PushToggle />
 
             <DashboardStats

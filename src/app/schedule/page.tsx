@@ -14,7 +14,7 @@ export default function SchedulePage() {
     <main>
       <Navbar />
       <div className="pt-20 sm:pt-24">
-        <div className="max-w-6xl mx-auto px-4 pt-4">
+        <div className="max-w-6xl 2xl:max-w-7xl mx-auto px-4 pt-4">
           <Link
             href="/"
             className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-blue-600 transition-colors"

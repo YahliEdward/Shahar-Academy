@@ -52,7 +52,7 @@ export default function Navbar() {
       }`}
       style={{ height: scrolled ? '58px' : 'var(--nav-height)' }}
     >
-      <nav className="w-full max-w-6xl xl:max-w-7xl 2xl:max-w-[1600px] mx-auto px-4 flex items-center justify-between">
+      <nav className="w-full max-w-6xl 2xl:max-w-7xl mx-auto px-4 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 shrink-0">
           <ShaharLogo size={44} />
           <span className="hidden sm:inline text-sm font-black text-slate-900 tracking-tight">

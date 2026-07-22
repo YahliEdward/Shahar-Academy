@@ -17,7 +17,7 @@ export default function TestimonialsTab({ testimonials, onRefresh }: {
         {pending.length === 0 ? (
           <p className="text-sm text-slate-400">אין ביקורות ממתינות.</p>
         ) : (
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
             {pending.map((t) => (
               <TestimonialCard key={t.id} testimonial={t} onRefresh={onRefresh} />
             ))}
@@ -30,7 +30,7 @@ export default function TestimonialsTab({ testimonials, onRefresh }: {
         {approved.length === 0 ? (
           <p className="text-sm text-slate-400">אין ביקורות מאושרות עדיין.</p>
         ) : (
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
             {approved.map((t) => (
               <TestimonialCard key={t.id} testimonial={t} onRefresh={onRefresh} />
             ))}

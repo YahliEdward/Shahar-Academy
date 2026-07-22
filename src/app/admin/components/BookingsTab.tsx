@@ -82,7 +82,7 @@ export default function BookingsTab({ bookings, slots, filter, onFilterChange, o
       {filtered.length === 0 ? (
         <p className="text-center text-slate-400 py-10 text-sm">אין תוצאות ל&quot;{query}&quot;</p>
       ) : visible ? (
-        <div className="space-y-3">{renderCards(visible)}</div>
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">{renderCards(visible)}</div>
       ) : (
         <div className="space-y-6">
           {pending.length > 0 && (
@@ -90,7 +90,7 @@ export default function BookingsTab({ bookings, slots, filter, onFilterChange, o
               <h3 className="text-sm font-bold text-blue-600 mb-3 uppercase tracking-wider">
                 ממתין לאישור ({pending.length})
               </h3>
-              <div className="space-y-3">{renderCards(pending)}</div>
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">{renderCards(pending)}</div>
             </div>
           )}
           {confirmed.length > 0 && (
@@ -98,7 +98,7 @@ export default function BookingsTab({ bookings, slots, filter, onFilterChange, o
               <h3 className="text-sm font-bold text-green-600 mb-3 uppercase tracking-wider">
                 מאושר ({confirmed.length})
               </h3>
-              <div className="space-y-3">{renderCards(confirmed)}</div>
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">{renderCards(confirmed)}</div>
             </div>
           )}
         </div>

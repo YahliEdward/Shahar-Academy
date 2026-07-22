@@ -6,6 +6,12 @@ import { gsap, prefersReducedMotion } from '@/lib/gsap'
 
 export type Stat = { value: number; prefix?: string; suffix?: string; label: string; decimals?: number }
 
+function gridColsClass(n: number): string {
+  if (n <= 3) return 'grid-cols-1 sm:grid-cols-3'
+  if (n === 4) return 'grid-cols-2 md:grid-cols-4'
+  return 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4'
+}
+
 export default function TrustBarCounters({ stats }: { stats: Stat[] }) {
   const scope = useRef<HTMLDivElement>(null)
 
@@ -36,12 +42,10 @@ export default function TrustBarCounters({ stats }: { stats: Stat[] }) {
     })
   }, { scope })
 
-  const gridClass = stats.length >= 4
-    ? 'grid grid-cols-2 md:grid-cols-4 gap-6 text-center'
-    : 'grid grid-cols-1 sm:grid-cols-3 gap-6 text-center'
+  const gridClass = `grid ${gridColsClass(stats.length)} gap-6 text-center`
 
   return (
-    <div ref={scope} className={`max-w-6xl xl:max-w-7xl 2xl:max-w-[1600px] mx-auto ${gridClass}`}>
+    <div ref={scope} className={`max-w-6xl 2xl:max-w-7xl mx-auto ${gridClass}`}>
       {stats.map((s, i) => {
         const displayValue = s.decimals != null ? s.value.toFixed(s.decimals) : String(s.value)
         return (

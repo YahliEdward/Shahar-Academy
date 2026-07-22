@@ -3,7 +3,7 @@
 // differently for different lessons in the same month — a weekday rate, a
 // one-time discount, etc.), so every total here is a plain sum of each
 // billable row's own price — never a rate multiplied by a lesson count.
-import { Booking, TEMPLATE_KEY, formatPrice, formatShortDate } from './types'
+import { Booking, Slot, MAX_STUDENTS, TEMPLATE_KEY, formatPrice, formatShortDate } from './types'
 
 export interface MonthTotal {
   monthKey: string
@@ -83,6 +83,10 @@ function weekLabel(weekKey: string, weekNumber: number): string {
 // month to attribute to anyway.
 export function isBillable(b: Booking): boolean {
   return b.status === 'confirmed' && b.price != null && !!b.weekKey && b.weekKey !== TEMPLATE_KEY
+}
+
+export function countOpenSlots(slots: Slot[]): number {
+  return slots.reduce((sum, s) => sum + Math.max(0, MAX_STUDENTS - s.enrolled), 0)
 }
 
 export function buildReport(bookings: Booking[]): ReportData {
