@@ -192,7 +192,10 @@ export async function resetWeekToDefault(weekKey: string): Promise<void> {
 
 // ─── Bookings ─────────────────────────────────────────────────────────────────
 
+// Also called directly from the public homepage (TrustBar), which must not
+// throw when Supabase isn't configured — mirrors getApprovedTestimonials().
 export async function getBookings(): Promise<Booking[]> {
+  if (!isAdminConfigured) return []
   const { data, error } = await getSupabaseAdmin()
     .from('bookings')
     .select('*')

@@ -1,66 +1,38 @@
-'use client'
+import TrustBarCounters, { Stat } from './TrustBarCounters'
+import { getBookings, getApprovedTestimonials } from '@/lib/serverDb'
+import { buildReport } from '@/lib/reports'
+import { MAX_STUDENTS } from '@/lib/types'
 
-import { useRef } from 'react'
-import { useGSAP } from '@gsap/react'
-import { gsap, prefersReducedMotion } from '@/lib/gsap'
+export default async function TrustBar() {
+  const [bookings, testimonials] = await Promise.all([
+    getBookings(),
+    getApprovedTestimonials(),
+  ])
 
-type Stat = { value: number; prefix?: string; suffix?: string; label: string }
+  const report = buildReport(bookings)
+  const distinctStudents = report.byStudent.length
+  const totalLessons = report.byStudent.reduce((sum, s) => sum + s.lessonCount, 0)
 
-const DEFAULT_STATS: Stat[] = [
-  { value: 100, suffix: '+', label: 'תלמידים ליווינו להצלחה' },
-  { value: 98, suffix: '%', label: 'הורים ממליצים עלינו' },
-  { value: 22, prefix: '+', label: 'נק׳ שיפור ממוצע בבגרות' },
-  { value: 6, label: 'תלמידים מקסימום לקבוצה' },
-]
+  const stats: Stat[] = [
+    { value: distinctStudents, label: 'תלמידים למדו איתנו' },
+    { value: totalLessons, label: 'שיעורים שנקבעו' },
+  ]
 
-export default function TrustBar({ stats = DEFAULT_STATS }: { stats?: Stat[] }) {
-  const scope = useRef<HTMLDivElement>(null)
-
-  useGSAP(() => {
-    const counters = scope.current?.querySelectorAll<HTMLElement>('[data-counter]')
-    if (!counters?.length) return
-
-    if (prefersReducedMotion()) {
-      counters.forEach((el) => {
-        el.textContent = `${el.dataset.prefix ?? ''}${el.dataset.value}${el.dataset.suffix ?? ''}`
-      })
-      return
-    }
-
-    counters.forEach((el) => {
-      const target = Number(el.dataset.value)
-      const obj = { val: 0 }
-      gsap.to(obj, {
-        val: target,
-        duration: 1.6,
-        ease: 'power2.out',
-        scrollTrigger: { trigger: el, start: 'top 85%', once: true },
-        onUpdate: () => {
-          el.textContent = `${el.dataset.prefix ?? ''}${Math.round(obj.val)}${el.dataset.suffix ?? ''}`
-        },
-      })
+  if (testimonials.length > 0) {
+    const avg = testimonials.reduce((sum, t) => sum + t.stars, 0) / testimonials.length
+    stats.push({
+      value: Math.round(avg * 10) / 10,
+      decimals: 1,
+      suffix: ' / 5',
+      label: `דירוג ממוצע (${testimonials.length} ביקורות)`,
     })
-  }, { scope })
+  }
+
+  stats.push({ value: MAX_STUDENTS, label: 'תלמידים מקסימום לקבוצה' })
 
   return (
     <section className="px-4 py-10 border-y border-slate-200">
-      <div ref={scope} className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-        {stats.map((s, i) => (
-          <div key={i}>
-            <div
-              data-counter
-              dir="ltr"
-              data-value={s.value}
-              data-prefix={s.prefix ?? ''}
-              data-suffix={s.suffix ?? ''}
-              className="text-3xl sm:text-4xl font-black text-blue-600"
-            >
-              {s.prefix}{s.value}{s.suffix}
-            </div>
-            <div className="text-xs sm:text-sm text-slate-500 mt-1">{s.label}</div>
-          </div>
-        ))}
-      </div>
+      <TrustBarCounters stats={stats} />
     </section>
   )
 }

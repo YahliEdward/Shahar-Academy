@@ -18,7 +18,7 @@ const HIGHLIGHTS = [
 
 export default function AboutShahar() {
   return (
-    <section id="about" className="py-16 px-4 max-w-6xl mx-auto">
+    <section id="about" className="py-16 px-4 max-w-6xl xl:max-w-7xl 2xl:max-w-[1600px] mx-auto">
       <ScrollReveal
         selector=":scope > *"
         className="grid lg:grid-cols-[1fr_1.3fr] gap-10 lg:gap-14 items-center"

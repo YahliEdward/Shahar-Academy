@@ -7,8 +7,17 @@ import { fetchReportExports, generateReportExport, downloadReportExport } from '
 import { useToast } from './ui/Toast'
 
 export default function ReportsTab({ bookings }: { bookings: Booking[] }) {
-  const { byMonth, byStudent, grandTotal } = buildReport(bookings)
+  const { byMonth, byWeek, byStudent, grandTotal } = buildReport(bookings)
   const toast = useToast()
+
+  // byWeek is already sorted most-recent-first by weekKey — grouping by year
+  // here preserves that order both across and within year groups.
+  const weeksByYear: { year: number; weeks: typeof byWeek }[] = []
+  for (const w of byWeek) {
+    const group = weeksByYear[weeksByYear.length - 1]
+    if (group && group.year === w.year) group.weeks.push(w)
+    else weeksByYear.push({ year: w.year, weeks: [w] })
+  }
 
   const [exporting, setExporting] = useState(false)
   const [history, setHistory] = useState<ReportExportSummary[]>([])
@@ -74,6 +83,25 @@ export default function ReportsTab({ bookings }: { bookings: Booking[] }) {
             <div key={m.monthKey} className="flex items-center justify-between bg-white border border-slate-200 rounded-lg px-4 py-2.5">
               <span className="text-sm text-slate-700">{m.label}</span>
               <span className="text-sm font-bold text-slate-900" dir="ltr">{formatPrice(m.total)}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section>
+        <h3 className="text-sm font-bold text-slate-700 mb-3">לפי שבוע</h3>
+        <div className="space-y-4">
+          {weeksByYear.map((group) => (
+            <div key={group.year}>
+              <h4 className="text-xs font-bold text-slate-500 mb-2">{group.year}</h4>
+              <div className="space-y-2">
+                {group.weeks.map((w) => (
+                  <div key={w.weekKey} className="flex items-center justify-between bg-white border border-slate-200 rounded-lg px-4 py-2.5">
+                    <span className="text-sm text-slate-700">{w.label}</span>
+                    <span className="text-sm font-bold text-slate-900" dir="ltr">{formatPrice(w.total)}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           ))}
         </div>

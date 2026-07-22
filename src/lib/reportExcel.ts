@@ -10,7 +10,7 @@ export function buildReportWorkbook(bookings: Booking[]): {
   grandTotal: number
   lessonCount: number
 } {
-  const { byMonth, byStudent, grandTotal } = buildReport(bookings)
+  const { byMonth, byWeek, byStudent, grandTotal } = buildReport(bookings)
   const detail = buildDetailRows(bookings)
 
   const wb = XLSX.utils.book_new()
@@ -25,13 +25,24 @@ export function buildReportWorkbook(bookings: Booking[]): {
   )
   XLSX.utils.book_append_sheet(wb, byMonthSheet, 'לפי חודש')
 
+  const byWeekSheet = XLSX.utils.json_to_sheet(
+    byWeek.map((w) => ({ 'שבוע': w.label, 'שנה': w.year, 'סה"כ (₪)': w.total }))
+  )
+  XLSX.utils.book_append_sheet(wb, byWeekSheet, 'לפי שבוע')
+
   const byStudentSheet = XLSX.utils.json_to_sheet(
     byStudent.map((s) => ({ 'תלמיד': s.studentName, 'מספר שיעורים': s.lessonCount, 'סה"כ (₪)': s.total }))
   )
   XLSX.utils.book_append_sheet(wb, byStudentSheet, 'לפי תלמיד')
 
   const detailSheet = XLSX.utils.json_to_sheet(
-    detail.map((d) => ({ 'תלמיד': d.studentName, 'חודש': d.monthLabel, 'משבצת': d.slotLabel, 'מחיר (₪)': d.price }))
+    detail.map((d) => ({
+      'תלמיד': d.studentName,
+      'חודש': d.monthLabel,
+      'שבוע': d.weekLabel,
+      'משבצת': d.slotLabel,
+      'מחיר (₪)': d.price,
+    }))
   )
   XLSX.utils.book_append_sheet(wb, detailSheet, 'פירוט שיעורים')
 

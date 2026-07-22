@@ -41,7 +41,7 @@ const REASONS = [
 
 export default function WhyChooseUs() {
   return (
-    <section id="why-us" className="py-16 px-4 max-w-6xl mx-auto">
+    <section id="why-us" className="py-16 px-4 max-w-6xl xl:max-w-7xl 2xl:max-w-[1600px] mx-auto">
       <div className="text-center mb-10">
         <h2 className="text-3xl font-black text-slate-900 mb-2">למה דווקא שחר?</h2>
       </div>
