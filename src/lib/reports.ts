@@ -4,6 +4,7 @@
 // one-time discount, etc.), so every total here is a plain sum of each
 // billable row's own price — never a rate multiplied by a lesson count.
 import { Booking, Slot, MAX_STUDENTS, TEMPLATE_KEY, formatPrice, formatShortDate } from './types'
+import { pricePerStudent } from './pricing'
 
 export interface MonthTotal {
   monthKey: string
@@ -76,20 +77,52 @@ function weekLabel(weekKey: string, weekNumber: number): string {
   return `שבוע ${weekNumber} (${formatShortDate(sunday)}–${formatShortDate(saturday)})`
 }
 
-// Only confirmed lessons with a price count as revenue. Master standing rows
+// Only confirmed lessons count as revenue. Master standing rows
 // (week_key === TEMPLATE_KEY) are the recurring *definition*, not a real
 // billable week — counting them would double-count a standing student (once
 // on the master, again on every weekly clone) and they have no real calendar
 // month to attribute to anyway.
 export function isBillable(b: Booking): boolean {
-  return b.status === 'confirmed' && b.price != null && !!b.weekKey && b.weekKey !== TEMPLATE_KEY
+  return b.status === 'confirmed' && !!b.weekKey && b.weekKey !== TEMPLATE_KEY
 }
 
+// A lesson's price follows the group size that actually shared the slot (see
+// pricing.ts): the fewer students, the more each one pays. That size is only
+// knowable across the whole booking list, so prices are resolved here rather
+// than frozen onto a row at booking time — a group that grows from 2 to 4
+// re-rates itself, matching the "מומלץ" hint the admin already sees in
+// StudentsModal. An explicit price on the row always wins: that is the admin's
+// deliberate override (a discount, a one-off rate) and is never recomputed.
+function slotKey(b: Booking): string {
+  return `${b.weekKey}|${b.slotId}`
+}
+
+export function groupSizes(bookings: Booking[]): Map<string, number> {
+  const sizes = new Map<string, number>()
+  for (const b of bookings) {
+    if (!isBillable(b)) continue
+    const key = slotKey(b)
+    sizes.set(key, (sizes.get(key) ?? 0) + 1)
+  }
+  return sizes
+}
+
+export function effectivePrice(b: Booking, sizes: Map<string, number>): number {
+  if (b.price != null) return b.price
+  return pricePerStudent(Math.max(sizes.get(slotKey(b)) ?? 1, 1))
+}
+
+// Placeholder slots (group_type 'empty') are unassigned hours on the board,
+// not lessons on offer — counting their six seats each would advertise a
+// mostly-blank timetable as free capacity.
 export function countOpenSlots(slots: Slot[]): number {
-  return slots.reduce((sum, s) => sum + Math.max(0, MAX_STUDENTS - s.enrolled), 0)
+  return slots
+    .filter((s) => s.groupType !== 'empty')
+    .reduce((sum, s) => sum + Math.max(0, MAX_STUDENTS - s.enrolled), 0)
 }
 
 export function buildReport(bookings: Booking[]): ReportData {
+  const sizes = groupSizes(bookings)
   const byMonthMap = new Map<string, number>()
   const byWeekMap = new Map<string, number>()
   const byStudentMap = new Map<string, { total: number; lessonCount: number }>()
@@ -97,7 +130,7 @@ export function buildReport(bookings: Booking[]): ReportData {
 
   for (const b of bookings) {
     if (!isBillable(b)) continue
-    const price = b.price as number
+    const price = effectivePrice(b, sizes)
     grandTotal += price
 
     const weekKey = b.weekKey as string
@@ -148,6 +181,7 @@ export interface DetailRow {
 // sheet. Reuses isBillable so this can never disagree with buildReport's
 // totals or with what's on screen.
 export function buildDetailRows(bookings: Booking[]): DetailRow[] {
+  const sizes = groupSizes(bookings)
   return bookings
     .filter(isBillable)
     .map((b) => {
@@ -159,7 +193,7 @@ export function buildDetailRows(bookings: Booking[]): DetailRow[] {
         monthLabel: monthKey ? monthLabel(monthKey) : weekKey,
         weekLabel: weekInfo ? `שבוע ${weekInfo.weekNumber}` : weekKey,
         slotLabel: b.slotLabel || '',
-        price: b.price as number,
+        price: effectivePrice(b, sizes),
       }
     })
     .sort((a, b) =>

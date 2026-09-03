@@ -2,8 +2,13 @@ import { NextRequest, NextResponse, after } from 'next/server'
 import { isAdminConfigured } from '@/lib/supabaseAdmin'
 import { createBooking, SlotFullError, SlotNotFoundError, SlotPastError, NewBooking } from '@/lib/serverDb'
 import { sendPushToAll } from '@/lib/webPush'
+import { createRateLimiter } from '@/lib/rateLimit'
 
 const FAVORED_TRACKS = ['ח', 'ט', '4 יחידות', '5 יחידות']
+
+// Loose enough for a parent registering several siblings in one sitting,
+// tight enough that the endpoint isn't a free booking-spam faucet.
+const limiter = createRateLimiter({ windowMs: 60 * 60 * 1000, max: 10 })
 
 // Public endpoint: anyone can submit a booking request, but it is validated and
 // written server-side so capacity is enforced and the bookings table stays
@@ -11,6 +16,9 @@ const FAVORED_TRACKS = ['ח', 'ט', '4 יחידות', '5 יחידות']
 export async function POST(request: NextRequest) {
   if (!isAdminConfigured) {
     return NextResponse.json({ error: 'Server not configured' }, { status: 503 })
+  }
+  if (!limiter.allow(request)) {
+    return NextResponse.json({ error: 'יותר מדי בקשות. נסו שוב מאוחר יותר.' }, { status: 429 })
   }
 
   let body: Record<string, unknown>
