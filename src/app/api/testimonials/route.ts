@@ -1,12 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isAdminConfigured } from '@/lib/supabaseAdmin'
 import { createTestimonial } from '@/lib/serverDb'
+import { createRateLimiter } from '@/lib/rateLimit'
+
+// One person has no reason to file more than a handful of reviews an hour.
+const limiter = createRateLimiter({ windowMs: 60 * 60 * 1000, max: 3 })
 
 // Public endpoint: anyone can submit a review, but it lands as 'pending' and
 // only appears on the site once an admin approves it.
 export async function POST(request: NextRequest) {
   if (!isAdminConfigured) {
     return NextResponse.json({ error: 'Server not configured' }, { status: 503 })
+  }
+  if (!limiter.allow(request)) {
+    return NextResponse.json({ error: 'יותר מדי בקשות. נסו שוב מאוחר יותר.' }, { status: 429 })
   }
 
   let body: Record<string, unknown>

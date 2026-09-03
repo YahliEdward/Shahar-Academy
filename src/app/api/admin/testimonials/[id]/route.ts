@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { isAdmin } from '@/lib/auth'
 import { isAdminConfigured } from '@/lib/supabaseAdmin'
 import { updateTestimonialStatus, deleteTestimonial } from '@/lib/serverDb'
@@ -22,6 +23,9 @@ export async function PATCH(request: NextRequest, ctx: { params: Promise<{ id: s
   }
   try {
     await updateTestimonialStatus(id, body.status)
+    // The homepage renders only approved reviews and is cached; without this
+    // an approval would not show publicly until the next revalidate window.
+    revalidatePath('/')
     return NextResponse.json({ ok: true })
   } catch {
     return NextResponse.json({ error: 'Failed to update testimonial' }, { status: 500 })
@@ -38,6 +42,7 @@ export async function DELETE(_request: NextRequest, ctx: { params: Promise<{ id:
   const { id } = await ctx.params
   try {
     await deleteTestimonial(id)
+    revalidatePath('/')
     return NextResponse.json({ ok: true })
   } catch {
     return NextResponse.json({ error: 'Failed to delete testimonial' }, { status: 500 })

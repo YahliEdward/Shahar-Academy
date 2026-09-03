@@ -243,11 +243,10 @@ create table if not exists testimonials (
 
 alter table testimonials enable row level security;
 
--- Preserve the 4 existing placeholder testimonials as pre-approved rows so the
--- public site isn't blank the moment this migration runs. Safe to re-run.
-insert into testimonials (id, name, stars, text, status) values
-  ('seed-1', 'מיכל ר.', 5, 'יובל עלה מ-62 ל-91 בתוך שלושה חודשים. שחר מסביר בסבלנות ויודע בדיוק איפה הילד תקוע. ממליצה בחום!', 'approved'),
-  ('seed-2', 'אבי כ.', 5, 'ניסינו מורים פרטיים רבים לפני שחר. הקבוצה הקטנה עושה הבדל עצום — נועה סוף סוף מרגישה בנוח לשאול שאלות.', 'approved'),
-  ('seed-3', 'דנה מ.', 5, 'הגעתי לשחר עם 54 בבגרות. היום אני יודעת שאני יכולה להגיש על 5 יחידות. האווירה בקבוצה מדהימה.', 'approved'),
-  ('seed-4', 'רותי ש.', 5, 'תאיר פחדה ממתמטיקה שנים. שחר הצליח להפוך אותה לאחת הטובות בכיתה. לא יאמן.', 'approved')
-on conflict (id) do nothing;
+-- No seed rows. This table previously shipped four pre-approved placeholder
+-- testimonials written during design; they made specific, invented claims
+-- ("עלה מ-62 ל-91") and were removed in 2026-09 because publishing invented
+-- reviews as if they were real is not something the site should do. The
+-- section renders an empty state until genuine submissions are approved
+-- through the admin "ביקורות" tab.
+delete from testimonials where id in ('seed-1', 'seed-2', 'seed-3', 'seed-4');

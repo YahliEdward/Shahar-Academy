@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getSlots, getBookings } from '@/lib/serverDb'
+import { getSlots, getBookings, syncStandingBookings } from '@/lib/serverDb'
 import { sendPushToAll } from '@/lib/webPush'
 import { DayIndex, GROUP_LABELS, MOTZASH_DAY, dayLabel } from '@/lib/types'
 
@@ -10,6 +10,18 @@ export async function GET(request: NextRequest) {
   const secret = process.env.CRON_SECRET
   if (!secret || request.headers.get('authorization') !== `Bearer ${secret}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  // Standing students are cloned into each new week opportunistically — only
+  // when an admin opens or saves "לוח קבוע". If nobody opens the board, weeks
+  // that scroll into range stay empty, and this push then finds no lessons and
+  // skips. This daily run is the one guaranteed heartbeat the app has, so it
+  // does the sync itself before reading the day's slots. Failing here must not
+  // cost Shahar the notification, so a sync error is logged, not thrown.
+  try {
+    await syncStandingBookings()
+  } catch (err) {
+    console.error('standing-booking sync failed', err)
   }
 
   // Today's date in Israel, independent of the serverless region's timezone
