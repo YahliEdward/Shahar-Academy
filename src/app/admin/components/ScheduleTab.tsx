@@ -2,13 +2,14 @@
 
 import { useState, useEffect } from 'react'
 import {
-  Slot, Booking, GroupType, DayIndex, FRIDAY_DAY, MOTZASH_DAY, MAX_STUDENTS, TEMPLATE_KEY,
+  Slot, Booking, GroupType, DayIndex, FRIDAY_DAY, MOTZASH_DAY, OVER_CAPACITY_LIMIT, TEMPLATE_KEY,
   addSlotToDay, removeSlot, getWeekKey, getWeekDates, formatShortDate,
 } from '@/lib/types'
-import { adjustWeekEnrolled, fetchTemplate, fetchWeekSlots, putTemplate, putWeekSlots, resetWeek } from '@/lib/adminApi'
+import { fetchTemplate, fetchWeekSlots, putTemplate, putWeekSlots, resetWeek } from '@/lib/adminApi'
 import WeekMiniGrid from './WeekMiniGrid'
 import SlotEditorCard from './SlotEditorCard'
 import StudentsModal from './StudentsModal'
+import RemoveStudentModal from './RemoveStudentModal'
 import { useToast } from './ui/Toast'
 import { useConfirm } from './ui/ConfirmDialog'
 
@@ -33,7 +34,9 @@ export default function ScheduleTab({ bookings, onChanged, defaultMode = 'week' 
   const [loadedFor, setLoadedFor] = useState<string | null>(null)
   const [loadError, setLoadError] = useState(false)
   const [reloadKey, setReloadKey] = useState(0)
-  const [detailSlot, setDetailSlot] = useState<Slot | null>(null)
+  // Which slot's students popup is open, and why: the card itself opens the
+  // roster, "+" jumps straight to the add form, "−" opens the removal picker.
+  const [studentsPopup, setStudentsPopup] = useState<{ slot: Slot; action: 'view' | 'add' | 'remove' } | null>(null)
 
   const weekKey = getWeekKey(weekOffset)
   const weekDates = getWeekDates(weekOffset)
@@ -89,24 +92,7 @@ export default function ScheduleTab({ bookings, onChanged, defaultMode = 'week' 
   const setGroupType = (id: string, groupType: GroupType) =>
     commit(slots.map((s) => s.id === id ? { ...s, groupType } : s))
 
-  const clampEnrolled = (n: number) => Math.max(0, Math.min(MAX_STUDENTS, n))
-
-  // Anonymous +/- headcount only makes sense for a specific week — "לוח קבוע"
-  // now manages named standing students instead (see displaySlot below), so
-  // this is never called in that mode (the buttons aren't rendered there).
-  const adjustEnrolled = async (slot: Slot, delta: number) => {
-    setSlots((list) => list.map((s) =>
-      s.id === slot.id ? { ...s, enrolled: clampEnrolled(s.enrolled + delta) } : s
-    ))
-    try {
-      await adjustWeekEnrolled(weekKey, slot.id, delta)
-      toast('נשמר ✓')
-      onChanged()
-    } catch {
-      toast('שגיאה בשמירה — נסו שוב', 'error')
-      setReloadKey((k) => k + 1)
-    }
-  }
+  const clampEnrolled = (n: number) => Math.max(0, Math.min(OVER_CAPACITY_LIMIT, n))
 
   // What the card shows: in template mode, the count of standing (recurring)
   // students registered directly to this slot — not a specific week's seats.
@@ -269,14 +255,14 @@ export default function ScheduleTab({ bookings, onChanged, defaultMode = 'week' 
                 return b.slotId === slot.id && b.weekKey === targetKey
               })}
               showStudents
-              showAdjustButtons={mode !== 'default'}
               showOrigin={mode !== 'default'}
               canRemove={activeDay === MOTZASH_DAY || activeDay === FRIDAY_DAY ? true : daySlots.length > 1}
               onTimeChange={(field, value) => updateSlotTime(slot.id, field, value)}
               onGroupChange={(g) => setGroupType(slot.id, g)}
-              onAdjustEnrolled={(delta) => adjustEnrolled(slot, delta)}
+              onAddStudent={() => setStudentsPopup({ slot, action: 'add' })}
+              onRemoveStudent={() => setStudentsPopup({ slot, action: 'remove' })}
               onRemove={() => handleRemoveSlot(slot.id)}
-              onShowStudents={() => setDetailSlot(slot)}
+              onShowStudents={() => setStudentsPopup({ slot, action: 'view' })}
             />
           ))}
 
@@ -289,16 +275,29 @@ export default function ScheduleTab({ bookings, onChanged, defaultMode = 'week' 
         </div>
       )}
 
-      {detailSlot && (
-        <StudentsModal
-          slot={detailSlot}
-          weekKey={mode === 'default' ? TEMPLATE_KEY : weekKey}
-          date={mode === 'default' ? undefined : weekDates[detailSlot.day]}
-          standing={mode === 'default'}
-          bookings={bookings}
-          onClose={() => setDetailSlot(null)}
-          onChanged={handleStudentsChanged}
-        />
+      {studentsPopup && (
+        studentsPopup.action === 'remove' ? (
+          <RemoveStudentModal
+            slot={studentsPopup.slot}
+            weekKey={mode === 'default' ? TEMPLATE_KEY : weekKey}
+            date={mode === 'default' ? undefined : weekDates[studentsPopup.slot.day]}
+            standing={mode === 'default'}
+            bookings={bookings}
+            onClose={() => setStudentsPopup(null)}
+            onChanged={handleStudentsChanged}
+          />
+        ) : (
+          <StudentsModal
+            slot={studentsPopup.slot}
+            weekKey={mode === 'default' ? TEMPLATE_KEY : weekKey}
+            date={mode === 'default' ? undefined : weekDates[studentsPopup.slot.day]}
+            standing={mode === 'default'}
+            autoOpenAdd={studentsPopup.action === 'add'}
+            bookings={bookings}
+            onClose={() => setStudentsPopup(null)}
+            onChanged={handleStudentsChanged}
+          />
+        )
       )}
     </div>
   )

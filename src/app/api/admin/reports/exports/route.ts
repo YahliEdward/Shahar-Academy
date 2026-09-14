@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { isAdmin } from '@/lib/auth'
 import { isAdminConfigured } from '@/lib/supabaseAdmin'
-import { getBookings, saveReportExport, getReportExports } from '@/lib/serverDb'
+import { getBookings, saveReportExport, getReportExports, getSlotLabelMap } from '@/lib/serverDb'
 import { buildReportWorkbook, buildExportFilename } from '@/lib/reportExcel'
 
 export async function GET() {
@@ -29,8 +29,8 @@ export async function POST() {
     return NextResponse.json({ error: 'Server not configured' }, { status: 503 })
   }
   try {
-    const bookings = await getBookings()
-    const { buffer, grandTotal, lessonCount } = buildReportWorkbook(bookings)
+    const [bookings, slotLabels] = await Promise.all([getBookings(), getSlotLabelMap()])
+    const { buffer, grandTotal, lessonCount } = buildReportWorkbook(bookings, slotLabels)
     const filename = buildExportFilename()
     const saved = await saveReportExport({ filename, buffer, grandTotal, lessonCount })
     return new NextResponse(new Uint8Array(buffer), {

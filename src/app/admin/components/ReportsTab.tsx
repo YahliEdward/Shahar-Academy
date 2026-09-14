@@ -67,13 +67,29 @@ export default function ReportsTab({ bookings }: { bookings: Booking[] }) {
       <div className="bg-white border border-slate-200 rounded-xl p-5 text-center shadow-sm">
         <div className="text-3xl font-black text-blue-600" dir="ltr">{formatPrice(grandTotal)}</div>
         <div className="text-xs text-slate-500 font-semibold mt-1">סה״כ הכנסה (מאושרים בלבד)</div>
-        <button
-          onClick={handleExport}
-          disabled={exporting}
-          className="mt-4 min-h-10 px-5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-sm transition-colors disabled:opacity-60"
-        >
-          {exporting ? 'מייצא…' : '📊 ייצוא לאקסל'}
-        </button>
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+          <button
+            onClick={handleExport}
+            disabled={exporting}
+            className="min-h-10 px-5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-sm transition-colors disabled:opacity-60"
+          >
+            {exporting ? 'מייצא…' : '📊 ייצוא לאקסל'}
+          </button>
+          {/* An anchor rather than window.open: mobile Safari popup-blocks a
+              scripted open even from a click handler, and a blocked popup
+              would leave the button looking broken. */}
+          <a
+            href="/api/admin/reports/print"
+            target="_blank"
+            rel="noopener"
+            className="min-h-10 px-5 inline-flex items-center bg-white hover:bg-slate-50 text-slate-700 font-bold rounded-lg text-sm border border-slate-300 transition-colors"
+          >
+            📄 ייצוא ל-PDF
+          </a>
+        </div>
+        <p className="text-[11px] text-slate-400 mt-2">
+          אקסל לעריכה · PDF לצפייה ושליחה מכל מכשיר
+        </p>
       </div>
 
       <section>

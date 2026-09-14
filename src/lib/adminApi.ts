@@ -57,8 +57,11 @@ export async function patchBooking(id: string, updates: Partial<Booking>): Promi
   }))
 }
 
-export async function removeBooking(id: string): Promise<void> {
-  await jsonOrThrow(await fetch(`/api/admin/bookings/${id}`, { method: 'DELETE' }))
+// scope 'week' removes the student from that one lesson only — a standing
+// student stays enrolled in every other week. Omit it to remove them for good.
+export async function removeBooking(id: string, scope?: 'week'): Promise<void> {
+  const query = scope === 'week' ? '?scope=week' : ''
+  await jsonOrThrow(await fetch(`/api/admin/bookings/${id}${query}`, { method: 'DELETE' }))
 }
 
 export interface AdminNewBookingRequest {
@@ -155,16 +158,6 @@ export async function putWeekSlots(weekKey: string, slots: Slot[]): Promise<void
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ mode: 'week', weekKey, slots }),
-  }))
-}
-
-// Bump one slot's enrolled count without turning the week into a schedule
-// override — the week keeps following the template.
-export async function adjustWeekEnrolled(weekKey: string, slotId: string, delta: number): Promise<void> {
-  await jsonOrThrow(await fetch('/api/admin/slots', {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ weekKey, slotId, delta }),
   }))
 }
 

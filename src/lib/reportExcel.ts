@@ -5,13 +5,16 @@ import * as XLSX from 'xlsx'
 import { Booking } from './types'
 import { buildReport, buildDetailRows } from './reports'
 
-export function buildReportWorkbook(bookings: Booking[]): {
+export function buildReportWorkbook(
+  bookings: Booking[],
+  slotLabels?: Map<string, string>,
+): {
   buffer: Buffer
   grandTotal: number
   lessonCount: number
 } {
   const { byMonth, byWeek, byStudent, grandTotal } = buildReport(bookings)
-  const detail = buildDetailRows(bookings)
+  const detail = buildDetailRows(bookings, slotLabels)
 
   const wb = XLSX.utils.book_new()
 

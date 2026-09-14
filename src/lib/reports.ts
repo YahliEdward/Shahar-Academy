@@ -3,7 +3,7 @@
 // differently for different lessons in the same month — a weekday rate, a
 // one-time discount, etc.), so every total here is a plain sum of each
 // billable row's own price — never a rate multiplied by a lesson count.
-import { Booking, Slot, MAX_STUDENTS, TEMPLATE_KEY, formatPrice, formatShortDate } from './types'
+import { Booking, Slot, DayIndex, MAX_STUDENTS, TEMPLATE_KEY, dayLabel, formatPrice, formatShortDate } from './types'
 import { pricePerStudent } from './pricing'
 
 export interface MonthTotal {
@@ -177,10 +177,36 @@ export interface DetailRow {
   price: number
 }
 
+// Most bookings carry no stored slotLabel — only ones booked through the
+// public form do, and standing/seeded rows don't — so the export mirrors what
+// the Bookings tab shows on screen: the stored label when there is one, else
+// the slot looked up by (weekKey, slotId), else the id itself. Keys in
+// slotLabels are `${weekKey}|${slotId}`, with a bare slotId entry as the
+// template fallback for weeks that never got an override row.
+export function slotLabelFor(b: Booking, slotLabels?: Map<string, string>): string {
+  if (b.slotLabel) return b.slotLabel
+  if (slotLabels) {
+    const label = slotLabels.get(`${b.weekKey}|${b.slotId}`) ?? slotLabels.get(b.slotId)
+    if (label) return label
+  }
+  // Nothing to look up: the slot this lesson was booked into has since been
+  // removed from the schedule. Template ids encode day and start time
+  // (`slot-0-1400`), so the row can still name its hour instead of an id.
+  const m = /^slot-(\d+)-(\d{2})(\d{2})$/.exec(b.slotId)
+  if (m) {
+    const day = Number(m[1]) as DayIndex
+    return `יום ${dayLabel(day)} ${m[2]}:${m[3]}`
+  }
+  return b.slotId
+}
+
 // One row per individual billable lesson — the "lesson breakdown" export
 // sheet. Reuses isBillable so this can never disagree with buildReport's
 // totals or with what's on screen.
-export function buildDetailRows(bookings: Booking[]): DetailRow[] {
+export function buildDetailRows(
+  bookings: Booking[],
+  slotLabels?: Map<string, string>,
+): DetailRow[] {
   const sizes = groupSizes(bookings)
   return bookings
     .filter(isBillable)
@@ -192,7 +218,7 @@ export function buildDetailRows(bookings: Booking[]): DetailRow[] {
         studentName: b.studentName || '(ללא שם)',
         monthLabel: monthKey ? monthLabel(monthKey) : weekKey,
         weekLabel: weekInfo ? `שבוע ${weekInfo.weekNumber}` : weekKey,
-        slotLabel: b.slotLabel || '',
+        slotLabel: slotLabelFor(b, slotLabels),
         price: effectivePrice(b, sizes),
       }
     })

@@ -3,9 +3,9 @@ import { isAdmin } from '@/lib/auth'
 import { isAdminConfigured } from '@/lib/supabaseAdmin'
 import {
   getTemplate, getSlots, saveTemplate, saveSlots, weekHasOverride, resetWeekToDefault,
-  adjustSlotEnrolled, SlotNotFoundError, syncStandingBookings,
+  reconcileWeekEnrolled, syncStandingBookings,
 } from '@/lib/serverDb'
-import { Slot, GroupType, MAX_STUDENTS } from '@/lib/types'
+import { Slot, GroupType, OVER_CAPACITY_LIMIT } from '@/lib/types'
 
 const GROUP_TYPES: GroupType[] = ['middle-school', 'high-4', 'high-5', 'mixed', 'empty']
 const TIME_RE = /^\d{2}:\d{2}$/
@@ -19,8 +19,11 @@ function isValidSlot(s: unknown): s is Slot {
     typeof o.time === 'string' && TIME_RE.test(o.time) &&
     typeof o.endTime === 'string' && TIME_RE.test(o.endTime) &&
     typeof o.groupType === 'string' && GROUP_TYPES.includes(o.groupType as GroupType) &&
+    // The ceiling, not the standard: a slot the admin deliberately took past
+    // MAX_STUDENTS must still be saveable, or every later edit to that week
+    // (times, group type, adding an hour) would be rejected.
     typeof o.enrolled === 'number' && Number.isInteger(o.enrolled) &&
-    o.enrolled >= 0 && o.enrolled <= MAX_STUDENTS
+    o.enrolled >= 0 && o.enrolled <= OVER_CAPACITY_LIMIT
   )
 }
 
@@ -44,6 +47,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ slots: template })
     }
     const weekKey = searchParams.get('weekKey') ?? ''
+    // Opportunistic self-heal: every seat is a named student now, so realign
+    // enrolled with the week's actual bookings before reading them back.
+    await reconcileWeekEnrolled(weekKey)
     const [slots, isOverride] = await Promise.all([getSlots(weekKey), weekHasOverride(weekKey)])
     return NextResponse.json({ slots, isOverride })
   } catch {
@@ -83,45 +89,6 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ ok: true })
   } catch {
     return NextResponse.json({ error: 'Failed to save slots' }, { status: 500 })
-  }
-}
-
-// PATCH body: { weekKey, slotId, delta } — bump one slot's enrolled count.
-// Unlike PUT this never rewrites the week's schedule, so a week that follows
-// the template keeps following it.
-export async function PATCH(request: NextRequest) {
-  if (!(await isAdmin())) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-  if (!isAdminConfigured) {
-    return NextResponse.json({ error: 'Server not configured' }, { status: 503 })
-  }
-  let body: { weekKey?: unknown; slotId?: unknown; delta?: unknown }
-  try {
-    body = await request.json()
-  } catch {
-    return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
-  }
-  const { weekKey, slotId, delta } = body
-  if (
-    typeof weekKey !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(weekKey) ||
-    typeof slotId !== 'string' || slotId.length === 0 || slotId.length > 100 ||
-    typeof delta !== 'number' || !Number.isInteger(delta) ||
-    delta === 0 || Math.abs(delta) > MAX_STUDENTS
-  ) {
-    return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
-  }
-  try {
-    const applied = await adjustSlotEnrolled(weekKey, slotId, delta)
-    if (!applied) {
-      return NextResponse.json({ error: 'אין מקום פנוי בשעה זו' }, { status: 409 })
-    }
-    return NextResponse.json({ ok: true })
-  } catch (err) {
-    if (err instanceof SlotNotFoundError) {
-      return NextResponse.json({ error: 'השעה לא קיימת בשבוע זה' }, { status: 404 })
-    }
-    return NextResponse.json({ error: 'Failed to update slot' }, { status: 500 })
   }
 }
 
