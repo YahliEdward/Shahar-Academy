@@ -1,6 +1,6 @@
 'use client'
 
-import { Slot, Booking, GroupType, GROUP_LABELS, GROUP_COLORS, MAX_STUDENTS, isFixedBooking } from '@/lib/types'
+import { Slot, Booking, GroupType, GROUP_LABELS, GROUP_COLORS, MAX_STUDENTS, OVER_CAPACITY_LIMIT, isFixedBooking } from '@/lib/types'
 import TimePicker from '@/components/TimePicker'
 
 const GROUP_OPTIONS: GroupType[] = ['middle-school', 'high-4', 'high-5', 'mixed', 'empty']
@@ -15,24 +15,30 @@ function StudentChip({ b }: { b: Booking }) {
   )
 }
 
-export default function SlotEditorCard({ slot, students, showStudents, canRemove, showAdjustButtons = true, showOrigin = false, onTimeChange, onGroupChange, onAdjustEnrolled, onRemove, onShowStudents }: {
+export default function SlotEditorCard({ slot, students, showStudents, canRemove, showOrigin = false, onTimeChange, onGroupChange, onAddStudent, onRemoveStudent, onRemove, onShowStudents }: {
   slot: Slot
   students: Booking[]
   showStudents: boolean
   canRemove: boolean
-  showAdjustButtons?: boolean
   // True in "week" mode, where students can be a mix of standing (fixed) and
   // one-time additions — false in "template" mode, where every row shown is
   // a standing master and the split would be meaningless.
   showOrigin?: boolean
   onTimeChange: (field: 'time' | 'endTime', value: string) => void
   onGroupChange: (g: GroupType) => void
-  onAdjustEnrolled: (delta: number) => void
+  onAddStudent: () => void
+  onRemoveStudent: () => void
   onRemove: () => void
   onShowStudents: () => void
 }) {
   const fixedStudents = showOrigin ? students.filter(isFixedBooking) : []
   const oneTimeStudents = showOrigin ? students.filter((b) => !isFixedBooking(b)) : students
+
+  // A lesson the teacher deliberately took past the standard group size. The
+  // meter grows an extra amber segment per student instead of pinning at 6/6.
+  const over = slot.enrolled > MAX_STUDENTS
+  const segments = Math.max(MAX_STUDENTS, slot.enrolled)
+  const atCeiling = students.length >= OVER_CAPACITY_LIMIT
 
   return (
     <div className={`rounded-xl border p-4 shadow-sm ${GROUP_COLORS[slot.groupType]}`}>
@@ -96,32 +102,48 @@ export default function SlotEditorCard({ slot, students, showStudents, canRemove
         </select>
 
         <div className="flex items-center gap-3">
-          {showAdjustButtons && (
-            <button
-              onClick={() => onAdjustEnrolled(-1)}
-              disabled={slot.enrolled <= 0}
-              className="w-8 h-8 rounded-lg bg-white border border-slate-300 hover:bg-slate-100 disabled:opacity-30 text-slate-700 font-bold transition-colors text-lg"
-            >
-              −
-            </button>
-          )}
+          <button
+            onClick={onRemoveStudent}
+            disabled={students.length === 0}
+            title="הסר תלמיד מהשיעור"
+            aria-label="הסר תלמיד מהשיעור"
+            className="w-8 h-8 rounded-lg bg-white border border-slate-300 hover:bg-slate-100 disabled:opacity-30 text-slate-700 font-bold transition-colors text-lg"
+          >
+            −
+          </button>
           <div className="text-center min-w-[70px]">
-            <div className="text-slate-900 font-black text-lg">{slot.enrolled}/{MAX_STUDENTS}</div>
+            <div className={`font-black text-lg ${over ? 'text-amber-600' : 'text-slate-900'}`}>
+              {slot.enrolled}/{MAX_STUDENTS}
+            </div>
             <div className="flex gap-0.5 mt-1">
-              {Array.from({ length: MAX_STUDENTS }).map((_, i) => (
-                <div key={i} className={`h-1 flex-1 rounded-full ${i < slot.enrolled ? 'bg-blue-500' : 'bg-slate-300'}`} />
+              {Array.from({ length: segments }).map((_, i) => (
+                <div
+                  key={i}
+                  className={`h-1 flex-1 rounded-full ${
+                    i >= slot.enrolled ? 'bg-slate-300' : i >= MAX_STUDENTS ? 'bg-amber-500' : 'bg-blue-500'
+                  }`}
+                />
               ))}
             </div>
+            {over && <div className="text-[10px] text-amber-600 font-bold mt-0.5">חריגה</div>}
           </div>
-          {showAdjustButtons && (
-            <button
-              onClick={() => onAdjustEnrolled(1)}
-              disabled={slot.enrolled >= MAX_STUDENTS}
-              className="w-8 h-8 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-30 text-white font-bold transition-colors text-lg"
-            >
-              +
-            </button>
-          )}
+          <button
+            onClick={onAddStudent}
+            disabled={atCeiling}
+            title={
+              atCeiling
+                ? `הגעתם למקסימום — ${OVER_CAPACITY_LIMIT} תלמידים בשיעור`
+                : students.length >= MAX_STUDENTS
+                  ? 'השיעור מלא — הוספה תיצור חריגה'
+                  : 'הוסף תלמיד לשיעור'
+            }
+            aria-label="הוסף תלמיד לשיעור"
+            className={`w-8 h-8 rounded-lg disabled:opacity-30 text-white font-bold transition-colors text-lg ${
+              students.length >= MAX_STUDENTS ? 'bg-amber-500 hover:bg-amber-600' : 'bg-blue-600 hover:bg-blue-700'
+            }`}
+          >
+            +
+          </button>
 
           {canRemove && (
             <button

@@ -1,10 +1,13 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Slot, Booking, dayLabel, formatShortDate, GROUP_LABELS, formatPrice, isFixedBooking } from '@/lib/types'
+import {
+  Slot, Booking, dayLabel, formatShortDate, GROUP_LABELS, formatPrice, isFixedBooking,
+  MAX_STUDENTS, OVER_CAPACITY_LIMIT,
+} from '@/lib/types'
 import { pricePerStudent } from '@/lib/pricing'
 import { removeBooking, patchBooking, adminCreateBooking } from '@/lib/adminApi'
-import { whatsappUrl } from '../lib'
+import { whatsappUrl, knownStudents, StudentSuggestion } from '../lib'
 import { useToast } from './ui/Toast'
 import { useConfirm } from './ui/ConfirmDialog'
 import { useScrollLock } from '@/lib/useScrollLock'
@@ -60,18 +63,21 @@ function validatePhone(phone: string): string | null {
   return /^0\d{8,9}$/.test(phone.replace(/[-\s]/g, '')) ? null : 'מספר לא תקין'
 }
 
-export default function StudentsModal({ slot, weekKey, date, standing = false, bookings, onClose, onChanged }: {
+export default function StudentsModal({ slot, weekKey, date, standing = false, autoOpenAdd = false, bookings, onClose, onChanged }: {
   slot: Slot
   weekKey: string
   date?: Date
   // True for "לוח קבוע": students managed here are standing (recurring)
   // enrollments that repeat every week until removed, not a one-time roster.
   standing?: boolean
+  // Opens straight into the add form — how the card's "+" button gets here.
+  autoOpenAdd?: boolean
   bookings: Booking[]
   onClose: () => void
   onChanged: () => void
 }) {
   const dialogRef = useRef<HTMLDivElement>(null)
+  const addFormRef = useRef<HTMLDivElement>(null)
   const toast = useToast()
   const confirmDialog = useConfirm()
 
@@ -88,10 +94,25 @@ export default function StudentsModal({ slot, weekKey, date, standing = false, b
   const suggestedForAdd = pricePerStudent(students.length + 1)
   const suggestedForSize = (size: number) => pricePerStudent(Math.max(size, 1))
 
-  const [adding, setAdding] = useState(false)
+  const [adding, setAdding] = useState(autoOpenAdd)
   const [addDraft, setAddDraft] = useState<StudentDraft>(() => emptyDraft(suggestedForAdd))
   const [addError, setAddError] = useState<{ studentName?: string; phone?: string }>({})
   const [addLoading, setAddLoading] = useState(false)
+  const [pickerQuery, setPickerQuery] = useState('')
+
+  // Quick-pick list for the add form: everyone registered before who isn't
+  // already in this lesson. Derived from the bookings the dashboard already
+  // loaded — the app has no students table.
+  const enrolledNames = new Set(students.map((b) => b.studentName.trim().replace(/\s+/g, ' ')))
+  const trimmedQuery = pickerQuery.trim()
+  const suggestions = knownStudents(bookings)
+    .filter((s) => !enrolledNames.has(s.studentName))
+    .filter((s) => !trimmedQuery || s.studentName.includes(trimmedQuery) || s.phone.includes(trimmedQuery))
+
+  // Past the standard group size the add still goes through — the teacher may
+  // deliberately squeeze a student in — but never past the hard ceiling.
+  const overCapacity = students.length >= MAX_STUDENTS
+  const atCeiling = students.length >= OVER_CAPACITY_LIMIT
 
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editDraft, setEditDraft] = useState<StudentDraft | null>(null)
@@ -110,6 +131,12 @@ export default function StudentsModal({ slot, weekKey, date, standing = false, b
     return () => document.removeEventListener('keydown', onKey)
   }, [onClose])
 
+  // Arriving from the card's "+" means the add form is the point — bring it
+  // into view instead of leaving it below the roster.
+  useEffect(() => {
+    if (autoOpenAdd) addFormRef.current?.scrollIntoView({ block: 'start' })
+  }, [autoOpenAdd])
+
   const remove = async (b: Booking) => {
     if (!(await confirmDialog({
       title: 'להסיר את התלמיד מהשיעור?',
@@ -126,6 +153,21 @@ export default function StudentsModal({ slot, weekKey, date, standing = false, b
     } catch {
       toast('שגיאה בהסרה — נסו שוב', 'error')
     }
+  }
+
+  // Fills the form from a previously registered student. The price stays the
+  // suggested rate for this slot's size rather than whatever they last paid.
+  const pickStudent = (s: StudentSuggestion) => {
+    setAddDraft((draft) => ({
+      ...draft,
+      studentName: s.studentName,
+      parentName: s.parentName,
+      phone: s.phone,
+      grade: s.grade,
+      groupPreference: s.groupPreference,
+    }))
+    setAddError({})
+    setPickerQuery('')
   }
 
   const submitAdd = async () => {
@@ -409,8 +451,50 @@ export default function StudentsModal({ slot, weekKey, date, standing = false, b
           )}
 
           {adding ? (
-            <div className="rounded-xl border border-blue-200 bg-blue-50/50 p-4 space-y-2.5">
-              <p className="text-sm font-bold text-blue-800 mb-1">הוספת תלמיד</p>
+            <div ref={addFormRef} className="rounded-xl border border-blue-200 bg-blue-50/50 p-4 space-y-2.5 scroll-mt-4">
+              <p className="text-sm font-bold text-blue-800 mb-1">
+                {standing ? 'הוספת תלמיד קבוע' : 'הוספת תלמיד לשיעור'}
+              </p>
+
+              {atCeiling ? (
+                <p className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700 font-semibold">
+                  לא ניתן להוסיף — הגעתם למקסימום ({OVER_CAPACITY_LIMIT} תלמידים בשיעור)
+                </p>
+              ) : overCapacity && (
+                <p className="rounded-lg bg-amber-50 border border-amber-300 px-3 py-2 text-xs text-amber-800 font-semibold">
+                  ⚠️ השיעור כבר מלא ({MAX_STUDENTS} תלמידים) — התלמיד יתווסף כחריגה מעל התקן.
+                </p>
+              )}
+
+              {suggestions.length > 0 && (
+                <Field label="בחירה מתלמידים קיימים">
+                  <input
+                    className={inputClass}
+                    placeholder="חיפוש לפי שם או טלפון…"
+                    value={pickerQuery}
+                    onChange={(e) => setPickerQuery(e.target.value)}
+                  />
+                  <div className="mt-1.5 max-h-40 overflow-y-auto space-y-1">
+                    {suggestions.map((s) => (
+                      <button
+                        key={s.studentName}
+                        type="button"
+                        onClick={() => pickStudent(s)}
+                        className="w-full text-right rounded-lg border border-slate-200 bg-white hover:border-blue-400 hover:bg-blue-50 px-3 py-2 transition-colors"
+                      >
+                        <span className="text-sm font-semibold text-slate-900">{s.studentName}</span>
+                        {(s.grade || s.phone) && (
+                          <span className="block text-xs text-slate-500">
+                            {[s.grade, s.phone].filter(Boolean).join(' | ')}
+                          </span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-xs text-slate-400 mt-1">או מלאו את הפרטים ידנית לתלמיד חדש</p>
+                </Field>
+              )}
+
               <Field label="שם התלמיד" error={addError.studentName}>
                 <input
                   className={inputClass}
@@ -475,13 +559,15 @@ export default function StudentsModal({ slot, weekKey, date, standing = false, b
               <div className="flex gap-2 pt-1">
                 <button
                   onClick={submitAdd}
-                  disabled={addLoading}
-                  className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-bold rounded-lg text-sm transition-colors"
+                  disabled={addLoading || atCeiling}
+                  className={`flex-1 py-2 disabled:opacity-60 text-white font-bold rounded-lg text-sm transition-colors ${
+                    overCapacity ? 'bg-amber-500 hover:bg-amber-600' : 'bg-blue-600 hover:bg-blue-700'
+                  }`}
                 >
-                  {addLoading ? 'מוסיף…' : 'הוסף תלמיד'}
+                  {addLoading ? 'מוסיף…' : overCapacity ? 'הוסף בכל זאת' : 'הוסף תלמיד'}
                 </button>
                 <button
-                  onClick={() => { setAdding(false); setAddError({}) }}
+                  onClick={() => { setAdding(false); setAddError({}); setPickerQuery('') }}
                   disabled={addLoading}
                   className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg text-sm transition-colors"
                 >
@@ -491,7 +577,7 @@ export default function StudentsModal({ slot, weekKey, date, standing = false, b
             </div>
           ) : (
             <button
-              onClick={() => { setAddDraft(emptyDraft(suggestedForAdd)); setAdding(true) }}
+              onClick={() => { setAddDraft(emptyDraft(suggestedForAdd)); setPickerQuery(''); setAdding(true) }}
               className="w-full py-2.5 rounded-xl border border-dashed border-slate-300 text-slate-500 hover:border-blue-400 hover:text-blue-600 transition-all text-sm font-semibold"
             >
               + הוסף תלמיד

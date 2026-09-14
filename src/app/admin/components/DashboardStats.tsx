@@ -73,7 +73,9 @@ export default function DashboardStats({ bookings, slots, onPendingClick, onToda
         <div className="mt-1.5 h-1 rounded-full bg-slate-200 overflow-hidden">
           <div
             className="h-full rounded-full bg-blue-500 transition-all"
-            style={{ width: capacity === 0 ? '0%' : `${Math.round((enrolled / capacity) * 100)}%` }}
+            // Over-capacity lessons can push enrolled past the standard
+            // capacity — the number stays honest, the bar just stops at full.
+            style={{ width: capacity === 0 ? '0%' : `${Math.min(100, Math.round((enrolled / capacity) * 100))}%` }}
           />
         </div>
       </StatCard>

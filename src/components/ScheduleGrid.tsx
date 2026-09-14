@@ -36,6 +36,9 @@ function SlotCard({ slot, isPast, onClick }: { slot: Slot; isPast: boolean; onCl
   const isFull = slot.enrolled >= MAX_STUDENTS
   const isEmpty = slot.groupType === 'empty'
   const disabled = isFull || isPast
+  // The teacher can deliberately take a lesson past the standard group size,
+  // but the public never sees "7/6" — such a slot is simply full here.
+  const shown = Math.min(slot.enrolled, MAX_STUDENTS)
 
   if (isEmpty) {
     if (isPast) {
@@ -89,13 +92,13 @@ function SlotCard({ slot, isPast, onClick }: { slot: Slot; isPast: boolean; onCl
             <div
               key={i}
               className={`h-1.5 flex-1 rounded-full ${
-                i < slot.enrolled ? 'bg-blue-500' : 'bg-slate-200'
+                i < shown ? 'bg-blue-500' : 'bg-slate-200'
               }`}
             />
           ))}
         </div>
         <div className="text-xs text-slate-400 mt-1">
-          {slot.enrolled}/{MAX_STUDENTS} תלמידים
+          {shown}/{MAX_STUDENTS} תלמידים
         </div>
       </div>
 

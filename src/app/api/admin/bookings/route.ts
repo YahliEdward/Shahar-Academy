@@ -5,7 +5,7 @@ import {
   getBookings, createBookingAsAdmin, createStandingBookingAsAdmin,
   SlotFullError, SlotNotFoundError, SlotPastError,
 } from '@/lib/serverDb'
-import { TEMPLATE_KEY } from '@/lib/types'
+import { TEMPLATE_KEY, OVER_CAPACITY_LIMIT } from '@/lib/types'
 
 export async function GET() {
   if (!(await isAdmin())) {
@@ -87,7 +87,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ booking })
   } catch (err) {
     if (err instanceof SlotFullError) {
-      return NextResponse.json({ error: 'המקום התמלא' }, { status: 409 })
+      // The admin path runs at the raised ceiling, so this is never the
+      // standard "6 seats taken" — it's the hard limit.
+      return NextResponse.json(
+        { error: `הגעתם למקסימום המותר — ${OVER_CAPACITY_LIMIT} תלמידים בשיעור` },
+        { status: 409 },
+      )
     }
     if (err instanceof SlotNotFoundError) {
       return NextResponse.json({ error: 'המשבצת כבר לא קיימת' }, { status: 409 })

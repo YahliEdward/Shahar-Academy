@@ -100,6 +100,18 @@ create unique index if not exists bookings_template_clone_uq
 create index if not exists bookings_week_key_idx on bookings (week_key);
 
 -- ════════════════════════════════════════════════════════════════════════════
+-- Migration: removing a standing student from a single week
+-- ════════════════════════════════════════════════════════════════════════════
+-- The admin can drop a standing (recurring) student from one specific week
+-- without ending the enrollment. Deleting that week's clone outright does not
+-- work: the next standing sync sees no clone for that master and recreates it.
+-- Instead the clone stays as a tombstone with cancelled = true — invisible
+-- everywhere (getBookings() filters it out) and holding no seat, but still
+-- blocking the re-clone. Safe to re-run.
+
+alter table bookings add column if not exists cancelled boolean not null default false;
+
+-- ════════════════════════════════════════════════════════════════════════════
 -- Atomic capacity updates
 -- ════════════════════════════════════════════════════════════════════════════
 -- Single conditional UPDATE so two parallel bookings can never both take the

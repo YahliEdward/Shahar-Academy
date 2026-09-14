@@ -1,7 +1,7 @@
 import { getSupabaseAdmin, isAdminConfigured } from './supabaseAdmin'
 import {
-  Slot, Booking, Testimonial, MAX_STUDENTS, TEMPLATE_KEY,
-  rowToSlot, rowToBooking, rowToTestimonial, templateSlotId, buildDefaultSlots,
+  Slot, Booking, Testimonial, MAX_STUDENTS, OVER_CAPACITY_LIMIT, TEMPLATE_KEY,
+  rowToSlot, rowToBooking, rowToTestimonial, templateSlotId, buildDefaultSlots, dayLabel,
   ReportExportSummary, ReportExportRecord, rowToReportExportSummary, rowToReportExportRecord,
 } from './types'
 
@@ -47,6 +47,27 @@ export async function getSlots(weekKey: string): Promise<Slot[]> {
 
   if (data && data.length > 0) return data.map(rowToSlot)
   return getTemplate()
+}
+
+// One pass over the whole slots table, keyed `${weekKey}|${slotId}` so every
+// week's own override wins, plus a bare-id entry from the template for the
+// weeks that only ever followed it. Used by the Excel export, which spans all
+// weeks at once and so can't go week-by-week through getSlots().
+export async function getSlotLabelMap(): Promise<Map<string, string>> {
+  const { data } = await getSupabaseAdmin()
+    .from('slots').select('id, day, time, end_time, week_key')
+  const labels = new Map<string, string>()
+  for (const row of data ?? []) {
+    const s = rowToSlot(row)
+    const label = `יום ${dayLabel(s.day)} ${s.time}–${s.endTime}`
+    const weekKey = row.week_key as string
+    labels.set(`${weekKey}|${s.id}`, label)
+    if (weekKey === TEMPLATE_KEY) {
+      labels.set(s.id, label)
+      labels.set(templateSlotId(s.day, s.time), label)
+    }
+  }
+  return labels
 }
 
 function slotsToRows(slots: Slot[], weekKey: string, isOverride: boolean) {
@@ -194,13 +215,28 @@ export async function resetWeekToDefault(weekKey: string): Promise<void> {
 
 // Also called directly from the public homepage (TrustBar), which must not
 // throw when Supabase isn't configured — mirrors getApprovedTestimonials().
+// This is the only read path for bookings (admin UI, reports, morning push,
+// TrustBar), so filtering cancelled tombstones out here hides them everywhere:
+// a standing student dropped from a single week keeps a row purely so the
+// standing sync won't clone them back into it (see cancelStandingCloneForWeek).
 export async function getBookings(): Promise<Booking[]> {
   if (!isAdminConfigured) return []
-  const { data, error } = await getSupabaseAdmin()
+  const db = getSupabaseAdmin()
+  const { data, error } = await db
     .from('bookings')
     .select('*')
+    .eq('cancelled', false)
     .order('created_at', { ascending: false })
 
+  if (error?.message.includes('cancelled')) {
+    // Deployed ahead of the migration — read everything rather than nothing.
+    console.warn('cancelled column missing — run supabase-schema.sql.', error.message)
+    const { data: all } = await db
+      .from('bookings')
+      .select('*')
+      .order('created_at', { ascending: false })
+    return (all ?? []).map(rowToBooking)
+  }
   if (error || !data) return []
   return data.map(rowToBooking)
 }
@@ -216,6 +252,10 @@ export type NewBooking = Omit<Booking, 'id' | 'createdAt' | 'status'> & { status
 export class SlotFullError extends Error {}
 export class SlotNotFoundError extends Error {}
 export class SlotPastError extends Error {}
+// The DB is missing a column this operation needs — supabase-schema.sql hasn't
+// been re-run since the deploy. Surfaced to the admin instead of silently
+// falling back, because the fallback would do something else entirely.
+export class MigrationRequiredError extends Error {}
 
 // Wall-clock comparison in Israel time, so the serverless region's timezone
 // doesn't affect the result. Both sides use the "YYYY-MM-DD HH:mm" format, so
@@ -268,29 +308,30 @@ async function ensureWeekSlots(weekKey: string): Promise<Slot[]> {
   return template
 }
 
-// Bumps a single slot's enrolled count for a week — through the atomic
-// adjust_enrolled() UPDATE — without rewriting the week's schedule, so a week
-// that follows the template keeps following it. Returns false when the slot
-// is already full.
-export async function adjustSlotEnrolled(weekKey: string, slotId: string, delta: number): Promise<boolean> {
+// Re-derives a week's enrolled counts from the bookings that actually exist.
+// Every seat is a named student now, so the two can only drift through history
+// (the old anonymous +/- counter) or a failed best-effort release. Called when
+// the admin opens a week, in the same self-healing spirit as
+// syncStandingBookings(). Writes enrolled directly rather than going through
+// saveSlots() so a template-following week keeps following it.
+export async function reconcileWeekEnrolled(weekKey: string): Promise<void> {
   const db = getSupabaseAdmin()
-  const slots = await ensureWeekSlots(weekKey)
-  if (!slots.some((s) => s.id === slotId)) throw new SlotNotFoundError('Unknown slot')
+  const { data: rows, error } = await db
+    .from('slots').select('id, enrolled').eq('week_key', weekKey)
+  if (error || !rows || rows.length === 0) return
 
-  const { data: applied, error } = await db.rpc('adjust_enrolled', {
-    p_slot_id: slotId, p_week_key: weekKey, p_delta: delta, p_max: MAX_STUDENTS,
-  })
-  if (error) {
-    console.warn('adjust_enrolled() missing — run supabase-schema.sql. Using legacy path.', error.message)
-    const updated = slots.map((s) =>
-      s.id === slotId
-        ? { ...s, enrolled: Math.max(0, Math.min(MAX_STUDENTS, s.enrolled + delta)) }
-        : s
-    )
-    await saveSlots(updated, weekKey, await weekHasOverride(weekKey))
-    return true
+  const bookings = await getBookings()
+  const counts = new Map<string, number>()
+  for (const b of bookings) {
+    if (b.weekKey !== weekKey) continue
+    counts.set(b.slotId, (counts.get(b.slotId) ?? 0) + 1)
   }
-  return Boolean(applied)
+
+  const drifted = rows.filter((r) => (counts.get(r.id as string) ?? 0) !== r.enrolled)
+  await Promise.all(drifted.map((r) => db.from('slots')
+    .update({ enrolled: Math.min(counts.get(r.id as string) ?? 0, OVER_CAPACITY_LIMIT) })
+    .eq('id', r.id as string)
+    .eq('week_key', weekKey)))
 }
 
 function bookingRow(booking: NewBooking) {
@@ -314,10 +355,10 @@ function bookingRow(booking: NewBooking) {
 // Pre-migration path (old delete/reinsert persistence, non-atomic capacity
 // check). Kept so bookings don't break if the code deploys before the
 // adjust_enrolled() function from supabase-schema.sql exists.
-async function createBookingLegacy(booking: NewBooking, weekKey: string): Promise<Booking> {
+async function createBookingLegacy(booking: NewBooking, weekKey: string, capacityLimit: number): Promise<Booking> {
   const slots = await getSlots(weekKey)
   const idx = slots.findIndex((s) => s.id === booking.slotId)
-  if (idx !== -1 && slots[idx].enrolled >= MAX_STUDENTS) {
+  if (idx !== -1 && slots[idx].enrolled >= capacityLimit) {
     throw new SlotFullError('Slot is full')
   }
 
@@ -326,7 +367,7 @@ async function createBookingLegacy(booking: NewBooking, weekKey: string): Promis
   if (error || !data) throw new Error('Failed to save booking')
 
   if (idx !== -1) {
-    slots[idx] = { ...slots[idx], enrolled: Math.min(slots[idx].enrolled + 1, MAX_STUDENTS) }
+    slots[idx] = { ...slots[idx], enrolled: Math.min(slots[idx].enrolled + 1, capacityLimit) }
     // Keep the week's override status — a booking must not flip it either way.
     await saveSlots(slots, weekKey, await weekHasOverride(weekKey))
   }
@@ -336,7 +377,11 @@ async function createBookingLegacy(booking: NewBooking, weekKey: string): Promis
 // Creates a booking and bumps the slot's enrolled count. Capacity is enforced
 // by a single conditional UPDATE in Postgres (adjust_enrolled), so two
 // parallel requests can never both take the last seat.
-export async function createBooking(booking: NewBooking): Promise<Booking> {
+//
+// capacityLimit defaults to the standard group size, which is what the public
+// booking form must always get — only createBookingAsAdmin raises it, so a
+// deliberate over-capacity lesson stays an admin decision.
+export async function createBooking(booking: NewBooking, capacityLimit = MAX_STUDENTS): Promise<Booking> {
   const weekKey = booking.weekKey ?? ''
   const db = getSupabaseAdmin()
 
@@ -351,11 +396,11 @@ export async function createBooking(booking: NewBooking): Promise<Booking> {
     p_slot_id: booking.slotId,
     p_week_key: weekKey,
     p_delta: 1,
-    p_max: MAX_STUDENTS,
+    p_max: capacityLimit,
   })
   if (rpcError) {
     console.warn('adjust_enrolled() missing — run supabase-schema.sql. Using legacy path.', rpcError.message)
-    return createBookingLegacy(booking, weekKey)
+    return createBookingLegacy(booking, weekKey, capacityLimit)
   }
   if (!seatTaken) throw new SlotFullError('Slot is full')
 
@@ -363,7 +408,7 @@ export async function createBooking(booking: NewBooking): Promise<Booking> {
   if (error || !data) {
     // Release the seat we just took (best effort).
     await db.rpc('adjust_enrolled', {
-      p_slot_id: booking.slotId, p_week_key: weekKey, p_delta: -1, p_max: MAX_STUDENTS,
+      p_slot_id: booking.slotId, p_week_key: weekKey, p_delta: -1, p_max: OVER_CAPACITY_LIMIT,
     })
     throw new Error('Failed to save booking')
   }
@@ -375,7 +420,9 @@ export async function createBooking(booking: NewBooking): Promise<Booking> {
 // defaults to '' (or the slot's own group) and is filled in later if needed.
 // The booking is confirmed immediately: an admin adding a student is the
 // approval, so it must not land in the pending-requests queue.
-// Reuses createBooking so capacity/seat-taking stays capacity-safe.
+// Reuses createBooking so capacity/seat-taking stays capacity-safe, but with
+// the raised ceiling: the teacher is allowed to deliberately squeeze a student
+// in past the standard group size, which the public form can never do.
 export type NewAdminBooking = {
   slotId: string
   weekKey: string
@@ -400,7 +447,7 @@ export async function createBookingAsAdmin(input: NewAdminBooking): Promise<Book
     groupPreference: input.groupPreference ?? '',
     status: 'confirmed',
     price: input.price ?? null,
-  })
+  }, OVER_CAPACITY_LIMIT)
 }
 
 // ─── Standing (recurring) students ──────────────────────────────────────────
@@ -443,13 +490,16 @@ async function syncStandingBookingsIntoWeek(weekKey: string, standing: Booking[]
     ensureWeekSlots(weekKey),
     db.from('bookings').select('template_id').eq('week_key', weekKey),
   ])
+  // Deliberately unfiltered by `cancelled`: a tombstone left by dropping a
+  // standing student from this one week counts as "already cloned", which is
+  // exactly what keeps this sync from bringing them back.
   const alreadyCloned = new Set((weekRows ?? []).map((r) => r.template_id as string).filter(Boolean))
 
   for (const master of standing) {
     if (alreadyCloned.has(master.id)) continue
     if (!slots.some((s) => s.id === master.slotId)) continue
     const { data: seatTaken } = await db.rpc('adjust_enrolled', {
-      p_slot_id: master.slotId, p_week_key: weekKey, p_delta: 1, p_max: MAX_STUDENTS,
+      p_slot_id: master.slotId, p_week_key: weekKey, p_delta: 1, p_max: OVER_CAPACITY_LIMIT,
     })
     if (!seatTaken) continue
     // The alreadyCloned check above is only a fast path, not a guarantee —
@@ -474,7 +524,7 @@ async function syncStandingBookingsIntoWeek(weekKey: string, standing: Booking[]
     }))
     if (insertError) {
       await db.rpc('adjust_enrolled', {
-        p_slot_id: master.slotId, p_week_key: weekKey, p_delta: -1, p_max: MAX_STUDENTS,
+        p_slot_id: master.slotId, p_week_key: weekKey, p_delta: -1, p_max: OVER_CAPACITY_LIMIT,
       })
     }
   }
@@ -522,15 +572,44 @@ export async function isStandingBooking(id: string): Promise<boolean> {
 // clone, releasing each of those weeks' seats.
 export async function removeStandingBooking(masterId: string): Promise<void> {
   const db = getSupabaseAdmin()
-  const { data: clones } = await db.from('bookings').select('id, slot_id, week_key').eq('template_id', masterId)
+  const { data: clones } = await db.from('bookings').select('*').eq('template_id', masterId)
   for (const clone of clones ?? []) {
     await db.from('bookings').delete().eq('id', clone.id as string)
+    // A cancelled clone is a tombstone whose seat was already released when
+    // the admin dropped the student from that week — releasing it again would
+    // free someone else's place.
+    if (clone.cancelled) continue
     const { error } = await db.rpc('adjust_enrolled', {
-      p_slot_id: clone.slot_id as string, p_week_key: clone.week_key as string, p_delta: -1, p_max: MAX_STUDENTS,
+      p_slot_id: clone.slot_id as string, p_week_key: clone.week_key as string, p_delta: -1, p_max: OVER_CAPACITY_LIMIT,
     })
     if (error) console.warn('adjust_enrolled() missing on standing removal — run supabase-schema.sql.', error.message)
   }
   await db.from('bookings').delete().eq('id', masterId)
+}
+
+// Removes a student from one week's lesson only. A one-time booking is simply
+// deleted; a standing student's clone is kept as a cancelled tombstone instead,
+// because deleting it would let the next standing sync clone them right back
+// into that week (see syncStandingBookingsIntoWeek). Either way the seat is
+// released and the student disappears from every read path.
+export async function removeBookingForWeek(id: string): Promise<void> {
+  const db = getSupabaseAdmin()
+  const { data: booking } = await db.from('bookings').select('*').eq('id', id).single()
+  if (!booking) return
+  if (!booking.template_id) return deleteBooking(id)
+  if (booking.cancelled) return
+
+  const { error } = await db.from('bookings').update({ cancelled: true }).eq('id', id)
+  if (error) {
+    if (error.message.includes('cancelled')) throw new MigrationRequiredError(error.message)
+    throw new Error(`Failed to cancel booking ${id}: ${error.message}`)
+  }
+  const { error: rpcError } = await db.rpc('adjust_enrolled', {
+    p_slot_id: booking.slot_id as string, p_week_key: booking.week_key as string, p_delta: -1, p_max: OVER_CAPACITY_LIMIT,
+  })
+  if (rpcError) {
+    console.warn('adjust_enrolled() missing on week cancellation — run supabase-schema.sql.', rpcError.message)
+  }
 }
 
 export async function updateBooking(id: string, updates: Partial<Booking>): Promise<void> {
@@ -553,14 +632,16 @@ export async function deleteBooking(id: string): Promise<void> {
   // Look up slot/week before deleting — the row (and its slot_id/week_key) is
   // gone once the delete succeeds.
   const { data: booking } = await db
-    .from('bookings').select('slot_id, week_key').eq('id', id).single()
+    .from('bookings').select('*').eq('id', id).single()
 
   await db.from('bookings').delete().eq('id', id)
 
-  if (booking) {
+  // A cancelled tombstone holds no seat — releasing one again would free
+  // someone else's place.
+  if (booking && !booking.cancelled) {
     // Release the seat (best effort) — mirrors the fallback style in createBooking.
     const { error } = await db.rpc('adjust_enrolled', {
-      p_slot_id: booking.slot_id, p_week_key: booking.week_key ?? '', p_delta: -1, p_max: MAX_STUDENTS,
+      p_slot_id: booking.slot_id, p_week_key: booking.week_key ?? '', p_delta: -1, p_max: OVER_CAPACITY_LIMIT,
     })
     if (error) {
       console.warn('adjust_enrolled() missing on delete — run supabase-schema.sql.', error.message)

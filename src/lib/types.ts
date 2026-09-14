@@ -55,7 +55,15 @@ export interface Testimonial {
   createdAt: string
 }
 
+// The standard group size: what the public site shows, what marks a slot
+// "full", and the denominator of every "X/6" meter.
 export const MAX_STUDENTS = 6
+
+// Hard ceiling for one lesson. The admin can deliberately go past the standard
+// (a make-up lesson, a sibling joining for one week) — this is only a valve
+// against a typo or a bug inflating the counter, never a normal target. The
+// public booking form is always capped at MAX_STUDENTS.
+export const OVER_CAPACITY_LIMIT = 10
 
 export const DAYS = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי'] as const
 
