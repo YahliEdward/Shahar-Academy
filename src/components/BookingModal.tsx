@@ -311,6 +311,12 @@ export default function BookingModal({ slot, weekKey, weekDates, onClose, onBook
             >
               {loading ? 'שולח...' : 'שלח בקשת שריון ←'}
             </button>
+            <p className="text-xs text-slate-400 text-center leading-relaxed">
+              הפרטים משמשים רק לתיאום השיעורים ולא יועברו לאף אחד.{' '}
+              <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:text-slate-600">
+                מדיניות פרטיות
+              </a>
+            </p>
           </form>
         )}
       </div>

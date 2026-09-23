@@ -188,6 +188,12 @@ function ReviewModal({ onClose }: { onClose: () => void }) {
             >
               {loading ? 'שולח...' : 'שליחת ביקורת'}
             </button>
+            <p className="text-xs text-slate-400 text-center leading-relaxed">
+              הביקורת תתפרסם באתר עם השם שבחרתם, אחרי אישור.{' '}
+              <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:text-slate-600">
+                מדיניות פרטיות
+              </a>
+            </p>
           </form>
         )}
       </div>
