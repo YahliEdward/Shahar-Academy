@@ -23,7 +23,6 @@ const inputClass = 'w-full bg-white border border-slate-300 rounded-lg px-3 py-2
 
 type StudentDraft = {
   studentName: string
-  parentName: string
   phone: string
   grade: string
   groupPreference: string
@@ -34,7 +33,6 @@ type StudentDraft = {
 function draftFromBooking(b: Booking): StudentDraft {
   return {
     studentName: b.studentName,
-    parentName: b.parentName,
     phone: b.phone,
     grade: b.grade,
     groupPreference: b.groupPreference,
@@ -43,7 +41,7 @@ function draftFromBooking(b: Booking): StudentDraft {
 }
 
 function emptyDraft(suggestedPrice: number): StudentDraft {
-  return { studentName: '', parentName: '', phone: '', grade: '', groupPreference: '', price: String(suggestedPrice) }
+  return { studentName: '', phone: '', grade: '', groupPreference: '', price: String(suggestedPrice) }
 }
 
 // Parses a price string from the form into the DB shape: '' → null, otherwise a
@@ -161,7 +159,6 @@ export default function StudentsModal({ slot, weekKey, date, standing = false, a
     setAddDraft((draft) => ({
       ...draft,
       studentName: s.studentName,
-      parentName: s.parentName,
       phone: s.phone,
       grade: s.grade,
       groupPreference: s.groupPreference,
@@ -190,7 +187,6 @@ export default function StudentsModal({ slot, weekKey, date, standing = false, a
         slotId: slot.id,
         weekKey,
         studentName: addDraft.studentName.trim(),
-        parentName: addDraft.parentName.trim() || undefined,
         phone: addDraft.phone.trim() || undefined,
         grade: addDraft.grade || undefined,
         groupPreference: addDraft.groupPreference,
@@ -239,7 +235,6 @@ export default function StudentsModal({ slot, weekKey, date, standing = false, a
     try {
       await patchBooking(id, {
         studentName: editDraft.studentName.trim(),
-        parentName: editDraft.parentName.trim(),
         phone: editDraft.phone.trim(),
         grade: editDraft.grade,
         groupPreference: editDraft.groupPreference,
@@ -267,13 +262,6 @@ export default function StudentsModal({ slot, weekKey, date, standing = false, a
               className={inputClass}
               value={editDraft.studentName}
               onChange={(e) => setEditDraft({ ...editDraft, studentName: e.target.value })}
-            />
-          </Field>
-          <Field label="שם ההורה">
-            <input
-              className={inputClass}
-              value={editDraft.parentName}
-              onChange={(e) => setEditDraft({ ...editDraft, parentName: e.target.value })}
             />
           </Field>
           <Field label="טלפון" error={editError.phone}>
@@ -373,7 +361,7 @@ export default function StudentsModal({ slot, weekKey, date, standing = false, a
             {b.price == null && <span className="text-slate-400"> (מוצע)</span>}
           </div>
           <div className="text-xs text-slate-400 mt-2 flex items-center justify-between gap-3 flex-wrap">
-            <span>הורה: {b.parentName || 'לא צוין'} | נשלח: {new Date(b.createdAt).toLocaleString('he-IL')}</span>
+            <span>נשלח: {new Date(b.createdAt).toLocaleString('he-IL')}</span>
             <div className="flex gap-2">
               <button
                 onClick={() => startEdit(b)}
@@ -501,13 +489,6 @@ export default function StudentsModal({ slot, weekKey, date, standing = false, a
                   placeholder="שם התלמיד"
                   value={addDraft.studentName}
                   onChange={(e) => setAddDraft({ ...addDraft, studentName: e.target.value })}
-                />
-              </Field>
-              <Field label="שם ההורה (אופציונלי)">
-                <input
-                  className={inputClass}
-                  value={addDraft.parentName}
-                  onChange={(e) => setAddDraft({ ...addDraft, parentName: e.target.value })}
                 />
               </Field>
               <Field label="טלפון (אופציונלי)" error={addError.phone}>

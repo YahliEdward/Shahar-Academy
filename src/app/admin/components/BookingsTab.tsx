@@ -20,7 +20,7 @@ export default function BookingsTab({ bookings, slots, filter, onFilterChange, o
   const qDigits = normalizePhone(q)
   const matches = (b: Booking) => {
     if (!q) return true
-    if (b.studentName.toLowerCase().includes(q) || b.parentName.toLowerCase().includes(q)) return true
+    if (b.studentName.toLowerCase().includes(q)) return true
     return qDigits.length > 0 && normalizePhone(b.phone).includes(qDigits)
   }
 
