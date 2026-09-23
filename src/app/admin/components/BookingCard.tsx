@@ -162,7 +162,7 @@ export default function BookingCard({ booking, slotLabel, onRefresh }: {
       )}
 
       <div className="text-xs text-slate-400 mt-3">
-        הורה: {booking.parentName} | נשלח: {new Date(booking.createdAt).toLocaleString('he-IL')}
+        נשלח: {new Date(booking.createdAt).toLocaleString('he-IL')}
       </div>
     </div>
   )

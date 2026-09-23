@@ -11,7 +11,6 @@ export const normalizePhone = (s: string) => s.replace(/\D/g, '')
 
 export interface StudentSuggestion {
   studentName: string
-  parentName: string
   phone: string
   grade: string
   groupPreference: string
@@ -35,7 +34,6 @@ export function knownStudents(bookings: Booking[]): StudentSuggestion[] {
       at: Number.isNaN(at) ? 0 : at,
       student: {
         studentName,
-        parentName: b.parentName ?? '',
         phone: b.phone ?? '',
         grade: b.grade ?? '',
         groupPreference: b.groupPreference ?? '',

@@ -28,14 +28,10 @@ export default function AboutShahar() {
           <Image
             src="/shahar.jpg"
             alt="שחר — מורה פרטי למתמטיקה"
-            width={800}
-            height={1000}
-            className="relative rounded-2xl border border-slate-200 object-cover"
+            width={1600}
+            height={899}
+            className="relative w-full rounded-2xl border border-slate-200 object-cover"
           />
-          <div className="absolute bottom-4 right-4 bg-white/90 backdrop-blur-sm border border-blue-200 rounded-xl px-4 py-2 shadow-sm">
-            <div className="font-black text-slate-900">שחר</div>
-            <div className="text-xs text-blue-700">מורה פרטי למתמטיקה</div>
-          </div>
         </div>
 
         <div>
