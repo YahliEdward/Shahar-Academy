@@ -79,6 +79,22 @@ body {
   animation: fade-in-up 0.5s ease-out both;
 }
 
+/* Hide GSAP-driven entrance content until its component hydrates and takes over
+   (the "js" class is set by an inline script in the root layout). Without this the
+   server-rendered content shows, disappears on hydration and animates back in.
+   The delayed fallback reveals it anyway if hydration never happens. */
+@keyframes reveal-fallback {
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .js [data-reveal]:not([data-reveal-ready]) > *,
+  .js [data-counter]:not([data-counter-ready]) {
+    opacity: 0;
+    animation: reveal-fallback 0s 4s forwards;
+  }
+}
+
 /* FAQ accordion — height animated via grid-template-rows, GSAP handles chevron/opacity */
 .faq-answer-wrap {
   display: grid;

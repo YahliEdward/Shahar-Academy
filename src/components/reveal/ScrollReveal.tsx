@@ -20,12 +20,18 @@ export default function ScrollReveal({
   const scope = useRef<HTMLDivElement>(null)
 
   useGSAP(() => {
-    if (prefersReducedMotion() || !scope.current) return
+    const el = scope.current
+    if (!el) return
+    // Hand over from the pre-hydration CSS hide (globals.css) to GSAP. This runs
+    // in a layout effect, so the inline opacity:0 lands before the next paint.
+    const markReady = () => el.setAttribute('data-reveal-ready', '')
+    if (prefersReducedMotion()) return markReady()
 
-    const targets = scope.current.querySelectorAll(selector)
-    if (!targets.length) return
+    const targets = el.querySelectorAll(selector)
+    if (!targets.length) return markReady()
 
     gsap.set(targets, { opacity: 0, y: 24 })
+    markReady()
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -35,13 +41,13 @@ export default function ScrollReveal({
       },
       { threshold: 0, rootMargin: '0px 0px -15% 0px' }
     )
-    observer.observe(scope.current)
+    observer.observe(el)
 
     return () => observer.disconnect()
   }, { scope })
 
   return (
-    <div ref={scope} id={id} className={className}>
+    <div ref={scope} id={id} className={className} data-reveal>
       {children}
     </div>
   )

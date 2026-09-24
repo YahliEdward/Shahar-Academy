@@ -112,8 +112,8 @@ export default function Navbar() {
 
       {/* Mobile drawer */}
       <div
-        className={`md:hidden fixed inset-x-0 bottom-0 z-50 bg-white transition-opacity duration-300 ${
-          menuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        className={`md:hidden fixed inset-x-0 bottom-0 z-50 bg-white transition-[opacity,transform] duration-200 ease-out ${
+          menuOpen ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-2 pointer-events-none'
         }`}
         style={{ top: scrolled ? '58px' : 'var(--nav-height)' }}
         inert={!menuOpen}

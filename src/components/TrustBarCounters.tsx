@@ -19,9 +19,14 @@ export default function TrustBarCounters({ stats }: { stats: Stat[] }) {
     const counters = scope.current?.querySelectorAll<HTMLElement>('[data-counter]')
     if (!counters?.length) return
 
+    const render = (el: HTMLElement, val: string) => {
+      el.textContent = `${el.dataset.prefix ?? ''}${val}${el.dataset.suffix ?? ''}`
+    }
+
     if (prefersReducedMotion()) {
       counters.forEach((el) => {
-        el.textContent = `${el.dataset.prefix ?? ''}${el.dataset.value}${el.dataset.suffix ?? ''}`
+        render(el, el.dataset.value ?? '')
+        el.setAttribute('data-counter-ready', '')
       })
       return
     }
@@ -30,14 +35,17 @@ export default function TrustBarCounters({ stats }: { stats: Stat[] }) {
       const target = Number(el.dataset.value)
       const decimals = Number(el.dataset.decimals ?? 0)
       const obj = { val: 0 }
+      // Start from zero right away (the counter is still CSS-hidden, see globals.css)
+      // so it never flashes the final number and then snaps back to 0 when the
+      // scroll trigger fires.
+      render(el, obj.val.toFixed(decimals))
+      el.setAttribute('data-counter-ready', '')
       gsap.to(obj, {
         val: target,
         duration: 1.6,
         ease: 'power2.out',
-        scrollTrigger: { trigger: el, start: 'top 85%', once: true },
-        onUpdate: () => {
-          el.textContent = `${el.dataset.prefix ?? ''}${obj.val.toFixed(decimals)}${el.dataset.suffix ?? ''}`
-        },
+        scrollTrigger: { trigger: el, start: 'top bottom', once: true },
+        onUpdate: () => render(el, obj.val.toFixed(decimals)),
       })
     })
   }, { scope })
