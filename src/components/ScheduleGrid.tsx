@@ -58,21 +58,28 @@ function SlotCard({ slot, isPast, mine, onClick }: { slot: Slot; isPast: boolean
         </div>
       )
     }
+    // A wide-open hour is the best opening on the board, so it gets a solid
+    // card with its call to action always showing (phones have no hover).
     return (
       <button
         onClick={onClick}
-        className={`w-full rounded-xl border border-dashed p-3 text-center text-slate-400 text-xs transition-all hover:border-blue-400 hover:bg-blue-50/50 hover:-translate-y-0.5 cursor-pointer group ${
-          mine ? 'border-green-400 bg-green-50/40' : 'border-slate-300'
+        className={`w-full text-right rounded-xl border p-3 bg-white shadow-sm transition-all hover:border-blue-400 hover:shadow-md hover:-translate-y-0.5 cursor-pointer group ${
+          mine ? 'border-green-400' : 'border-emerald-300'
         }`}
       >
-        <div className="font-semibold text-slate-500" dir="ltr">
-          {slot.time}–{slot.endTime}
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-xs font-mono text-slate-500" dir="ltr">
+            {slot.time}–{slot.endTime}
+          </span>
+          <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-bold border border-emerald-200 whitespace-nowrap">
+            פנוי לגמרי
+          </span>
         </div>
-        <div className="mt-1">פנוי</div>
+        <div className="text-sm font-semibold text-slate-700">השעה פתוחה לשיעור</div>
         {mine ? (
           <MineBadge />
         ) : (
-          <div className="mt-1.5 text-blue-600/0 group-hover:text-blue-600/80 transition-colors font-semibold">
+          <div className="mt-2 text-xs text-blue-600/80 group-hover:text-blue-600 transition-colors font-semibold">
             לחץ לבקשת שריון ←
           </div>
         )}
