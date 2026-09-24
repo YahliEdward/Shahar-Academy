@@ -15,7 +15,7 @@ export default function FinalCTA() {
           ?
         </h2>
         <p className="text-slate-700 mb-8 max-w-xl mx-auto leading-relaxed">
-          המקומות בכל קבוצה מוגבלים ל־6 תלמידים בלבד. בחרו שעה פנויה עכשיו — לפני שהיא נתפסת.
+          המקומות בכל קבוצה מוגבלים ל־6 תלמידים בלבד. בחרו שעה פנויה עכשיו, לפני שהיא נתפסת.
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <Link

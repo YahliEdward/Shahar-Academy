@@ -13,7 +13,7 @@ export default async function Testimonials() {
     return (
       <section id="testimonials" className="py-12 px-4 max-w-6xl 2xl:max-w-7xl mx-auto text-center">
         <h2 className="text-2xl font-black text-slate-900 mb-2">למדתם אצל שחר?</h2>
-        <p className="text-slate-500 mb-6">נשמח לשמוע איך היה — הביקורת שלכם תעזור לתלמידים אחרים</p>
+        <p className="text-slate-500 mb-6">נשמח לשמוע איך היה. הביקורת שלכם תעזור לתלמידים אחרים</p>
         <div className="flex justify-center">
           <AddReviewButton />
         </div>

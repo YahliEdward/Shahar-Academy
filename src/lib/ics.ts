@@ -39,7 +39,7 @@ export function buildLessonIcs(opts: {
     `DTSTAMP:${dtStamp}`,
     `DTSTART:${localStamp(opts.date, opts.time)}`,
     `DTEND:${localStamp(opts.date, opts.endTime)}`,
-    `SUMMARY:${escapeText('שיעור מתמטיקה — שחר מורה פרטי')}`,
+    `SUMMARY:${escapeText('שיעור מתמטיקה עם שחר')}`,
     `DESCRIPTION:${escapeText(`תלמיד: ${opts.studentName}\nההרשמה ממתינה לאישור סופי של שחר`)}`,
     'STATUS:TENTATIVE',
     'END:VEVENT',

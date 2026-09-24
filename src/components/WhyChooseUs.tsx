@@ -12,7 +12,7 @@ const REASONS = [
   },
   {
     title: 'אווירה תומכת ובגובה העיניים',
-    text: 'קבוצה קטנה של בני אותו גיל — אפשר לשאול כל שאלה בלי פחד להיראות "לא מבינים".',
+    text: 'קבוצה קטנה של בני אותו גיל, שבה אפשר לשאול כל שאלה בלי פחד להיראות "לא מבינים".',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" className="w-6 h-6">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 12h.01M15 12h.01M8 15c.7.8 1.8 1.3 4 1.3s3.3-.5 4-1.3M12 21a9 9 0 100-18 9 9 0 000 18z" />
@@ -30,7 +30,7 @@ const REASONS = [
   },
   {
     title: 'תקשורת ישירה ומהירה',
-    text: 'כל שאלה או עדכון — הודעת וואטסאפ אחת, בלי בירוקרטיה ובלי לחכות לימי הורים.',
+    text: 'כל שאלה או עדכון בהודעת וואטסאפ אחת, בלי בירוקרטיה ובלי לחכות לימי הורים.',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" className="w-6 h-6">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M13 10V3L4 14h7v7l9-11h-7z" />
