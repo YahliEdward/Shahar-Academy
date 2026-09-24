@@ -16,7 +16,7 @@ export interface StudentSuggestion {
   groupPreference: string
 }
 
-const normalizeName = (s: string) => s.trim().replace(/\s+/g, ' ')
+export const normalizeName = (s: string) => s.trim().replace(/\s+/g, ' ')
 
 // The roster of students the admin has registered before, for the quick-pick
 // list in the "add student" form. There is no students table — a student is
