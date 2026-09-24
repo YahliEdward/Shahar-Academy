@@ -5,8 +5,10 @@ import { patchTestimonial, removeTestimonial } from '@/lib/adminApi'
 import { useToast } from './ui/Toast'
 import { useConfirm } from './ui/ConfirmDialog'
 
-export default function TestimonialCard({ testimonial, onRefresh }: {
+export default function TestimonialCard({ testimonial, onLocalChange, onRefresh }: {
   testimonial: Testimonial
+  // Applies a change to the local list immediately, before the server answers.
+  onLocalChange: (update: (list: Testimonial[]) => Testimonial[]) => void
   onRefresh: () => void
 }) {
   const toast = useToast()
@@ -14,23 +16,25 @@ export default function TestimonialCard({ testimonial, onRefresh }: {
   const isPending = testimonial.status === 'pending'
 
   const approve = async () => {
+    onLocalChange((list) => list.map((t) => t.id === testimonial.id ? { ...t, status: 'approved' } : t))
+    toast('הביקורת אושרה ✓')
     try {
       await patchTestimonial(testimonial.id, 'approved')
-      toast('הביקורת אושרה ✓')
-      onRefresh()
     } catch {
       toast('שגיאה באישור — נסו שוב', 'error')
     }
+    onRefresh()
   }
 
   const reject = async () => {
+    onLocalChange((list) => list.map((t) => t.id === testimonial.id ? { ...t, status: 'rejected' } : t))
+    toast('הביקורת נדחתה')
     try {
       await patchTestimonial(testimonial.id, 'rejected')
-      toast('הביקורת נדחתה')
-      onRefresh()
     } catch {
       toast('שגיאה בדחייה — נסו שוב', 'error')
     }
+    onRefresh()
   }
 
   const remove = async () => {
@@ -40,13 +44,14 @@ export default function TestimonialCard({ testimonial, onRefresh }: {
       confirmLabel: 'הסר',
       danger: true,
     }))) return
+    onLocalChange((list) => list.filter((t) => t.id !== testimonial.id))
+    toast('הביקורת הוסרה')
     try {
       await removeTestimonial(testimonial.id)
-      toast('הביקורת הוסרה')
-      onRefresh()
     } catch {
       toast('שגיאה בהסרה — נסו שוב', 'error')
     }
+    onRefresh()
   }
 
   return (

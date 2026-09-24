@@ -8,9 +8,11 @@ import { useToast } from './ui/Toast'
 import { useConfirm } from './ui/ConfirmDialog'
 import WhatsAppIcon from './WhatsAppIcon'
 
-export default function BookingCard({ booking, slotLabel, onRefresh }: {
+export default function BookingCard({ booking, slotLabel, onLocalChange, onRefresh }: {
   booking: Booking
   slotLabel: string
+  // Applies a change to the local list immediately, before the server answers.
+  onLocalChange: (update: (list: Booking[]) => Booking[]) => void
   onRefresh: () => void
 }) {
   const toast = useToast()
@@ -20,7 +22,6 @@ export default function BookingCard({ booking, slotLabel, onRefresh }: {
   // flow (pending) or via the edit toggle (confirmed).
   const [priceOpen, setPriceOpen] = useState(false)
   const [draft, setDraft] = useState(booking.price != null ? String(booking.price) : '')
-  const [saving, setSaving] = useState(false)
 
   const save = async () => {
     const trimmed = draft.trim()
@@ -35,17 +36,16 @@ export default function BookingCard({ booking, slotLabel, onRefresh }: {
       }
       price = Math.round(parsed)
     }
-    setSaving(true)
+    // Optimistic: show the change right away, then sync with the server.
+    setPriceOpen(false)
+    onLocalChange((list) => list.map((b) => b.id === booking.id ? { ...b, status: 'confirmed', price } : b))
+    toast(isConfirmed ? 'המחיר עודכן ✓' : 'הבקשה אושרה ✓')
     try {
       await patchBooking(booking.id, { status: 'confirmed', price })
-      toast(isConfirmed ? 'המחיר עודכן ✓' : 'הבקשה אושרה ✓')
-      setPriceOpen(false)
-      onRefresh()
     } catch {
       toast('שגיאה בשמירה — נסו שוב', 'error')
-    } finally {
-      setSaving(false)
     }
+    onRefresh()
   }
 
   const remove = async () => {
@@ -55,13 +55,14 @@ export default function BookingCard({ booking, slotLabel, onRefresh }: {
       confirmLabel: 'מחק',
       danger: true,
     }))) return
+    onLocalChange((list) => list.filter((b) => b.id !== booking.id))
+    toast('הבקשה נמחקה')
     try {
       await removeBooking(booking.id)
-      toast('הבקשה נמחקה')
-      onRefresh()
     } catch {
       toast('שגיאה במחיקה — נסו שוב', 'error')
     }
+    onRefresh()
   }
 
   return (
@@ -117,10 +118,9 @@ export default function BookingCard({ booking, slotLabel, onRefresh }: {
             />
             <button
               onClick={save}
-              disabled={saving}
               className="min-h-10 px-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-xs transition-colors disabled:opacity-60"
             >
-              {saving ? 'שומר…' : isConfirmed ? 'שמור מחיר' : '✓ אשר ושמור'}
+              {isConfirmed ? 'שמור מחיר' : '✓ אשר ושמור'}
             </button>
             <button
               onClick={() => { setPriceOpen(false); setDraft(booking.price != null ? String(booking.price) : '') }}

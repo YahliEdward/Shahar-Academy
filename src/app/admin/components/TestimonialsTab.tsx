@@ -3,8 +3,9 @@
 import { Testimonial } from '@/lib/types'
 import TestimonialCard from './TestimonialCard'
 
-export default function TestimonialsTab({ testimonials, onRefresh }: {
+export default function TestimonialsTab({ testimonials, onLocalChange, onRefresh }: {
   testimonials: Testimonial[]
+  onLocalChange: (update: (list: Testimonial[]) => Testimonial[]) => void
   onRefresh: () => void
 }) {
   const pending = testimonials.filter((t) => t.status === 'pending')
@@ -19,7 +20,7 @@ export default function TestimonialsTab({ testimonials, onRefresh }: {
         ) : (
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
             {pending.map((t) => (
-              <TestimonialCard key={t.id} testimonial={t} onRefresh={onRefresh} />
+              <TestimonialCard key={t.id} testimonial={t} onLocalChange={onLocalChange} onRefresh={onRefresh} />
             ))}
           </div>
         )}
@@ -32,7 +33,7 @@ export default function TestimonialsTab({ testimonials, onRefresh }: {
         ) : (
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
             {approved.map((t) => (
-              <TestimonialCard key={t.id} testimonial={t} onRefresh={onRefresh} />
+              <TestimonialCard key={t.id} testimonial={t} onLocalChange={onLocalChange} onRefresh={onRefresh} />
             ))}
           </div>
         )}

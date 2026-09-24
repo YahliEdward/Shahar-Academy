@@ -176,6 +176,7 @@ export default function AdminPage() {
                 slots={slots}
                 filter={bookingsFilter}
                 onFilterChange={setBookingsFilter}
+                onLocalChange={setBookings}
                 onRefresh={refreshBookings}
               />
             )}
@@ -189,7 +190,7 @@ export default function AdminPage() {
             )}
             {tab === 'reports' && <ReportsTab bookings={bookings} />}
             {tab === 'testimonials' && (
-              <TestimonialsTab testimonials={testimonials} onRefresh={refreshTestimonials} />
+              <TestimonialsTab testimonials={testimonials} onLocalChange={setTestimonials} onRefresh={refreshTestimonials} />
             )}
           </div>
         </div>

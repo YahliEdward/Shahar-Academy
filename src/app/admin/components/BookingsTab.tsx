@@ -7,11 +7,12 @@ import BookingCard from './BookingCard'
 
 export type BookingsFilter = 'all' | 'pending' | 'confirmed'
 
-export default function BookingsTab({ bookings, slots, filter, onFilterChange, onRefresh }: {
+export default function BookingsTab({ bookings, slots, filter, onFilterChange, onLocalChange, onRefresh }: {
   bookings: Booking[]
   slots: Slot[]
   filter: BookingsFilter
   onFilterChange: (f: BookingsFilter) => void
+  onLocalChange: (update: (list: Booking[]) => Booking[]) => void
   onRefresh: () => void
 }) {
   const [query, setQuery] = useState('')
@@ -47,7 +48,7 @@ export default function BookingsTab({ bookings, slots, filter, onFilterChange, o
   }
 
   const renderCards = (list: Booking[]) => list.map((b) => (
-    <BookingCard key={b.id} booking={b} slotLabel={getSlotLabel(b, slots)} onRefresh={onRefresh} />
+    <BookingCard key={b.id} booking={b} slotLabel={getSlotLabel(b, slots)} onLocalChange={onLocalChange} onRefresh={onRefresh} />
   ))
 
   const visible = filter === 'pending' ? pending : filter === 'confirmed' ? confirmed : null
