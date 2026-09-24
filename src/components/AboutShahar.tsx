@@ -27,9 +27,9 @@ export default function AboutShahar() {
           <div className="absolute -inset-3 rounded-3xl bg-blue-50 border border-blue-200 rotate-2" />
           <Image
             src="/shahar.jpg"
-            alt="שחר, מורה פרטי למתמטיקה, בשיעור עם תלמידות"
-            width={1600}
-            height={899}
+            alt="שחר, מורה פרטי למתמטיקה"
+            width={416}
+            height={520}
             className="relative w-full rounded-2xl border border-slate-200 object-cover"
           />
         </div>
