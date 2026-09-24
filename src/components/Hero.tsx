@@ -51,7 +51,7 @@ export default function Hero() {
             className="hero-tagline fade-in-up text-lg text-slate-700 mb-4 leading-relaxed max-w-lg"
             style={{ animationDelay: '0.14s' }}
           >
-            קבוצות למידה קטנות ואישיות בבית שחר — עד <strong className="text-blue-600">6 תלמידים בלבד</strong> לכל קבוצה.
+            קבוצות למידה קטנות ואישיות בבית שחר בראש העין — עד <strong className="text-blue-600">6 תלמידים בלבד</strong> לכל קבוצה.
             תשומת לב מקסימלית, שיפור מורגש בציונים.
           </p>
 
