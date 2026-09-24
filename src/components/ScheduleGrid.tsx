@@ -10,33 +10,15 @@ import MyLessons, { useMyLessons } from './MyLessons'
 
 const MAX_WEEK_OFFSET = 3
 
-function AvailabilityBadge({ enrolled }: { enrolled: number }) {
-  const free = MAX_STUDENTS - enrolled
-  if (enrolled >= MAX_STUDENTS) {
-    return (
-      <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-400 font-semibold border border-slate-200">
-        מלא לחלוטין
-      </span>
-    )
-  }
-  if (free === 1) {
-    return (
-      <span className="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-bold border border-blue-300 pulse-badge">
-        רק מקום 1 פנוי!
-      </span>
-    )
-  }
-  return (
-    <span className="text-xs px-2 py-0.5 rounded-full bg-green-50 text-green-700 font-semibold border border-green-200">
-      {free} מקומות פנויים
-    </span>
-  )
-}
-
-function MineBadge() {
-  return (
-    <div className="mt-2 text-xs font-bold text-green-700">✓ השיעור שלך</div>
-  )
+// One short status line per card, in place of a separate count + badge.
+function SlotStatus({ slot, isPast, mine }: { slot: Slot; isPast: boolean; mine: boolean }) {
+  const free = MAX_STUDENTS - slot.enrolled
+  if (mine) return <span className="font-bold text-green-700">✓ השיעור שלך</span>
+  if (isPast) return <span className="text-slate-400">הסתיים</span>
+  if (slot.groupType === 'empty') return <span className="font-bold text-emerald-700">פנוי לגמרי</span>
+  if (free <= 0) return <span className="text-slate-400">מלא</span>
+  if (free === 1) return <span className="font-bold text-blue-700 pulse-badge">נשאר מקום אחד!</span>
+  return <span className="font-semibold text-green-700">{free} מקומות פנויים</span>
 }
 
 function SlotCard({ slot, isPast, mine, onClick }: { slot: Slot; isPast: boolean; mine: boolean; onClick: () => void }) {
@@ -47,46 +29,7 @@ function SlotCard({ slot, isPast, mine, onClick }: { slot: Slot; isPast: boolean
   // but the public never sees "7/6" — such a slot is simply full here.
   const shown = Math.min(slot.enrolled, MAX_STUDENTS)
 
-  if (isEmpty) {
-    if (isPast) {
-      return (
-        <div className="w-full rounded-xl border border-dashed border-slate-200 p-3 text-center text-slate-300 text-xs opacity-70">
-          <div className="font-semibold" dir="ltr">
-            {slot.time}–{slot.endTime}
-          </div>
-          <div className="mt-1">הסתיים</div>
-        </div>
-      )
-    }
-    // A wide-open hour is the best opening on the board, so it gets a solid
-    // card with its call to action always showing (phones have no hover).
-    return (
-      <button
-        onClick={onClick}
-        className={`w-full text-right rounded-xl border p-3 bg-white shadow-sm transition-all hover:border-blue-400 hover:shadow-md hover:-translate-y-0.5 cursor-pointer group ${
-          mine ? 'border-green-400' : 'border-emerald-300'
-        }`}
-      >
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-xs font-mono text-slate-500" dir="ltr">
-            {slot.time}–{slot.endTime}
-          </span>
-          <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-bold border border-emerald-200 whitespace-nowrap">
-            פנוי לגמרי
-          </span>
-        </div>
-        <div className="text-sm font-semibold text-slate-700">השעה פתוחה לשיעור</div>
-        {mine ? (
-          <MineBadge />
-        ) : (
-          <div className="mt-2 text-xs text-blue-600/80 group-hover:text-blue-600 transition-colors font-semibold">
-            לחץ לבקשת שריון ←
-          </div>
-        )}
-      </button>
-    )
-  }
-
+  // Every card has the same four rows, so cards line up across the days.
   return (
     <button
       onClick={disabled ? undefined : onClick}
@@ -94,49 +37,47 @@ function SlotCard({ slot, isPast, mine, onClick }: { slot: Slot; isPast: boolean
       className={`w-full text-right rounded-xl border p-3 transition-all group ${
         disabled
           ? `bg-slate-50 cursor-not-allowed ${mine ? 'border-green-400' : 'border-slate-200 opacity-60'}`
-          : `bg-white shadow-sm hover:border-blue-400 hover:shadow-md hover:-translate-y-0.5 cursor-pointer ${mine ? 'border-green-400' : 'border-slate-200'}`
+          : `bg-white shadow-sm hover:border-blue-400 hover:shadow-md hover:-translate-y-0.5 cursor-pointer ${
+              mine ? 'border-green-400' : isEmpty ? 'border-emerald-300' : 'border-slate-200'
+            }`
       }`}
     >
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-xs font-mono text-slate-500" dir="ltr">
+      {/* Time and label share a row on phones; the narrow desktop columns stack them. */}
+      <div className="flex items-center justify-between gap-2 md:block">
+        <div className="text-sm font-bold text-slate-800 tabular-nums whitespace-nowrap" dir="ltr">
           {slot.time}–{slot.endTime}
-        </span>
-        <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${GROUP_BADGE[slot.groupType]}`}>
-          {GROUP_LABELS[slot.groupType]}
-        </span>
-      </div>
-
-      <div className="mb-2">
-        <div className="flex gap-0.5">
-          {Array.from({ length: MAX_STUDENTS }).map((_, i) => (
-            <div
-              key={i}
-              className={`h-1.5 flex-1 rounded-full ${
-                i < shown ? 'bg-blue-500' : 'bg-slate-200'
-              }`}
-            />
-          ))}
         </div>
-        <div className="text-xs text-slate-400 mt-1">
-          {shown}/{MAX_STUDENTS} תלמידים
+
+        <div className="md:mt-1.5">
+          {isEmpty ? (
+            <span className="inline-block text-xs px-2 py-0.5 rounded-full font-semibold whitespace-nowrap bg-emerald-50 text-emerald-700 border border-emerald-200">
+              פתוח לכל כיתה
+            </span>
+          ) : (
+            <span className={`inline-block text-xs px-2 py-0.5 rounded-full font-semibold whitespace-nowrap ${GROUP_BADGE[slot.groupType]}`}>
+              {GROUP_LABELS[slot.groupType]}
+            </span>
+          )}
         </div>
       </div>
 
-      {isPast ? (
-        <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-400 font-semibold border border-slate-200">
-          הסתיים
-        </span>
-      ) : (
-        <AvailabilityBadge enrolled={slot.enrolled} />
-      )}
+      <div className="flex gap-0.5 mt-2.5" aria-label={`${shown}/${MAX_STUDENTS} תלמידים`}>
+        {Array.from({ length: MAX_STUDENTS }).map((_, i) => (
+          <div
+            key={i}
+            className={`h-1.5 flex-1 rounded-full ${i < shown ? 'bg-blue-500' : 'bg-slate-200'}`}
+          />
+        ))}
+      </div>
 
-      {mine && <MineBadge />}
-
-      {!disabled && !mine && (
-        <div className="mt-2 text-xs text-blue-600/70 group-hover:text-blue-600 transition-colors font-semibold">
-          לחץ לבקשת שריון ←
-        </div>
-      )}
+      <div className="flex items-center justify-between gap-2 mt-2 text-xs">
+        <SlotStatus slot={slot} isPast={isPast} mine={mine} />
+        {!disabled && !mine && (
+          <span aria-hidden className="text-blue-500 group-hover:text-blue-700 group-hover:-translate-x-0.5 transition-all font-bold">
+            ←
+          </span>
+        )}
+      </div>
     </button>
   )
 }
@@ -144,13 +85,12 @@ function SlotCard({ slot, isPast, mine, onClick }: { slot: Slot; isPast: boolean
 function SkeletonCard() {
   return (
     <div className="w-full rounded-xl border border-slate-200 bg-white p-3 animate-pulse">
-      <div className="flex items-center justify-between mb-2">
-        <div className="h-3 w-16 rounded bg-slate-200/70" />
-        <div className="h-4 w-14 rounded-full bg-slate-200/70" />
+      <div className="flex items-center justify-between md:block">
+        <div className="h-4 w-20 rounded bg-slate-200/70" />
+        <div className="h-5 w-16 rounded-full bg-slate-200/70 md:mt-1.5" />
       </div>
-      <div className="h-1.5 rounded-full bg-slate-200/70 mb-2" />
-      <div className="h-3 w-20 rounded bg-slate-200/70 mb-2" />
-      <div className="h-5 w-24 rounded-full bg-slate-200/70" />
+      <div className="h-1.5 rounded-full bg-slate-200/70 mt-2.5" />
+      <div className="h-3 w-24 rounded bg-slate-200/70 mt-2" />
     </div>
   )
 }
@@ -158,7 +98,7 @@ function SkeletonCard() {
 function EmptyDay() {
   return (
     <div className="rounded-xl border border-dashed border-slate-300 p-6 text-center text-sm text-slate-400">
-      אין שיעורים ביום זה
+      אין שיעורים
     </div>
   )
 }
@@ -343,7 +283,7 @@ export default function ScheduleGrid() {
       </div>
 
       {/* Desktop: full week grid */}
-      <div className={`hidden md:grid ${hasMotzash ? 'grid-cols-7' : 'grid-cols-6'} gap-4`}>
+      <div className={`hidden md:grid ${hasMotzash ? 'grid-cols-7' : 'grid-cols-6'} gap-3 rounded-2xl border border-slate-200 bg-slate-50/90 backdrop-blur-sm p-4`}>
         {visibleDays.map((d) => (
           <div key={d}>
             <div className="text-center font-bold text-slate-700 mb-3 pb-2 border-b border-slate-200">
