@@ -191,7 +191,7 @@ export default function BookingModal({ slot, weekKey, weekDates, onClose, onBook
             </div>
             <h4 className="text-xl font-black text-slate-900 mb-2">הבקשה נשלחה!</h4>
             <p className="text-slate-500 mb-4 leading-relaxed">
-              שחר יחזור אליכם בהקדם לאישור המקום ותיאום הפרטים.
+              שחר ישלח לכם הודעה בוואטסאפ תוך כמה שעות לאישור המקום ותיאום הפרטים.
             </p>
 
             <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-3 text-sm text-right space-y-2">
@@ -326,7 +326,7 @@ export default function BookingModal({ slot, weekKey, weekDates, onClose, onBook
             )}
 
             <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-800 leading-relaxed">
-              <strong>שימו לב:</strong> שריון המקום הוא זמני. שחר יחזור אליכם טלפונית תוך מספר שעות לתיאום המחיר המותאם עבורכם ואישור סופי של ההרשמה.
+              <strong>שימו לב:</strong> שריון המקום הוא זמני. שחר ישלח לכם הודעה בוואטסאפ תוך כמה שעות לאישור סופי של ההרשמה ותיאום הפרטים.
             </div>
 
             {submitError && (
