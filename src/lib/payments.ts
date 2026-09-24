@@ -1,8 +1,9 @@
-// Payment tracking: who owes for which lessons. A pure derivation over the
-// already-loaded bookings, like reports.ts — there is no students table, so a
-// student is everyone booked under the same name.
+// Payment tracking: who owes for which lessons, month by month (the teacher
+// bills roughly once a month). A pure derivation over the already-loaded
+// bookings, like reports.ts — there is no students table, so a student is
+// everyone booked under the same name.
 import { Booking, TEMPLATE_KEY } from './types'
-import { isBillable, groupSizes, effectivePrice } from './reports'
+import { isBillable, groupSizes, effectivePrice, lessonStart, monthKeyOf, monthLabel } from './reports'
 
 // True once the database has the paid_at column. Before the migration no row
 // carries the field at all, and every past lesson would otherwise read as owed.
@@ -10,23 +11,26 @@ export function paymentsEnabled(bookings: Booking[]): boolean {
   return bookings.length === 0 || bookings.some((b) => b.paidAt !== undefined)
 }
 
-// When a week's lesson starts, in local time: the week's Sunday plus the
-// slot's day, at the slot's start time. A lesson whose slot is unknown falls
-// back to the start of its week. Standing masters have no date.
-export function lessonStart(b: Booking): Date | null {
-  if (!b.weekKey || b.weekKey === TEMPLATE_KEY) return null
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(b.weekKey)
-  if (!m) return null
-  const [h, min] = (b.lessonTime ?? '00:00').split(':').map(Number)
-  return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]) + (b.lessonDay ?? 0), h || 0, min || 0)
-}
-
 export interface StudentLesson {
   booking: Booking
   start: Date
   price: number
+  paid: boolean
   happened: boolean
+  // Happened and not paid. An upcoming lesson isn't due yet.
   owed: boolean
+}
+
+export interface StudentMonth {
+  monthKey: string
+  label: string
+  // Oldest first — the order they're listed in on a bill.
+  lessons: StudentLesson[]
+  total: number
+  paid: number
+  owed: number
+  // Not paid and hasn't happened yet.
+  upcoming: number
 }
 
 export interface StudentAccount {
@@ -36,17 +40,22 @@ export interface StudentAccount {
   grade: string
   // Recurring enrollments (the "לוח קבוע" master rows).
   standing: Booking[]
-  // Confirmed dated lessons, newest first.
-  lessons: StudentLesson[]
-  owed: StudentLesson[]
+  // Newest month first.
+  months: StudentMonth[]
   owedTotal: number
   nextLesson: StudentLesson | null
+  lastLesson: StudentLesson | null
 }
 
 const normalizeName = (s: string) => s.trim().replace(/\s+/g, ' ')
 
-// One account per confirmed student. Only lessons that already happened can be
-// owed — an upcoming lesson isn't due yet.
+const sum = (lessons: StudentLesson[]) => lessons.reduce((total, l) => total + l.price, 0)
+
+// What the student still owes from months before `monthKey`.
+export function owedBefore(account: StudentAccount, monthKey: string): number {
+  return account.months.filter((m) => m.monthKey < monthKey).reduce((total, m) => total + m.owed, 0)
+}
+
 export function buildStudentAccounts(bookings: Booking[], now = new Date()): StudentAccount[] {
   const enabled = paymentsEnabled(bookings)
   const sizes = groupSizes(bookings)
@@ -69,28 +78,39 @@ export function buildStudentAccounts(bookings: Booking[], now = new Date()): Stu
       const start = lessonStart(b)
       if (!start || !isBillable(b)) continue
       const happened = start.getTime() <= now.getTime()
-      lessons.push({
-        booking: b,
-        start,
-        price: effectivePrice(b, sizes),
-        happened,
-        owed: enabled && happened && !b.paidAt,
-      })
+      const paid = Boolean(b.paidAt)
+      lessons.push({ booking: b, start, price: effectivePrice(b, sizes), paid, happened, owed: enabled && happened && !paid })
     }
-    lessons.sort((a, b) => b.start.getTime() - a.start.getTime())
-    const owed = lessons.filter((l) => l.owed)
-    const upcoming = lessons.filter((l) => !l.happened)
+    lessons.sort((a, b) => a.start.getTime() - b.start.getTime())
 
+    const byMonth = new Map<string, StudentLesson[]>()
+    for (const l of lessons) {
+      const key = monthKeyOf(l.start)
+      byMonth.set(key, [...(byMonth.get(key) ?? []), l])
+    }
+    const months: StudentMonth[] = [...byMonth.entries()]
+      .map(([monthKey, list]) => ({
+        monthKey,
+        label: monthLabel(monthKey),
+        lessons: list,
+        total: sum(list),
+        paid: sum(list.filter((l) => l.paid)),
+        owed: sum(list.filter((l) => l.owed)),
+        upcoming: sum(list.filter((l) => !l.happened && !l.paid)),
+      }))
+      .sort((a, b) => b.monthKey.localeCompare(a.monthKey))
+
+    const happened = lessons.filter((l) => l.happened)
     accounts.push({
       name,
       phone: pick('phone'),
       parentName: pick('parentName'),
       grade: pick('grade'),
       standing: rows.filter((b) => b.weekKey === TEMPLATE_KEY),
-      lessons,
-      owed,
-      owedTotal: owed.reduce((sum, l) => sum + l.price, 0),
-      nextLesson: upcoming[upcoming.length - 1] ?? null,
+      months,
+      owedTotal: months.reduce((total, m) => total + m.owed, 0),
+      nextLesson: lessons.find((l) => !l.happened) ?? null,
+      lastLesson: happened[happened.length - 1] ?? null,
     })
   }
   return accounts

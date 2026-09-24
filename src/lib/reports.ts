@@ -38,15 +38,33 @@ const HEBREW_MONTHS = [
   'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר',
 ]
 
-// week_key is the Sunday of the lesson's week (YYYY-MM-DD) — its calendar
-// month is derived directly from that, not from created_at (when the row was
-// created/cloned, which can be long before the week it bills).
-function monthKeyFromWeekKey(weekKey: string): string | null {
-  const m = /^(\d{4})-(\d{2})-\d{2}$/.exec(weekKey)
-  return m ? `${m[1]}-${m[2]}` : null
+// When a dated lesson starts: its week's Sunday (week_key) plus the slot's
+// day, at the slot's start time (lessonDay/lessonTime are attached by the
+// server — see withLessonTimes). Without them it falls back to the start of
+// the week. Standing masters have no date. Pure Y/M/D arithmetic, so the
+// calendar date is the same on a UTC server as in the browser.
+export function lessonStart(b: Booking): Date | null {
+  if (!b.weekKey || b.weekKey === TEMPLATE_KEY) return null
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(b.weekKey)
+  if (!m) return null
+  const [h, min] = (b.lessonTime ?? '00:00').split(':').map(Number)
+  return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]) + (b.lessonDay ?? 0), h || 0, min || 0)
 }
 
-function monthLabel(monthKey: string): string {
+export function monthKeyOf(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+}
+
+// A lesson belongs to the calendar month it actually takes place in — a
+// Tuesday 1/10 lesson in the week of Sunday 27/9 is billed in October — which
+// is how the teacher charges each month. Never created_at (when the row was
+// created/cloned, which can be long before the lesson).
+function lessonMonthKey(b: Booking): string | null {
+  const start = lessonStart(b)
+  return start ? monthKeyOf(start) : null
+}
+
+export function monthLabel(monthKey: string): string {
   const [y, m] = monthKey.split('-').map(Number)
   return `${HEBREW_MONTHS[m - 1]} ${y}`
 }
@@ -134,7 +152,7 @@ export function buildReport(bookings: Booking[]): ReportData {
     grandTotal += price
 
     const weekKey = b.weekKey as string
-    const monthKey = monthKeyFromWeekKey(weekKey)
+    const monthKey = lessonMonthKey(b)
     if (monthKey) byMonthMap.set(monthKey, (byMonthMap.get(monthKey) ?? 0) + price)
     byWeekMap.set(weekKey, (byWeekMap.get(weekKey) ?? 0) + price)
 
@@ -212,7 +230,7 @@ export function buildDetailRows(
     .filter(isBillable)
     .map((b) => {
       const weekKey = b.weekKey as string
-      const monthKey = monthKeyFromWeekKey(weekKey)
+      const monthKey = lessonMonthKey(b)
       const weekInfo = weekNumberFromWeekKey(weekKey)
       return {
         studentName: b.studentName || '(ללא שם)',
