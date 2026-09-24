@@ -1,7 +1,14 @@
 'use client'
 
-import { Booking, Slot, MAX_STUDENTS } from '@/lib/types'
+import { Booking, Slot, MAX_STUDENTS, formatPrice } from '@/lib/types'
+import { buildReport } from '@/lib/reports'
+import { buildStudentAccounts, paymentsEnabled } from '@/lib/payments'
 import { getTodayInfo } from '../lib'
+
+const MONTH_NAMES = [
+  'ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני',
+  'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר',
+]
 
 function StatCard({ value, label, sub, accent, onClick, children }: {
   value: string
@@ -20,7 +27,7 @@ function StatCard({ value, label, sub, accent, onClick, children }: {
         {value}
       </div>
       <div className="text-[11px] text-slate-500 font-semibold mt-0.5">{label}</div>
-      {sub && <div className="text-[10px] text-slate-400 mt-0.5" dir="ltr">{sub}</div>}
+      {sub && <div className="text-[10px] text-slate-400 mt-0.5">{sub}</div>}
       {children}
     </button>
   )
@@ -28,12 +35,13 @@ function StatCard({ value, label, sub, accent, onClick, children }: {
 
 // At-a-glance numbers derived from the already-loaded bookings + current-week
 // slots; each card jumps to the matching view.
-export default function DashboardStats({ bookings, slots, onPendingClick, onTodayClick, onOccupancyClick }: {
+export default function DashboardStats({ bookings, slots, onPendingClick, onTodayClick, onOccupancyClick, onIncomeClick }: {
   bookings: Booking[]
   slots: Slot[]
   onPendingClick: () => void
   onTodayClick: () => void
   onOccupancyClick: () => void
+  onIncomeClick: () => void
 }) {
   const pendingCount = bookings.filter((b) => b.status === 'pending').length
   const { jsDay, todaySlots, nextSlot } = getTodayInfo(slots)
@@ -41,6 +49,15 @@ export default function DashboardStats({ bookings, slots, onPendingClick, onToda
   const activeSlots = slots.filter((s) => s.groupType !== 'empty')
   const capacity = activeSlots.length * MAX_STUDENTS
   const enrolled = activeSlots.reduce((sum, s) => sum + s.enrolled, 0)
+
+  // Same month total as the reports tab (a lesson belongs to the month its
+  // week starts in), plus everything still owed for lessons that happened.
+  const now = new Date()
+  const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+  const monthTotal = buildReport(bookings).byMonth.find((m) => m.monthKey === monthKey)?.total ?? 0
+  const owedTotal = paymentsEnabled(bookings)
+    ? buildStudentAccounts(bookings, now).reduce((sum, a) => sum + a.owedTotal, 0)
+    : 0
 
   const todaySub = nextSlot
     ? `הבא: ${nextSlot.time}`
@@ -51,7 +68,7 @@ export default function DashboardStats({ bookings, slots, onPendingClick, onToda
         : 'יום פנוי'
 
   return (
-    <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-5">
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-5">
       <StatCard
         value={String(pendingCount)}
         label="ממתינות לאישור"
@@ -79,6 +96,12 @@ export default function DashboardStats({ bookings, slots, onPendingClick, onToda
           />
         </div>
       </StatCard>
+      <StatCard
+        value={formatPrice(monthTotal)}
+        label={`הכנסות ${MONTH_NAMES[now.getMonth()]}`}
+        sub={owedTotal > 0 ? `חוב פתוח: ${formatPrice(owedTotal)}` : 'אין חובות פתוחים'}
+        onClick={onIncomeClick}
+      />
     </div>
   )
 }

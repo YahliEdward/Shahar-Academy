@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { isAdmin } from '@/lib/auth'
 import { isAdminConfigured } from '@/lib/supabaseAdmin'
 import {
-  getBookings, createBookingAsAdmin, createStandingBookingAsAdmin,
+  getBookings, withLessonTimes, createBookingAsAdmin, createStandingBookingAsAdmin,
   SlotFullError, SlotNotFoundError, SlotPastError,
 } from '@/lib/serverDb'
 import { TEMPLATE_KEY, OVER_CAPACITY_LIMIT } from '@/lib/types'
@@ -15,7 +15,7 @@ export async function GET() {
     return NextResponse.json({ error: 'Server not configured' }, { status: 503 })
   }
   try {
-    const bookings = await getBookings()
+    const bookings = await withLessonTimes(await getBookings())
     return NextResponse.json({ bookings })
   } catch {
     return NextResponse.json({ error: 'Failed to load bookings' }, { status: 500 })

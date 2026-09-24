@@ -11,11 +11,12 @@ import AdminHeader from './components/AdminHeader'
 import DashboardStats from './components/DashboardStats'
 import TodayPanel from './components/TodayPanel'
 import BookingsTab, { BookingsFilter } from './components/BookingsTab'
+import StudentsTab, { StudentsFilter } from './components/StudentsTab'
 import ScheduleTab from './components/ScheduleTab'
 import ReportsTab from './components/ReportsTab'
 import TestimonialsTab from './components/TestimonialsTab'
 
-type Tab = 'bookings' | 'schedule' | 'reports' | 'testimonials'
+type Tab = 'bookings' | 'students' | 'schedule' | 'reports' | 'testimonials'
 
 export default function AdminPage() {
   // null = still checking whether a previous session cookie is valid.
@@ -25,6 +26,7 @@ export default function AdminPage() {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [testimonials, setTestimonials] = useState<Testimonial[]>([])
   const [bookingsFilter, setBookingsFilter] = useState<BookingsFilter>('all')
+  const [studentsFilter, setStudentsFilter] = useState<StudentsFilter>('all')
   // null = auto (TodayPanel opens itself when there are lessons today).
   const [todayOpen, setTodayOpen] = useState<boolean | null>(null)
   // Bumped when the occupancy stat is clicked so ScheduleTab remounts in week mode.
@@ -124,6 +126,11 @@ export default function AdminPage() {
     todayRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
+  const goToOwed = () => {
+    setTab('students')
+    setStudentsFilter('owed')
+  }
+
   const goToSchedule = () => {
     setTab('schedule')
     setScheduleMode('week')
@@ -160,6 +167,7 @@ export default function AdminPage() {
                   onPendingClick={goToPending}
                   onTodayClick={goToToday}
                   onOccupancyClick={goToSchedule}
+                onIncomeClick={goToOwed}
                 />
 
                 <TodayPanel
@@ -170,50 +178,30 @@ export default function AdminPage() {
                   panelRef={todayRef}
                 />
 
-                {/* Tabs */}
-                <div className="flex gap-2 mb-6">
-                  <button
-                    onClick={() => setTab('bookings')}
-                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${
-                      tab === 'bookings' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
-                    }`}
-                  >
-                    בקשות רישום
-                    {pendingCount > 0 && (
-                      <span className="w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center font-black">
-                        {pendingCount}
-                      </span>
-                    )}
-                  </button>
-                  <button
-                    onClick={() => setTab('schedule')}
-                    className={`px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${
-                      tab === 'schedule' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
-                    }`}
-                  >
-                    ניהול לוח שעות
-                  </button>
-                  <button
-                    onClick={() => setTab('reports')}
-                    className={`px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${
-                      tab === 'reports' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
-                    }`}
-                  >
-                    דוחות
-                  </button>
-                  <button
-                    onClick={() => setTab('testimonials')}
-                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${
-                      tab === 'testimonials' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
-                    }`}
-                  >
-                    ביקורות
-                    {pendingTestimonialsCount > 0 && (
-                      <span className="w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center font-black">
-                        {pendingTestimonialsCount}
-                      </span>
-                    )}
-                  </button>
+                {/* Tabs — scroll sideways on narrow phones instead of squeezing */}
+                <div className="flex gap-2 mb-6 overflow-x-auto -mx-4 px-4 lg:mx-0 lg:px-0 pb-1">
+                  {([
+                    { key: 'bookings', label: 'בקשות רישום', badge: pendingCount },
+                    { key: 'students', label: 'תלמידים', badge: 0 },
+                    { key: 'schedule', label: 'לוח שעות', badge: 0 },
+                    { key: 'reports', label: 'דוחות', badge: 0 },
+                    { key: 'testimonials', label: 'ביקורות', badge: pendingTestimonialsCount },
+                  ] as { key: Tab; label: string; badge: number }[]).map((t) => (
+                    <button
+                      key={t.key}
+                      onClick={() => setTab(t.key)}
+                      className={`flex-shrink-0 whitespace-nowrap flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${
+                        tab === t.key ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                      }`}
+                    >
+                      {t.label}
+                      {t.badge > 0 && (
+                        <span className="w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center font-black">
+                          {t.badge}
+                        </span>
+                      )}
+                    </button>
+                  ))}
                 </div>
 
                 {tab === 'bookings' && (
@@ -222,6 +210,16 @@ export default function AdminPage() {
                     slots={slots}
                     filter={bookingsFilter}
                     onFilterChange={setBookingsFilter}
+                    onLocalChange={setBookings}
+                    onRefresh={refreshBookings}
+                  />
+                )}
+                {tab === 'students' && (
+                  <StudentsTab
+                    bookings={bookings}
+                    slots={slots}
+                    filter={studentsFilter}
+                    onFilterChange={setStudentsFilter}
                     onLocalChange={setBookings}
                     onRefresh={refreshBookings}
                   />

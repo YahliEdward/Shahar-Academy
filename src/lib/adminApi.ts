@@ -65,6 +65,16 @@ export async function removeBooking(id: string, scope?: 'week'): Promise<void> {
   await jsonOrThrow(await fetch(`/api/admin/bookings/${id}${query}`, { method: 'DELETE' }))
 }
 
+// Marks lessons paid (or back to unpaid) — one lesson, or a student's whole
+// open balance at once.
+export async function setBookingsPaid(ids: string[], paid: boolean): Promise<void> {
+  await jsonOrThrow(await fetch('/api/admin/bookings/payments', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ids, paid }),
+  }))
+}
+
 export interface AdminNewBookingRequest {
   slotId: string
   weekKey: string
