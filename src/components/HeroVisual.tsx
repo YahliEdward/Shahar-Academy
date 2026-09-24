@@ -5,7 +5,7 @@ export default function HeroVisual() {
 
       {/* Secondary card peeking behind */}
       <div className="absolute -bottom-8 -left-6 -rotate-6 w-48 bg-white/80 border border-slate-200 rounded-xl p-4 shadow-xl -z-10">
-        <div className="text-[10px] font-mono text-slate-400 mb-2">יום ה׳ · 16:00–17:30</div>
+        <div className="text-[10px] font-mono text-slate-400 mb-2">יום ה׳ · 16:00–17:00</div>
         <div className="flex gap-0.5">
           {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className={`h-1 flex-1 rounded-full ${i < 6 ? 'bg-slate-300' : 'bg-slate-200'}`} />
@@ -16,7 +16,7 @@ export default function HeroVisual() {
       {/* Primary schedule-preview card */}
       <div className="relative rotate-3 bg-white border border-slate-200 rounded-2xl p-5 shadow-2xl">
         <div className="flex items-center justify-between mb-4">
-          <span className="text-xs font-mono text-slate-500">יום ג׳ · 17:00–18:30</span>
+          <span className="text-xs font-mono text-slate-500">יום ג׳ · 17:00–18:00</span>
           <span className="text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 font-semibold border border-amber-200">
             תיכון 5 יח&apos;
           </span>
