@@ -49,25 +49,49 @@ export async function getSlots(weekKey: string): Promise<Slot[]> {
   return getTemplate()
 }
 
+type SlotTime = Pick<Slot, 'day' | 'time' | 'endTime'>
+
 // One pass over the whole slots table, keyed `${weekKey}|${slotId}` so every
 // week's own override wins, plus a bare-id entry from the template for the
-// weeks that only ever followed it. Used by the Excel export, which spans all
-// weeks at once and so can't go week-by-week through getSlots().
-export async function getSlotLabelMap(): Promise<Map<string, string>> {
+// weeks that only ever followed it. Spans all weeks at once, so it can't go
+// week-by-week through getSlots().
+async function getSlotTimeMap(): Promise<Map<string, SlotTime>> {
   const { data } = await getSupabaseAdmin()
     .from('slots').select('id, day, time, end_time, week_key')
-  const labels = new Map<string, string>()
+  const times = new Map<string, SlotTime>()
   for (const row of data ?? []) {
     const s = rowToSlot(row)
-    const label = `יום ${dayLabel(s.day)} ${s.time}–${s.endTime}`
     const weekKey = row.week_key as string
-    labels.set(`${weekKey}|${s.id}`, label)
+    times.set(`${weekKey}|${s.id}`, s)
     if (weekKey === TEMPLATE_KEY) {
-      labels.set(s.id, label)
-      labels.set(templateSlotId(s.day, s.time), label)
+      times.set(s.id, s)
+      times.set(templateSlotId(s.day, s.time), s)
     }
   }
+  return times
+}
+
+function lookupSlotTime(times: Map<string, SlotTime>, b: Booking): SlotTime | undefined {
+  return times.get(`${b.weekKey}|${b.slotId}`) ?? times.get(b.slotId)
+}
+
+// Used by the Excel/PDF exports.
+export async function getSlotLabelMap(): Promise<Map<string, string>> {
+  const labels = new Map<string, string>()
+  for (const [key, s] of await getSlotTimeMap()) {
+    labels.set(key, `יום ${dayLabel(s.day)} ${s.time}–${s.endTime}`)
+  }
   return labels
+}
+
+// Attaches each booking's lesson day and hours, so the admin UI can tell a
+// lesson that already happened (and may be owed for) from an upcoming one.
+export async function withLessonTimes(bookings: Booking[]): Promise<Booking[]> {
+  const times = await getSlotTimeMap()
+  return bookings.map((b) => {
+    const s = lookupSlotTime(times, b)
+    return s ? { ...b, lessonDay: s.day, lessonTime: s.time, lessonEndTime: s.endTime } : b
+  })
 }
 
 function slotsToRows(slots: Slot[], weekKey: string, isOverride: boolean) {
@@ -625,6 +649,18 @@ export async function updateBooking(id: string, updates: Partial<Booking>): Prom
   if (updates.groupPreference !== undefined) row.group_preference = updates.groupPreference
   const { error } = await getSupabaseAdmin().from('bookings').update(row).eq('id', id)
   if (error) throw new Error(`Failed to update booking ${id}: ${error.message}`)
+}
+
+// Marks lessons as paid (now) or back to unpaid, in one update.
+export async function setBookingsPaid(ids: string[], paid: boolean): Promise<void> {
+  const { error } = await getSupabaseAdmin()
+    .from('bookings')
+    .update({ paid_at: paid ? new Date().toISOString() : null })
+    .in('id', ids)
+  if (error) {
+    if (error.message.includes('paid_at')) throw new MigrationRequiredError(error.message)
+    throw new Error(`Failed to update payment: ${error.message}`)
+  }
 }
 
 export async function deleteBooking(id: string): Promise<void> {

@@ -28,6 +28,14 @@ export interface Booking {
   // Set only on week-level clones of a standing (recurring) student: points
   // back to the master booking (weekKey === TEMPLATE_KEY) it was cloned from.
   templateId?: string
+  // When this lesson was paid for; null = not paid yet. Missing entirely when
+  // the database predates the paid_at column (see supabase-schema.sql).
+  paidAt?: string | null
+  // When the lesson meets, resolved on the server from the slot the booking
+  // points at — not stored on the row. Missing when the slot can't be found.
+  lessonDay?: DayIndex
+  lessonTime?: string
+  lessonEndTime?: string
 }
 
 // A record of one "ייצוא לאקסל" click on the reports tab — the literal
@@ -233,6 +241,9 @@ export function rowToBooking(row: Record<string, unknown>): Booking {
     price: row.price == null ? null : Number(row.price),
     createdAt: row.created_at as string,
     templateId: row.template_id as string | undefined,
+    // Only present once the column exists, so the admin UI can tell "unpaid"
+    // (null) apart from "payments not set up yet" (missing).
+    ...('paid_at' in row ? { paidAt: (row.paid_at as string | null) ?? null } : {}),
   }
 }
 

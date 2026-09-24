@@ -262,3 +262,13 @@ alter table testimonials enable row level security;
 -- section renders an empty state until genuine submissions are approved
 -- through the admin "ביקורות" tab.
 delete from testimonials where id in ('seed-1', 'seed-2', 'seed-3', 'seed-4');
+
+-- ════════════════════════════════════════════════════════════════════════════
+-- Migration: payment tracking
+-- ════════════════════════════════════════════════════════════════════════════
+-- When a lesson was paid for; null = not paid yet. The admin "תלמידים" tab
+-- marks lessons paid one by one or all of a student's open lessons at once,
+-- and sums what's still owed. Week clones of a standing student start unpaid
+-- (the column is not copied from the master). Safe to re-run.
+
+alter table bookings add column if not exists paid_at timestamptz;
