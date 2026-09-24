@@ -92,8 +92,8 @@ export const DEFAULT_TIMES: { time: string; endTime: string }[] = [
 
 export const GROUP_LABELS: Record<GroupType, string> = {
   'middle-school': 'חטיבת ביניים',
-  'high-4': 'תיכון — 4 יח\'',
-  'high-5': 'תיכון — 5 יח\'',
+  'high-4': 'תיכון 4 יח\'',
+  'high-5': 'תיכון 5 יח\'',
   'mixed': 'קבוצה מעורבת',
   'empty': 'פנוי',
 }

@@ -206,7 +206,7 @@ export default function ScheduleGrid() {
         <h2 className="text-3xl font-black text-slate-900 mb-2">
           לוח השעות השבועי
         </h2>
-        <p className="text-slate-500">בחרו יום ושעה שמתאימים לכם — לחצו לבקשת שריון</p>
+        <p className="text-slate-500">בחרו יום ושעה שמתאימים לכם ולחצו לבקשת שריון</p>
       </div>
 
       {/* Week navigation */}
@@ -251,7 +251,7 @@ export default function ScheduleGrid() {
       </div>
 
       {loadError && (
-        <p className="text-center text-red-600 py-10 text-sm">שגיאה בטעינת הלוח — נסו לרענן</p>
+        <p className="text-center text-red-600 py-10 text-sm">שגיאה בטעינת הלוח, נסו לרענן</p>
       )}
 
       {/* Mobile: single day view */}

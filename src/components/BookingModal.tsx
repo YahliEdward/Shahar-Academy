@@ -225,7 +225,7 @@ export default function BookingModal({ slot, weekKey, weekDates, onClose, onBook
             >
               💬 שלח הודעה לשחר (לא חובה)
             </a>
-            <p className="mt-1.5 text-[11px] text-slate-400">שחר כבר קיבל התראה על הבקשה — זו רק דרך מהירה ליצור איתו קשר ישיר.</p>
+            <p className="mt-1.5 text-[11px] text-slate-400">שחר כבר קיבל התראה על הבקשה. זו רק דרך מהירה ליצור איתו קשר ישיר.</p>
             <button
               onClick={onBooked}
               className="mt-3 w-full py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors"

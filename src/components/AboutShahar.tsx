@@ -4,11 +4,11 @@ import ScrollReveal from './reveal/ScrollReveal'
 const HIGHLIGHTS = [
   {
     title: 'מלמד מתוך אהבה למקצוע',
-    text: 'מתמטיקה היא לא רק נוסחאות — היא דרך חשיבה. המטרה שלי היא שכל תלמיד יצא מהשיעור עם ביטחון, לא רק עם פתרון.',
+    text: 'מתמטיקה היא לא רק נוסחאות, היא דרך חשיבה. המטרה שלי היא שכל תלמיד יצא מהשיעור עם ביטחון, לא רק עם פתרון.',
   },
   {
     title: 'שיטה שמותאמת לכל תלמיד',
-    text: 'בקבוצות קטנות אפשר באמת להכיר כל תלמיד — לזהות איפה הוא נתקע ולבנות איתו את הדרך קדימה, צעד אחר צעד.',
+    text: 'בקבוצות קטנות אפשר באמת להכיר כל תלמיד, לזהות איפה הוא נתקע ולבנות איתו את הדרך קדימה, צעד אחר צעד.',
   },
   {
     title: 'זמין גם אחרי השיעור',
@@ -27,7 +27,7 @@ export default function AboutShahar() {
           <div className="absolute -inset-3 rounded-3xl bg-blue-50 border border-blue-200 rotate-2" />
           <Image
             src="/shahar.jpg"
-            alt="שחר — מורה פרטי למתמטיקה"
+            alt="שחר, מורה פרטי למתמטיקה, בשיעור עם תלמידות"
             width={1600}
             height={899}
             className="relative w-full rounded-2xl border border-slate-200 object-cover"
@@ -36,11 +36,11 @@ export default function AboutShahar() {
 
         <div>
           <h2 className="text-3xl font-black text-slate-900 mb-2">מי עומד מאחורי הלימודים</h2>
-          <p className="text-slate-500 mb-6">נעים להכיר — שחר</p>
+          <p className="text-slate-500 mb-6">שחר, מורה פרטי למתמטיקה</p>
 
           <p className="text-slate-700 leading-relaxed mb-8">
             נעים מאוד, אני שחר. אני מלמד מתוך אמונה פשוטה: אין תלמיד ש&quot;לא מסוגל&quot;
-            במתמטיקה — יש רק תלמיד שעוד לא קיבל את ההסבר הנכון, בקצב הנכון, באווירה הנכונה.
+            במתמטיקה. יש רק תלמיד שעוד לא קיבל את ההסבר הנכון, בקצב הנכון, באווירה הנכונה.
             בקבוצות הקטנות שלנו, בכיתה שלי, כל תלמיד מקבל בדיוק את זה.
           </p>
 

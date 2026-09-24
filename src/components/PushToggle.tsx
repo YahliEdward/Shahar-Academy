@@ -58,7 +58,7 @@ export default function PushToggle() {
       setState('on')
     } catch {
       if (Notification.permission === 'denied') setState('denied')
-      else setError('הפעלת ההתראות נכשלה — נסו שוב')
+      else setError('הפעלת ההתראות נכשלה, נסו שוב')
     } finally {
       setBusy(false)
     }
@@ -76,7 +76,7 @@ export default function PushToggle() {
       }
       setState('off')
     } catch {
-      setError('כיבוי ההתראות נכשל — נסו שוב')
+      setError('כיבוי ההתראות נכשל, נסו שוב')
     } finally {
       setBusy(false)
     }
@@ -97,7 +97,7 @@ export default function PushToggle() {
   if (state === 'denied') {
     return (
       <div className="mb-6 bg-white border border-slate-200 rounded-xl p-4 text-sm text-slate-500 shadow-sm">
-        🔕 ההתראות חסומות במכשיר הזה — אפשרו התראות לאתר בהגדרות ורעננו את הדף.
+        🔕 ההתראות חסומות במכשיר הזה. אפשרו התראות לאתר בהגדרות ורעננו את הדף.
       </div>
     )
   }
