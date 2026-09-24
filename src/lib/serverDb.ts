@@ -265,6 +265,17 @@ export async function getBookings(): Promise<Booking[]> {
   return data.map(rowToBooking)
 }
 
+// Public "my lessons" lookup: a visitor's browser remembers the ids of the
+// bookings it made and asks for their current state, so a move or
+// cancellation by the teacher shows up there too. Cancelled tombstones read
+// as gone, like everywhere else.
+export async function getBookingsByIds(ids: string[]): Promise<Booking[]> {
+  if (!isAdminConfigured || ids.length === 0) return []
+  const { data, error } = await getSupabaseAdmin().from('bookings').select('*').in('id', ids)
+  if (error || !data) return []
+  return withLessonTimes(data.filter((row) => !row.cancelled).map(rowToBooking))
+}
+
 function generateId(): string {
   return Math.random().toString(36).slice(2) + Date.now().toString(36)
 }

@@ -4,11 +4,14 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import HeroVisual from './HeroVisual'
 import MarkerUnderline from './MarkerUnderline'
+import MyLessons, { useMyLessons } from './MyLessons'
 import { PHONE, WHATSAPP_URL } from '@/lib/constants'
 
 export default function Hero() {
   const [contactOpen, setContactOpen] = useState(false)
   const contactRef = useRef<HTMLDivElement>(null)
+  // A returning student sees their booked lesson right away.
+  const myLessons = useMyLessons()
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -123,6 +126,8 @@ export default function Hero() {
               )}
             </div>
           </div>
+
+          <MyLessons data={myLessons} className="w-full max-w-lg mt-8 fade-in-up" />
         </div>
 
         <div className="hero-visual fade-in-up hidden lg:block" style={{ animationDelay: '0.1s' }}>
