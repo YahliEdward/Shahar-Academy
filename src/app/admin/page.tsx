@@ -31,17 +31,48 @@ export default function AdminPage() {
   const [scheduleKey, setScheduleKey] = useState(0)
   const [scheduleMode, setScheduleMode] = useState<'default' | 'week'>('week')
   const todayRef = useRef<HTMLDivElement>(null)
+  // Until the first load succeeds the dashboard must not render: empty lists
+  // would read as "no bookings" / "all handled" when the network is down.
+  const [loadState, setLoadState] = useState<'loading' | 'ready' | 'error'>('loading')
 
   useEffect(() => {
     adminSession().then(setAuthed)
   }, [])
 
+  // Loads everything the dashboard shows. A background refresh keeps the data
+  // already on screen if it fails; only the first load surfaces an error.
+  const loadAll = useCallback((background = false) =>
+    Promise.all([fetchWeekSlots(getWeekKey(0)), fetchBookings(), fetchTestimonials()])
+      .then(([week, bookingList, testimonialList]) => {
+        setSlots(week.slots)
+        setBookings(bookingList)
+        setTestimonials(testimonialList)
+        setLoadState('ready')
+      })
+      .catch(() => {
+        if (!background) setLoadState('error')
+      }), [])
+
   useEffect(() => {
     if (!authed) return
-    fetchWeekSlots(getWeekKey(0)).then((r) => setSlots(r.slots)).catch(() => {})
-    fetchBookings().then(setBookings).catch(() => {})
-    fetchTestimonials().then(setTestimonials).catch(() => {})
-  }, [authed])
+    loadAll()
+  }, [authed, loadAll])
+
+  // A booking can arrive (with a push notification) while the dashboard sits
+  // open in a background tab — pull fresh data whenever it comes back into view.
+  useEffect(() => {
+    if (!authed) return
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') loadAll(true)
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [authed, loadAll])
+
+  const retryLoad = () => {
+    setLoadState('loading')
+    loadAll()
+  }
 
   const refreshTestimonials = () => {
     fetchTestimonials().then(setTestimonials).catch(() => {})
@@ -108,89 +139,106 @@ export default function AdminPage() {
           <div className="max-w-4xl xl:max-w-6xl 2xl:max-w-7xl mx-auto px-4 lg:px-6 py-6">
             <PushToggle />
 
-            <DashboardStats
-              bookings={bookings}
-              slots={slots}
-              onPendingClick={goToPending}
-              onTodayClick={goToToday}
-              onOccupancyClick={goToSchedule}
-            />
+            {loadState === 'loading' ? (
+              <p className="text-center text-slate-400 py-10 text-sm">טוען…</p>
+            ) : loadState === 'error' ? (
+              <div className="rounded-xl border border-red-200 bg-red-50 p-5 text-center">
+                <p className="font-bold text-red-700">לא הצלחנו לטעון את הנתונים</p>
+                <p className="text-xs text-red-600 mt-1">בדקו את החיבור לאינטרנט ונסו שוב.</p>
+                <button
+                  onClick={retryLoad}
+                  className="mt-3 min-h-10 px-5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg text-sm transition-colors"
+                >
+                  נסו שוב
+                </button>
+              </div>
+            ) : (
+              <>
+                <DashboardStats
+                  bookings={bookings}
+                  slots={slots}
+                  onPendingClick={goToPending}
+                  onTodayClick={goToToday}
+                  onOccupancyClick={goToSchedule}
+                />
 
-            <TodayPanel
-              slots={slots}
-              bookings={bookings}
-              open={todayOpen}
-              onToggle={setTodayOpen}
-              panelRef={todayRef}
-            />
+                <TodayPanel
+                  slots={slots}
+                  bookings={bookings}
+                  open={todayOpen}
+                  onToggle={setTodayOpen}
+                  panelRef={todayRef}
+                />
 
-            {/* Tabs */}
-            <div className="flex gap-2 mb-6">
-              <button
-                onClick={() => setTab('bookings')}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${
-                  tab === 'bookings' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
-                }`}
-              >
-                בקשות רישום
-                {pendingCount > 0 && (
-                  <span className="w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center font-black">
-                    {pendingCount}
-                  </span>
+                {/* Tabs */}
+                <div className="flex gap-2 mb-6">
+                  <button
+                    onClick={() => setTab('bookings')}
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${
+                      tab === 'bookings' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                    }`}
+                  >
+                    בקשות רישום
+                    {pendingCount > 0 && (
+                      <span className="w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center font-black">
+                        {pendingCount}
+                      </span>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => setTab('schedule')}
+                    className={`px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${
+                      tab === 'schedule' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                    }`}
+                  >
+                    ניהול לוח שעות
+                  </button>
+                  <button
+                    onClick={() => setTab('reports')}
+                    className={`px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${
+                      tab === 'reports' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                    }`}
+                  >
+                    דוחות
+                  </button>
+                  <button
+                    onClick={() => setTab('testimonials')}
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${
+                      tab === 'testimonials' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                    }`}
+                  >
+                    ביקורות
+                    {pendingTestimonialsCount > 0 && (
+                      <span className="w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center font-black">
+                        {pendingTestimonialsCount}
+                      </span>
+                    )}
+                  </button>
+                </div>
+
+                {tab === 'bookings' && (
+                  <BookingsTab
+                    bookings={bookings}
+                    slots={slots}
+                    filter={bookingsFilter}
+                    onFilterChange={setBookingsFilter}
+                    onLocalChange={setBookings}
+                    onRefresh={refreshBookings}
+                  />
                 )}
-              </button>
-              <button
-                onClick={() => setTab('schedule')}
-                className={`px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${
-                  tab === 'schedule' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
-                }`}
-              >
-                ניהול לוח שעות
-              </button>
-              <button
-                onClick={() => setTab('reports')}
-                className={`px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${
-                  tab === 'reports' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
-                }`}
-              >
-                דוחות
-              </button>
-              <button
-                onClick={() => setTab('testimonials')}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${
-                  tab === 'testimonials' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
-                }`}
-              >
-                ביקורות
-                {pendingTestimonialsCount > 0 && (
-                  <span className="w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center font-black">
-                    {pendingTestimonialsCount}
-                  </span>
+                {tab === 'schedule' && (
+                  <ScheduleTab
+                    key={scheduleKey}
+                    bookings={bookings}
+                    onChanged={handleScheduleChanged}
+                    defaultMode={scheduleMode}
+                  />
                 )}
-              </button>
-            </div>
-
-            {tab === 'bookings' && (
-              <BookingsTab
-                bookings={bookings}
-                slots={slots}
-                filter={bookingsFilter}
-                onFilterChange={setBookingsFilter}
-                onLocalChange={setBookings}
-                onRefresh={refreshBookings}
-              />
-            )}
-            {tab === 'schedule' && (
-              <ScheduleTab
-                key={scheduleKey}
-                bookings={bookings}
-                onChanged={handleScheduleChanged}
-                defaultMode={scheduleMode}
-              />
-            )}
-            {tab === 'reports' && <ReportsTab bookings={bookings} />}
-            {tab === 'testimonials' && (
-              <TestimonialsTab testimonials={testimonials} onLocalChange={setTestimonials} onRefresh={refreshTestimonials} />
+                {tab === 'reports' && <ReportsTab bookings={bookings} />}
+                {tab === 'testimonials' && (
+                  <TestimonialsTab testimonials={testimonials} onLocalChange={setTestimonials} onRefresh={refreshTestimonials} />
+                )}
+              </>
             )}
           </div>
         </div>

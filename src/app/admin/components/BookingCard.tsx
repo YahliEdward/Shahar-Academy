@@ -3,14 +3,18 @@
 import { useState } from 'react'
 import { Booking, formatPrice } from '@/lib/types'
 import { patchBooking, removeBooking } from '@/lib/adminApi'
+import { pricePerStudent } from '@/lib/pricing'
 import { whatsappUrl } from '../lib'
 import { useToast } from './ui/Toast'
 import { useConfirm } from './ui/ConfirmDialog'
 import WhatsAppIcon from './WhatsAppIcon'
 
-export default function BookingCard({ booking, slotLabel, onLocalChange, onRefresh }: {
+export default function BookingCard({ booking, slotLabel, groupSize, onLocalChange, onRefresh }: {
   booking: Booking
   slotLabel: string
+  // Students registered to this booking's lesson (including this one) — drives
+  // the suggested per-student price.
+  groupSize: number
   // Applies a change to the local list immediately, before the server answers.
   onLocalChange: (update: (list: Booking[]) => Booking[]) => void
   onRefresh: () => void
@@ -21,7 +25,14 @@ export default function BookingCard({ booking, slotLabel, onLocalChange, onRefre
   // Price editing is collapsed by default — it opens as part of the confirm
   // flow (pending) or via the edit toggle (confirmed).
   const [priceOpen, setPriceOpen] = useState(false)
-  const [draft, setDraft] = useState(booking.price != null ? String(booking.price) : '')
+  const suggestedPrice = pricePerStudent(Math.max(groupSize, 1))
+  const [draft, setDraft] = useState('')
+
+  // Pre-fills the saved price, or the suggested rate when none is set yet.
+  const openPrice = () => {
+    setDraft(String(booking.price ?? suggestedPrice))
+    setPriceOpen(true)
+  }
 
   const save = async () => {
     const trimmed = draft.trim()
@@ -104,13 +115,16 @@ export default function BookingCard({ booking, slotLabel, onLocalChange, onRefre
           <label className="text-xs text-slate-500 block mb-1.5">
             מחיר לשיעור (פנימי, לא חובה)
           </label>
+          <p className="text-[11px] text-slate-400 mb-1.5">
+            מחיר מוצע: {formatPrice(suggestedPrice)} ({groupSize <= 1 ? 'שיעור פרטי' : `${groupSize} תלמידים בשיעור`})
+          </p>
           <div className="flex gap-2 flex-wrap">
             <input
               type="number"
               min={0}
               step={1}
               inputMode="numeric"
-              placeholder="350"
+              placeholder={String(suggestedPrice)}
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               autoFocus
@@ -123,7 +137,7 @@ export default function BookingCard({ booking, slotLabel, onLocalChange, onRefre
               {isConfirmed ? 'שמור מחיר' : '✓ אשר ושמור'}
             </button>
             <button
-              onClick={() => { setPriceOpen(false); setDraft(booking.price != null ? String(booking.price) : '') }}
+              onClick={() => setPriceOpen(false)}
               className="min-h-10 px-3 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-lg text-xs font-semibold transition-colors"
             >
               בטל
@@ -134,7 +148,7 @@ export default function BookingCard({ booking, slotLabel, onLocalChange, onRefre
         <div className="mt-3 flex items-center gap-2 flex-wrap">
           {!isConfirmed ? (
             <button
-              onClick={() => setPriceOpen(true)}
+              onClick={openPrice}
               className="min-h-10 px-5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-sm transition-colors"
             >
               ✓ אשר
@@ -145,7 +159,7 @@ export default function BookingCard({ booking, slotLabel, onLocalChange, onRefre
                 מחיר: {formatPrice(booking.price)}
               </span>
               <button
-                onClick={() => setPriceOpen(true)}
+                onClick={openPrice}
                 className="min-h-10 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold transition-colors"
               >
                 ערוך מחיר
