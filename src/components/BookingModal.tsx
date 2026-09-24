@@ -7,6 +7,7 @@ import { WHATSAPP_NUMBER } from '@/lib/constants'
 import { buildLessonIcs, downloadIcs } from '@/lib/ics'
 import { readSavedRegistration, saveRegistration, clearSavedRegistration } from '@/lib/lastRegistration'
 import { useScrollLock } from '@/lib/useScrollLock'
+import type { LessonLocation } from '@/lib/lessonLocation'
 
 const adminWhatsappUrl = (studentName: string, grade: string, slotLabel: string, phone: string) => {
   const msg = encodeURIComponent(
@@ -54,6 +55,7 @@ export default function BookingModal({ slot, weekKey, weekDates, onClose, onBook
   const [prefilled, setPrefilled] = useState(() => !!readSavedRegistration())
   const [submitted, setSubmitted] = useState(false)
   const [submittedSlotLabel, setSubmittedSlotLabel] = useState('')
+  const [location, setLocation] = useState<LessonLocation | null>(null)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
   const [submitError, setSubmitError] = useState('')
@@ -126,7 +128,7 @@ export default function BookingModal({ slot, weekKey, weekDates, onClose, onBook
     setLoading(true)
     setSubmitError('')
     try {
-      await submitBooking({ slotId: slot.id, weekKey, slotLabel, ...form })
+      setLocation(await submitBooking({ slotId: slot.id, weekKey, slotLabel, ...form }))
       saveRegistration({
         studentName: form.studentName,
         parentName: form.parentName,
@@ -202,6 +204,32 @@ export default function BookingModal({ slot, weekKey, weekDates, onClose, onBook
               <SummaryRow label="טלפון" value={<span dir="ltr">{form.phone}</span>} />
             </div>
 
+            {location && (
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-3 text-sm text-right">
+                <div className="text-slate-500">📍 כתובת השיעור</div>
+                <div className="font-bold text-slate-900 mt-0.5">{location.address}</div>
+                <div className="text-xs text-slate-500 mt-0.5">הכיתה נמצאת בחצר הבית</div>
+                <div className="grid grid-cols-2 gap-2 mt-3">
+                  <a
+                    href={location.mapsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="py-2 bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 font-bold rounded-lg transition-colors text-center"
+                  >
+                    Google Maps
+                  </a>
+                  <a
+                    href={location.wazeUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="py-2 bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 font-bold rounded-lg transition-colors text-center"
+                  >
+                    Waze
+                  </a>
+                </div>
+              </div>
+            )}
+
             <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-4 text-sm text-blue-800 leading-relaxed text-right">
               <strong>שימו לב:</strong> השריון זמני עד לאישור טלפוני של שחר.
             </div>
@@ -212,6 +240,7 @@ export default function BookingModal({ slot, weekKey, weekDates, onClose, onBook
                 time: slot.time,
                 endTime: slot.endTime,
                 studentName: form.studentName,
+                location: location?.address,
               }))}
               className="flex items-center justify-center gap-2 w-full py-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 font-bold rounded-xl transition-colors text-sm"
             >

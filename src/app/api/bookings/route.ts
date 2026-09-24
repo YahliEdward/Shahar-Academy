@@ -3,6 +3,7 @@ import { isAdminConfigured } from '@/lib/supabaseAdmin'
 import { createBooking, SlotFullError, SlotNotFoundError, SlotPastError, NewBooking } from '@/lib/serverDb'
 import { sendPushToAll } from '@/lib/webPush'
 import { createRateLimiter } from '@/lib/rateLimit'
+import { getLessonLocation } from '@/lib/lessonLocation'
 
 const FAVORED_TRACKS = ['ח', 'ט', '4 יחידות', '5 יחידות']
 
@@ -65,7 +66,8 @@ export async function POST(request: NextRequest) {
       body: `${studentName} (${grade})\n${slotLabel}\nטלפון: ${phone}`,
       url: '/admin',
     }))
-    return NextResponse.json({ booking })
+    // The lesson address is only revealed to someone who has actually booked.
+    return NextResponse.json({ booking, location: getLessonLocation() })
   } catch (err) {
     if (err instanceof SlotFullError) {
       return NextResponse.json({ error: 'המקום התמלא' }, { status: 409 })
