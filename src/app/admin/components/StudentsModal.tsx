@@ -7,7 +7,7 @@ import {
 } from '@/lib/types'
 import { pricePerStudent } from '@/lib/pricing'
 import { removeBooking, patchBooking, adminCreateBooking } from '@/lib/adminApi'
-import { whatsappUrl, knownStudents, StudentSuggestion } from '../lib'
+import { whatsappUrl, knownStudents, normalizeName, StudentSuggestion } from '../lib'
 import { useToast } from './ui/Toast'
 import { useConfirm } from './ui/ConfirmDialog'
 import { useScrollLock } from '@/lib/useScrollLock'
@@ -96,16 +96,28 @@ export default function StudentsModal({ slot, weekKey, date, standing = false, a
   const [addDraft, setAddDraft] = useState<StudentDraft>(() => emptyDraft(suggestedForAdd))
   const [addError, setAddError] = useState<{ studentName?: string; phone?: string }>({})
   const [addLoading, setAddLoading] = useState(false)
-  const [pickerQuery, setPickerQuery] = useState('')
+  // Autocomplete on the name field: the student picked from it (if any), whether
+  // its dropdown is showing, and the keyboard-highlighted row (-1 = none).
+  const [picked, setPicked] = useState<StudentSuggestion | null>(null)
+  const [pickerOpen, setPickerOpen] = useState(false)
+  const [activeIndex, setActiveIndex] = useState(-1)
+  const listRef = useRef<HTMLUListElement>(null)
 
-  // Quick-pick list for the add form: everyone registered before who isn't
-  // already in this lesson. Derived from the bookings the dashboard already
-  // loaded — the app has no students table.
-  const enrolledNames = new Set(students.map((b) => b.studentName.trim().replace(/\s+/g, ' ')))
-  const trimmedQuery = pickerQuery.trim()
-  const suggestions = knownStudents(bookings)
+  // Suggestions for the name field: everyone registered before who isn't
+  // already in this lesson, filtered by what's typed (name, or phone digits).
+  // Derived from the bookings the dashboard already loaded — the app has no
+  // students table.
+  const enrolledNames = new Set(students.map((b) => normalizeName(b.studentName)))
+  const nameQuery = normalizeName(addDraft.studentName)
+  const queryDigits = nameQuery.replace(/\D/g, '')
+  const suggestions = picked ? [] : knownStudents(bookings)
     .filter((s) => !enrolledNames.has(s.studentName))
-    .filter((s) => !trimmedQuery || s.studentName.includes(trimmedQuery) || s.phone.includes(trimmedQuery))
+    .filter((s) => !nameQuery
+      || s.studentName.includes(nameQuery)
+      || (queryDigits.length > 0 && s.phone.replace(/\D/g, '').includes(queryDigits)))
+    // Names that start with the query first — that's usually who's meant.
+    .sort((a, b) => Number(b.studentName.startsWith(nameQuery)) - Number(a.studentName.startsWith(nameQuery)))
+  const showSuggestions = pickerOpen && suggestions.length > 0
 
   // Past the standard group size the add still goes through — the teacher may
   // deliberately squeeze a student in — but never past the hard ceiling.
@@ -128,6 +140,12 @@ export default function StudentsModal({ slot, weekKey, date, standing = false, a
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
   }, [onClose])
+
+  // Keep the keyboard-highlighted suggestion visible inside the scrolling list.
+  useEffect(() => {
+    if (activeIndex < 0) return
+    listRef.current?.children[activeIndex]?.scrollIntoView({ block: 'nearest' })
+  }, [activeIndex])
 
   // Arriving from the card's "+" means the add form is the point — bring it
   // into view instead of leaving it below the roster.
@@ -164,7 +182,47 @@ export default function StudentsModal({ slot, weekKey, date, standing = false, a
       groupPreference: s.groupPreference,
     }))
     setAddError({})
-    setPickerQuery('')
+    setPicked(s)
+    setPickerOpen(false)
+    setActiveIndex(-1)
+  }
+
+  // Typing a different name after picking someone means it's a different
+  // student — drop the details that were filled in for the picked one so they
+  // don't get saved under the wrong name.
+  const changeAddName = (studentName: string) => {
+    if (picked && normalizeName(studentName) !== picked.studentName) {
+      setAddDraft({ ...addDraft, studentName, phone: '', grade: '', groupPreference: '' })
+      setPicked(null)
+    } else {
+      setAddDraft({ ...addDraft, studentName })
+    }
+    setPickerOpen(true)
+    setActiveIndex(-1)
+  }
+
+  const onNameKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showSuggestions) return
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      setActiveIndex((i) => (i + 1) % suggestions.length)
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      setActiveIndex((i) => (i <= 0 ? suggestions.length - 1 : i - 1))
+    } else if (e.key === 'Enter' && activeIndex >= 0) {
+      e.preventDefault()
+      pickStudent(suggestions[activeIndex])
+    } else if (e.key === 'Escape') {
+      // Close just the list, not the whole dialog.
+      e.stopPropagation()
+      setPickerOpen(false)
+    }
+  }
+
+  const resetPicker = () => {
+    setPicked(null)
+    setPickerOpen(false)
+    setActiveIndex(-1)
   }
 
   const submitAdd = async () => {
@@ -195,6 +253,7 @@ export default function StudentsModal({ slot, weekKey, date, standing = false, a
       toast('התלמיד נוסף ✓')
       setAddDraft(emptyDraft(pricePerStudent(students.length + 2)))
       setAddError({})
+      resetPicker()
       setAdding(false)
       onChanged()
     } catch (err) {
@@ -439,7 +498,7 @@ export default function StudentsModal({ slot, weekKey, date, standing = false, a
           )}
 
           {adding ? (
-            <div ref={addFormRef} className="rounded-xl border border-blue-200 bg-blue-50/50 p-4 space-y-2.5 scroll-mt-4">
+            <div ref={addFormRef} className="rounded-xl border border-blue-200 bg-blue-50/50 p-4 space-y-2.5 scroll-mt-28">
               <p className="text-sm font-bold text-blue-800 mb-1">
                 {standing ? 'הוספת תלמיד קבוע' : 'הוספת תלמיד לשיעור'}
               </p>
@@ -454,42 +513,67 @@ export default function StudentsModal({ slot, weekKey, date, standing = false, a
                 </p>
               )}
 
-              {suggestions.length > 0 && (
-                <Field label="בחירה מתלמידים קיימים">
+              <Field label="שם התלמיד" error={addError.studentName}>
+                <div className="relative">
                   <input
                     className={inputClass}
-                    placeholder="חיפוש לפי שם או טלפון…"
-                    value={pickerQuery}
-                    onChange={(e) => setPickerQuery(e.target.value)}
+                    placeholder="הקלידו שם — או בחרו תלמיד קיים"
+                    autoComplete="off"
+                    role="combobox"
+                    aria-expanded={showSuggestions}
+                    aria-controls="student-suggestions"
+                    aria-autocomplete="list"
+                    aria-activedescendant={activeIndex >= 0 ? `student-suggestion-${activeIndex}` : undefined}
+                    value={addDraft.studentName}
+                    onChange={(e) => changeAddName(e.target.value)}
+                    onFocus={() => setPickerOpen(true)}
+                    onBlur={() => { setPickerOpen(false); setActiveIndex(-1) }}
+                    onKeyDown={onNameKeyDown}
                   />
-                  <div className="mt-1.5 max-h-40 overflow-y-auto space-y-1">
-                    {suggestions.map((s) => (
-                      <button
-                        key={s.studentName}
-                        type="button"
-                        onClick={() => pickStudent(s)}
-                        className="w-full text-right rounded-lg border border-slate-200 bg-white hover:border-blue-400 hover:bg-blue-50 px-3 py-2 transition-colors"
-                      >
-                        <span className="text-sm font-semibold text-slate-900">{s.studentName}</span>
-                        {(s.grade || s.phone) && (
-                          <span className="block text-xs text-slate-500">
-                            {[s.grade, s.phone].filter(Boolean).join(' | ')}
-                          </span>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                  <p className="text-xs text-slate-400 mt-1">או מלאו את הפרטים ידנית לתלמיד חדש</p>
-                </Field>
-              )}
-
-              <Field label="שם התלמיד" error={addError.studentName}>
-                <input
-                  className={inputClass}
-                  placeholder="שם התלמיד"
-                  value={addDraft.studentName}
-                  onChange={(e) => setAddDraft({ ...addDraft, studentName: e.target.value })}
-                />
+                  {showSuggestions && (
+                    // mousedown is cancelled so picking doesn't blur the input
+                    // (which would close the list before the click lands).
+                    <div
+                      className="absolute inset-x-0 top-full mt-1 z-20 rounded-lg border border-slate-200 bg-white shadow-lg overflow-hidden"
+                      onMouseDown={(e) => e.preventDefault()}
+                    >
+                      <p className="px-3 py-1.5 text-[11px] font-semibold text-slate-400 bg-slate-50 border-b border-slate-200">
+                        תלמידים שנרשמו בעבר ({suggestions.length})
+                      </p>
+                      {/* Fixed-height rows and a height of exactly five of them,
+                          so the list never ends on a half-cut row. */}
+                      <ul id="student-suggestions" role="listbox" ref={listRef} className="max-h-[220px] overflow-y-auto overscroll-contain">
+                        {suggestions.map((s, i) => (
+                          <li
+                            key={s.studentName}
+                            id={`student-suggestion-${i}`}
+                            role="option"
+                            aria-selected={i === activeIndex}
+                            onClick={() => pickStudent(s)}
+                            onMouseEnter={() => setActiveIndex(i)}
+                            className={`h-11 px-3 flex items-center justify-between gap-3 border-b border-slate-100 last:border-b-0 cursor-pointer transition-colors ${
+                              i === activeIndex ? 'bg-blue-50' : 'bg-white'
+                            }`}
+                          >
+                            <span className="text-sm font-semibold text-slate-900 truncate">{s.studentName}</span>
+                            {(s.grade || s.phone) && (
+                              <span className="text-xs text-slate-400 truncate shrink-0">
+                                {s.grade}
+                                {s.grade && s.phone && ' · '}
+                                {s.phone && <span dir="ltr">{s.phone}</span>}
+                              </span>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+                {picked && (
+                  <p className="text-xs text-green-700 mt-1">
+                    ✓ תלמיד קיים{(picked.phone || picked.grade || picked.groupPreference) && ' — שאר הפרטים מולאו אוטומטית'}
+                  </p>
+                )}
               </Field>
               <Field label="טלפון (אופציונלי)" error={addError.phone}>
                 <input
@@ -548,7 +632,7 @@ export default function StudentsModal({ slot, weekKey, date, standing = false, a
                   {addLoading ? 'מוסיף…' : overCapacity ? 'הוסף בכל זאת' : 'הוסף תלמיד'}
                 </button>
                 <button
-                  onClick={() => { setAdding(false); setAddError({}); setPickerQuery('') }}
+                  onClick={() => { setAdding(false); setAddError({}); resetPicker() }}
                   disabled={addLoading}
                   className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg text-sm transition-colors"
                 >
@@ -558,7 +642,7 @@ export default function StudentsModal({ slot, weekKey, date, standing = false, a
             </div>
           ) : (
             <button
-              onClick={() => { setAddDraft(emptyDraft(suggestedForAdd)); setPickerQuery(''); setAdding(true) }}
+              onClick={() => { setAddDraft(emptyDraft(suggestedForAdd)); resetPicker(); setAdding(true) }}
               className="w-full py-2.5 rounded-xl border border-dashed border-slate-300 text-slate-500 hover:border-blue-400 hover:text-blue-600 transition-all text-sm font-semibold"
             >
               + הוסף תלמיד
