@@ -47,8 +47,19 @@ export default function BookingsTab({ bookings, slots, filter, onFilterChange, o
     return <p className="text-center text-slate-400 py-10">אין בקשות רישום עדיין</p>
   }
 
+  // Same lesson = same slot in the same week.
+  const groupSize = (booking: Booking) =>
+    bookings.filter((b) => b.slotId === booking.slotId && b.weekKey === booking.weekKey).length
+
   const renderCards = (list: Booking[]) => list.map((b) => (
-    <BookingCard key={b.id} booking={b} slotLabel={getSlotLabel(b, slots)} onLocalChange={onLocalChange} onRefresh={onRefresh} />
+    <BookingCard
+      key={b.id}
+      booking={b}
+      slotLabel={getSlotLabel(b, slots)}
+      groupSize={groupSize(b)}
+      onLocalChange={onLocalChange}
+      onRefresh={onRefresh}
+    />
   ))
 
   const visible = filter === 'pending' ? pending : filter === 'confirmed' ? confirmed : null

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import {
   Slot, Booking, GroupType, DayIndex, FRIDAY_DAY, MOTZASH_DAY, OVER_CAPACITY_LIMIT, TEMPLATE_KEY,
-  addSlotToDay, removeSlot, getWeekKey, getWeekDates, formatShortDate,
+  addSlotToDay, removeSlot, getWeekKey, getWeekDates, formatShortDate, dayLabel,
 } from '@/lib/types'
 import { fetchTemplate, fetchWeekSlots, putTemplate, putWeekSlots, resetWeek } from '@/lib/adminApi'
 import WeekMiniGrid from './WeekMiniGrid'
@@ -116,8 +116,30 @@ export default function ScheduleTab({ bookings, onChanged, defaultMode = 'week' 
     setActiveDay(MOTZASH_DAY)
   }
 
-  const handleRemoveSlot = (id: string) => {
+  // The students shown on a slot's card: standing masters in template mode,
+  // this week's rows otherwise.
+  const slotStudents = (slotId: string) => {
+    const targetKey = mode === 'default' ? TEMPLATE_KEY : weekKey
+    return bookings.filter((b) => b.slotId === slotId && b.weekKey === targetKey)
+  }
+
+  // One tap on "×" from a phone is easy to hit by accident — always confirm,
+  // and say so plainly when students are registered to the slot.
+  const handleRemoveSlot = async (id: string) => {
     const removed = slots.find((s) => s.id === id)
+    if (!removed) return
+    const studentCount = slotStudents(id).length
+    // LRI/PDI isolate the time range so the RTL sentence doesn't flip it to "16:00–15:00".
+    const when = `יום ${dayLabel(removed.day)} ⁦${removed.time}–${removed.endTime}⁩`
+    const scope = mode === 'default' ? 'מהלוח הקבוע (מכל השבועות)' : 'מהשבוע הזה בלבד'
+    if (!(await confirmDialog({
+      title: 'להסיר את השעה?',
+      message: studentCount > 0
+        ? `השעה ${when} תוסר ${scope}. שימו לב: רשומים אליה ${studentCount} תלמידים.`
+        : `השעה ${when} תוסר ${scope}.`,
+      confirmLabel: 'הסר שעה',
+      danger: true,
+    }))) return
     const updated = removeSlot(slots, id)
     commit(updated)
     if (removed?.day === MOTZASH_DAY && !updated.some((s) => s.day === MOTZASH_DAY)) {
@@ -250,10 +272,7 @@ export default function ScheduleTab({ bookings, onChanged, defaultMode = 'week' 
             <SlotEditorCard
               key={slot.id}
               slot={displaySlot(slot)}
-              students={bookings.filter((b) => {
-                const targetKey = mode === 'default' ? TEMPLATE_KEY : weekKey
-                return b.slotId === slot.id && b.weekKey === targetKey
-              })}
+              students={slotStudents(slot.id)}
               showStudents
               showOrigin={mode !== 'default'}
               canRemove={activeDay === MOTZASH_DAY || activeDay === FRIDAY_DAY ? true : daySlots.length > 1}
