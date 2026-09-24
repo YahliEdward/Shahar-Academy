@@ -26,14 +26,15 @@ export const metadata: Metadata = {
     siteName: TITLE,
     locale: 'he_IL',
     type: 'website',
-    // WhatsApp won't show preview images over ~600KB — this one is a 58KB JPEG.
-    images: [{ url: '/og-image.jpg', width: 512, height: 512, alt: TITLE }],
+    // Wide 1200×630 card so WhatsApp shows a large preview. WhatsApp won't show
+    // preview images over ~600KB, so keep this JPEG small.
+    images: [{ url: '/og-share.jpg', width: 1200, height: 630, alt: TITLE }],
   },
   twitter: {
-    card: 'summary',
+    card: 'summary_large_image',
     title: TITLE,
     description: DESCRIPTION,
-    images: ['/og-image.jpg'],
+    images: ['/og-share.jpg'],
   },
 }
 

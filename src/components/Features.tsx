@@ -36,7 +36,7 @@ export default function Features() {
     <section id="features" className="py-16 px-4 max-w-6xl 2xl:max-w-7xl mx-auto">
       <div className="text-center mb-10">
         <h2 className="text-3xl font-black text-slate-900 mb-2">מה מקבלים כשלומדים עם שחר</h2>
-        <p className="text-slate-500">ככה נראית ליווי אישי, מקצועי וזמין</p>
+        <p className="text-slate-500">ככה נראה ליווי אישי, מקצועי וזמין</p>
       </div>
 
       <ScrollReveal selector=":scope > div" className="grid md:grid-cols-3 gap-5">
