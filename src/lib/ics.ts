@@ -28,6 +28,7 @@ export function buildLessonIcs(opts: {
   time: string
   endTime: string
   studentName: string
+  location?: string
 }): string {
   const dtStamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')
   return [
@@ -41,6 +42,7 @@ export function buildLessonIcs(opts: {
     `DTEND:${localStamp(opts.date, opts.endTime)}`,
     `SUMMARY:${escapeText('שיעור מתמטיקה עם שחר')}`,
     `DESCRIPTION:${escapeText(`תלמיד: ${opts.studentName}\nההרשמה ממתינה לאישור סופי של שחר`)}`,
+    ...(opts.location ? [`LOCATION:${escapeText(opts.location)}`] : []),
     'STATUS:TENTATIVE',
     'END:VEVENT',
     'END:VCALENDAR',

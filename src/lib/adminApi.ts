@@ -2,6 +2,7 @@
 // old direct-to-Supabase calls so the anon key can no longer read or mutate
 // booking data from the client.
 import { Slot, Booking, ReportExportSummary, Testimonial } from './types'
+import type { LessonLocation } from './lessonLocation'
 
 async function jsonOrThrow(res: Response) {
   if (!res.ok) {
@@ -198,12 +199,14 @@ export interface BookingRequest {
   groupPreference: string
 }
 
-export async function submitBooking(payload: BookingRequest): Promise<void> {
-  await jsonOrThrow(await fetch('/api/bookings', {
+// Returns where the lesson takes place (null if not configured on the server).
+export async function submitBooking(payload: BookingRequest): Promise<LessonLocation | null> {
+  const data = await jsonOrThrow(await fetch('/api/bookings', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   }))
+  return data.location ?? null
 }
 
 // ─── Testimonials ─────────────────────────────────────────────────────────────
