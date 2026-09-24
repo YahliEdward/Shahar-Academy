@@ -1,7 +1,7 @@
 // Browser-side wrappers around the server route handlers. These replace the
 // old direct-to-Supabase calls so the anon key can no longer read or mutate
 // booking data from the client.
-import { Slot, Booking, ReportExportSummary, Testimonial } from './types'
+import { Slot, Booking, DayIndex, ReportExportSummary, Testimonial } from './types'
 import type { LessonLocation } from './lessonLocation'
 
 async function jsonOrThrow(res: Response) {
@@ -209,14 +209,41 @@ export interface BookingRequest {
   groupPreference: string
 }
 
-// Returns where the lesson takes place (null if not configured on the server).
-export async function submitBooking(payload: BookingRequest): Promise<LessonLocation | null> {
+// Returns the new booking's id and where the lesson takes place (location is
+// null if not configured on the server).
+export async function submitBooking(
+  payload: BookingRequest,
+): Promise<{ bookingId: string | null; location: LessonLocation | null }> {
   const data = await jsonOrThrow(await fetch('/api/bookings', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   }))
-  return data.location ?? null
+  return { bookingId: data.booking?.id ?? null, location: data.location ?? null }
+}
+
+export interface MyLesson {
+  id: string
+  slotId: string
+  studentName: string
+  weekKey: string
+  day: DayIndex
+  time: string
+  endTime: string
+  status: Booking['status']
+}
+
+// Public: the current state of bookings this browser made. Ids the server no
+// longer knows (cancelled, deleted) are simply missing from the result.
+export async function getMyLessons(
+  ids: string[],
+): Promise<{ lessons: MyLesson[]; location: LessonLocation | null }> {
+  const data = await jsonOrThrow(await fetch('/api/bookings/mine', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ids }),
+  }))
+  return { lessons: data.lessons ?? [], location: data.location ?? null }
 }
 
 // ─── Testimonials ─────────────────────────────────────────────────────────────

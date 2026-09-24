@@ -6,6 +6,7 @@ import { submitBooking } from '@/lib/adminApi'
 import { WHATSAPP_NUMBER } from '@/lib/constants'
 import { buildLessonIcs, downloadIcs } from '@/lib/ics'
 import { readSavedRegistration, saveRegistration, clearSavedRegistration } from '@/lib/lastRegistration'
+import { addMyBookingId } from '@/lib/myBookings'
 import { useScrollLock } from '@/lib/useScrollLock'
 import type { LessonLocation } from '@/lib/lessonLocation'
 
@@ -128,7 +129,9 @@ export default function BookingModal({ slot, weekKey, weekDates, onClose, onBook
     setLoading(true)
     setSubmitError('')
     try {
-      setLocation(await submitBooking({ slotId: slot.id, weekKey, slotLabel, ...form }))
+      const { bookingId, location } = await submitBooking({ slotId: slot.id, weekKey, slotLabel, ...form })
+      setLocation(location)
+      if (bookingId) addMyBookingId(bookingId)
       saveRegistration({
         studentName: form.studentName,
         parentName: form.parentName,
