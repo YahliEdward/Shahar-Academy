@@ -12,7 +12,7 @@ const heebo = Heebo({
   display: "swap",
 })
 const TITLE = "שחר מורה פרטי"
-const DESCRIPTION = "שיעורי מתמטיקה בראש העין — קבוצות למידה קטנות ואישיות, עד 6 תלמידים בקבוצה. חטיבת ביניים ותיכון, 4 ו-5 יחידות."
+const DESCRIPTION = "שיעורי מתמטיקה בראש העין בקבוצות קטנות ואישיות, עד 6 תלמידים בקבוצה. חטיבת ביניים ותיכון, 4 ו-5 יחידות."
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
