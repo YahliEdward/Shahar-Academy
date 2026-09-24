@@ -12,7 +12,7 @@ const heebo = Heebo({
   display: "swap",
 })
 const TITLE = "שחר מורה פרטי"
-const DESCRIPTION = "הדרך שלכם להצלחה במתמטיקה מתחילה כאן. קבוצות למידה קטנות ואישיות — עד 6 תלמידים בקבוצה."
+const DESCRIPTION = "שיעורי מתמטיקה בראש העין — קבוצות למידה קטנות ואישיות, עד 6 תלמידים בקבוצה. חטיבת ביניים ותיכון, 4 ו-5 יחידות."
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -46,7 +46,10 @@ const jsonLd = {
   url: SITE_URL,
   logo: `${SITE_URL}/og-image.jpg`,
   telephone: PHONE,
-  areaServed: { '@type': 'Country', name: 'Israel' },
+  // City only — the street address lives on the Google Business Profile, where
+  // it can be hidden independently of the site.
+  address: { '@type': 'PostalAddress', addressLocality: 'ראש העין', addressCountry: 'IL' },
+  areaServed: { '@type': 'City', name: 'ראש העין' },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
