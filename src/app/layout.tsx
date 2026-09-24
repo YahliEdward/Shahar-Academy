@@ -54,8 +54,14 @@ const jsonLd = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="he" dir="rtl" className={heebo.variable}>
+    // suppressHydrationWarning: the inline script below adds a "js" class to <html>
+    // before React hydrates, which would otherwise be reported as a mismatch.
+    <html lang="he" dir="rtl" className={heebo.variable} suppressHydrationWarning>
       <body className="min-h-screen bg-[#ece8db] text-slate-800 font-[family-name:var(--font-heebo)]">
+        {/* Runs before first paint so globals.css can hide scroll-reveal content and
+            counters until their animations take over, instead of showing them, hiding
+            them on hydration and animating them back in (a visible flash). */}
+        <script dangerouslySetInnerHTML={{ __html: "document.documentElement.classList.add('js')" }} />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

@@ -32,7 +32,7 @@ export default async function Testimonials() {
         {testimonials.map((t) => (
           <div
             key={t.id}
-            className="bg-white border border-slate-200 rounded-2xl p-5 flex flex-col gap-3 shadow-sm hover:border-blue-300 transition-all"
+            className="bg-white border border-slate-200 rounded-2xl p-5 flex flex-col gap-3 shadow-sm hover:border-blue-300 transition-colors"
           >
             <div className="flex gap-0.5">
               {Array.from({ length: t.stars }).map((_, j) => (
