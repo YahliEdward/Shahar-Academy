@@ -3,11 +3,12 @@
 import { useState, useRef } from 'react'
 import { useGSAP } from '@gsap/react'
 import { gsap, prefersReducedMotion } from '@/lib/gsap'
+import { STANDARD_PRICE, pricePerStudent } from '@/lib/pricing'
 
 const FAQS = [
   {
     q: 'כמה עולה שיעור?',
-    a: 'המחיר משתנה לפי סוג הקבוצה וכמות המפגשים בשבוע. שולחים הודעה קצרה בוואטסאפ ונחזור עם מחיר מדויק ומסלול מותאם, בלי הפתעות ובלי התחייבות.',
+    a: `שיעור של שעה בקבוצה רגילה (4 עד 6 תלמידים) עולה ${STANDARD_PRICE} ₪ לתלמיד. כשיש מקום פנוי בשעה, למשל אחרי ביטול, אפשר ללמוד גם בקבוצה קטנה יותר: 3 תלמידים ${pricePerStudent(3)} ₪ לתלמיד, 2 תלמידים ${pricePerStudent(2)} ₪ לתלמיד, ושיעור פרטי ${pricePerStudent(1)} ₪.`,
   },
   {
     q: 'מה קורה אם צריך לבטל שיעור?',

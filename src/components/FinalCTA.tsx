@@ -22,7 +22,7 @@ export default function FinalCTA() {
             href="/schedule"
             className="px-8 py-4 bg-blue-600 text-white font-black text-lg rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 hover:shadow-blue-600/30 hover:-translate-y-0.5"
           >
-            בחרו שעה עכשיו ←
+            בחרו שעה עכשיו&nbsp;←
           </Link>
           <a
             href={WHATSAPP_URL}

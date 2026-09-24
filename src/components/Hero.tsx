@@ -85,7 +85,7 @@ export default function Hero() {
               href="/schedule"
               className="flex-1 sm:flex-none whitespace-normal sm:whitespace-nowrap px-4 sm:px-8 py-4 bg-blue-600 text-white font-black text-lg rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 hover:shadow-blue-600/30 hover:-translate-y-0.5 text-center"
             >
-              בחרו שעה עכשיו ←
+              בחרו שעה עכשיו&nbsp;←
             </Link>
             <div ref={contactRef} className="relative flex-1 sm:flex-none">
               <button
