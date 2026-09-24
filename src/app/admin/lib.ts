@@ -1,19 +1,14 @@
 // Admin-only helpers shared by the dashboard components.
 import { Slot, Booking, dayLabel, getWeekDates, isSlotPast } from '@/lib/types'
 
-const whatsappLink = (phone: string, message: string) => {
+// A WhatsApp chat with the message pre-filled (Israeli 05x numbers → 9725x).
+export const whatsappMessageUrl = (phone: string, message: string) => {
   const num = phone.replace(/[^0-9]/g, '').replace(/^0/, '972')
   return `https://wa.me/${num}?text=${encodeURIComponent(message)}`
 }
 
 export const whatsappUrl = (phone: string, name: string) =>
-  whatsappLink(phone, `שלום! זה שחר, מורה פרטי למתמטיקה. קיבלתי את הבקשה עבור ${name}. אשמח לתאם את הפרטים :)`)
-
-export const paymentReminderUrl = (phone: string, name: string, lessonCount: number, total: string) =>
-  whatsappLink(
-    phone,
-    `שלום! זה שחר 🙂 רציתי להזכיר שנשאר תשלום על ${lessonCount === 1 ? 'שיעור אחד' : `${lessonCount} שיעורים`} של ${name} — סה״כ ${total}. תודה!`,
-  )
+  whatsappMessageUrl(phone, `שלום! זה שחר, מורה פרטי למתמטיקה. קיבלתי את הבקשה עבור ${name}. אשמח לתאם את הפרטים :)`)
 
 export const normalizePhone = (s: string) => s.replace(/\D/g, '')
 

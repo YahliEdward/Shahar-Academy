@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { isAdmin } from '@/lib/auth'
 import { isAdminConfigured } from '@/lib/supabaseAdmin'
-import { getBookings, getSlotLabelMap } from '@/lib/serverDb'
+import { getBookings, withLessonTimes, getSlotLabelMap } from '@/lib/serverDb'
 import { buildReportHtml } from '@/lib/reportHtml'
 
 // Serves the report as a print-ready page the admin opens in a new tab and
@@ -25,7 +25,8 @@ export async function GET() {
     return htmlError('השרת אינו מוגדר', 503)
   }
   try {
-    const [bookings, slotLabels] = await Promise.all([getBookings(), getSlotLabelMap()])
+    // Lesson times put each lesson in the month it actually happens in.
+    const [bookings, slotLabels] = await Promise.all([getBookings().then(withLessonTimes), getSlotLabelMap()])
     return new NextResponse(buildReportHtml(bookings, slotLabels), {
       status: 200,
       headers: {
