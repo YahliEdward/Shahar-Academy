@@ -25,13 +25,16 @@ export default function AboutShahar() {
       >
         <div className="relative max-w-sm mx-auto lg:max-w-none w-full">
           <div className="absolute -inset-3 rounded-3xl bg-blue-50 border border-blue-200 rotate-2" />
-          <Image
-            src="/shahar.jpg"
-            alt="שחר, מורה פרטי למתמטיקה"
-            width={416}
-            height={520}
-            className="relative w-full rounded-2xl border border-slate-200 object-cover"
-          />
+          {/* Temporary: the logo stands in until there's a good photo of Shahar (public/shahar.jpg). */}
+          <div className="relative rounded-2xl border border-slate-200 bg-white p-6 sm:p-8">
+            <Image
+              src="/logo.png"
+              alt="שחר, מורה פרטי למתמטיקה"
+              width={520}
+              height={520}
+              className="w-full h-auto"
+            />
+          </div>
         </div>
 
         <div>
