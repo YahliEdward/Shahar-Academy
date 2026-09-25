@@ -50,9 +50,8 @@ function SlotCard({ slot, isPast, mine, onClick }: { slot: Slot; isPast: boolean
 
         <div className="md:mt-1.5">
           {isEmpty ? (
-            <span className="inline-block text-xs px-2 py-0.5 rounded-full font-semibold whitespace-nowrap bg-emerald-50 text-emerald-700 border border-emerald-200">
-              פתוח לכל כיתה
-            </span>
+            // No label on a free slot, but keep its height so the rows stay aligned.
+            <span aria-hidden className="invisible inline-block text-xs px-2 py-0.5 border">&nbsp;</span>
           ) : (
             <span className={`inline-block text-xs px-2 py-0.5 rounded-full font-semibold whitespace-nowrap ${GROUP_BADGE[slot.groupType]}`}>
               {GROUP_LABELS[slot.groupType]}
