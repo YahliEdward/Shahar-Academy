@@ -23,7 +23,7 @@ export default function AboutShahar() {
         selector=":scope > *"
         className="grid lg:grid-cols-[1fr_1.3fr] gap-10 lg:gap-14 items-center"
       >
-        <div className="relative max-w-sm mx-auto lg:max-w-none w-full">
+        <div className="relative max-w-xs mx-auto lg:max-w-sm w-full">
           <div className="absolute -inset-3 rounded-3xl bg-blue-50 border border-blue-200 rotate-2" />
           <Image
             src="/shahar-portrait.jpg"
