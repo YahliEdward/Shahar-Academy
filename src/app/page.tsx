@@ -1,5 +1,6 @@
 import Navbar from '@/components/Navbar'
 import Hero from '@/components/Hero'
+import NextOpenSlots from '@/components/NextOpenSlots'
 import TrustBar from '@/components/TrustBar'
 import Features from '@/components/Features'
 import WhyChooseUs from '@/components/WhyChooseUs'
@@ -24,6 +25,7 @@ export default function HomePage() {
     <main>
       <Navbar />
       <Hero />
+      <NextOpenSlots />
       <TrustBar />
       <Features />
       <WhyChooseUs />

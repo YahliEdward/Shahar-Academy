@@ -90,6 +90,14 @@ export default function Navbar() {
             בחרו שעה
           </Link>
 
+          {/* Phones: keep the booking button in the fixed bar, not only in the drawer. */}
+          <Link
+            href="/schedule"
+            className="md:hidden inline-flex items-center h-10 px-3.5 bg-blue-600 text-white font-black text-sm rounded-lg hover:bg-blue-700 transition-all shadow-sm shadow-blue-600/20"
+          >
+            בחרו שעה
+          </Link>
+
           <button
             onClick={() => setMenuOpen((o) => !o)}
             aria-label="תפריט"
