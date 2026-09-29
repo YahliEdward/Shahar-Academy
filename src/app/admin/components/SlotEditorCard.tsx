@@ -3,7 +3,7 @@
 import { Slot, Booking, GroupType, GROUP_LABELS, GROUP_COLORS, MAX_STUDENTS, OVER_CAPACITY_LIMIT, isFixedBooking } from '@/lib/types'
 import TimePicker from '@/components/TimePicker'
 
-const GROUP_OPTIONS: GroupType[] = ['middle-school', 'high-4', 'high-5', 'mixed', 'empty']
+const GROUP_OPTIONS: GroupType[] = ['middle-school', 'high-4', 'high-5', 'mixed', 'private', 'empty']
 
 function StudentChip({ b }: { b: Booking }) {
   return (
