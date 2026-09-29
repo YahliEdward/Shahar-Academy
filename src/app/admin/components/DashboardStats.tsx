@@ -1,6 +1,6 @@
 'use client'
 
-import { Booking, Slot, MAX_STUDENTS, formatPrice } from '@/lib/types'
+import { Booking, Slot, MAX_STUDENTS, formatPrice, isClosedToPublic } from '@/lib/types'
 import { buildReport } from '@/lib/reports'
 import { buildStudentAccounts, paymentsEnabled } from '@/lib/payments'
 import { getTodayInfo } from '../lib'
@@ -47,7 +47,8 @@ export default function DashboardStats({ bookings, slots, onPendingClick, onToda
   const { jsDay, todaySlots, nextSlot } = getTodayInfo(slots)
 
   const activeSlots = slots.filter((s) => s.groupType !== 'empty')
-  const capacity = activeSlots.length * MAX_STUDENTS
+  // A private lesson is full with its one student, not 1/6 of a group.
+  const capacity = activeSlots.reduce((sum, s) => sum + (isClosedToPublic(s) ? Math.max(s.enrolled, 1) : MAX_STUDENTS), 0)
   const enrolled = activeSlots.reduce((sum, s) => sum + s.enrolled, 0)
 
   // Same month total as the reports tab (a lesson belongs to the month its

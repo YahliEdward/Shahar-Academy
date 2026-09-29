@@ -1,6 +1,6 @@
 import { getSupabase } from './supabase'
 
-export type GroupType = 'middle-school' | 'high-4' | 'high-5' | 'mixed' | 'empty'
+export type GroupType = 'middle-school' | 'high-4' | 'high-5' | 'mixed' | 'private' | 'empty'
 export type DayIndex = 0 | 1 | 2 | 3 | 4 | 5 | 6
 
 export interface Slot {
@@ -103,6 +103,7 @@ export const GROUP_LABELS: Record<GroupType, string> = {
   'high-4': 'תיכון 4 יח\'',
   'high-5': 'תיכון 5 יח\'',
   'mixed': 'קבוצה מעורבת',
+  'private': 'שיעור פרטי',
   'empty': 'פנוי',
 }
 
@@ -113,7 +114,14 @@ export const GROUP_BADGE: Record<GroupType, string> = {
   'high-4': 'bg-purple-50 text-purple-700 border border-purple-200',
   'high-5': 'bg-amber-50 text-amber-700 border border-amber-200',
   'mixed': 'bg-green-50 text-green-700 border border-green-200',
+  'private': 'bg-rose-50 text-rose-700 border border-rose-200',
   'empty': 'bg-slate-50 text-slate-400 border border-slate-200',
+}
+
+// A private lesson belongs to one student: the public site shows it as taken
+// and never accepts a booking into it, whatever its enrolled count says.
+export function isClosedToPublic(slot: Pick<Slot, 'groupType'>): boolean {
+  return slot.groupType === 'private'
 }
 
 export const GROUP_COLORS: Record<GroupType, string> = {
@@ -121,6 +129,7 @@ export const GROUP_COLORS: Record<GroupType, string> = {
   'high-4': 'bg-purple-50 border-purple-300',
   'high-5': 'bg-amber-50 border-amber-300',
   'mixed': 'bg-green-50 border-green-300',
+  'private': 'bg-rose-50 border-rose-300',
   'empty': 'bg-white border-slate-200',
 }
 

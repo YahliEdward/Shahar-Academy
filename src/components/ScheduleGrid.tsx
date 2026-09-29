@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import {
-  Slot, DayIndex, MOTZASH_DAY, dayLabel, GROUP_LABELS, GROUP_BADGE, MAX_STUDENTS,
+  Slot, DayIndex, MOTZASH_DAY, dayLabel, GROUP_LABELS, GROUP_BADGE, MAX_STUDENTS, isClosedToPublic,
   getSlots, getWeekKey, getWeekDates, formatShortDate, isSlotPast,
 } from '@/lib/types'
 import BookingModal from './BookingModal'
@@ -16,18 +16,18 @@ function SlotStatus({ slot, isPast, mine }: { slot: Slot; isPast: boolean; mine:
   if (mine) return <span className="font-bold text-green-700">✓ השיעור שלך</span>
   if (isPast) return <span className="text-slate-400">הסתיים</span>
   if (slot.groupType === 'empty') return <span className="font-bold text-emerald-700">פנוי לגמרי</span>
-  if (free <= 0) return <span className="text-slate-400">מלא</span>
+  if (free <= 0 || isClosedToPublic(slot)) return <span className="text-slate-400">מלא</span>
   if (free === 1) return <span className="font-bold text-blue-700 pulse-badge">נשאר מקום אחד!</span>
   return <span className="font-semibold text-green-700">{free} מקומות פנויים</span>
 }
 
 function SlotCard({ slot, isPast, mine, onClick }: { slot: Slot; isPast: boolean; mine: boolean; onClick: () => void }) {
-  const isFull = slot.enrolled >= MAX_STUDENTS
+  const isFull = slot.enrolled >= MAX_STUDENTS || isClosedToPublic(slot)
   const isEmpty = slot.groupType === 'empty'
   const disabled = isFull || isPast
   // The teacher can deliberately take a lesson past the standard group size,
   // but the public never sees "7/6" — such a slot is simply full here.
-  const shown = Math.min(slot.enrolled, MAX_STUDENTS)
+  const shown = isClosedToPublic(slot) ? MAX_STUDENTS : Math.min(slot.enrolled, MAX_STUDENTS)
 
   // Every card has the same four rows, so cards line up across the days.
   return (
@@ -107,7 +107,7 @@ const SKELETON_ROWS = 3
 // A slot a visitor can still act on: not over, and either empty (request it)
 // or with a seat left.
 function isBookable(slot: Slot, weekDates: Date[]): boolean {
-  if (isSlotPast(slot, weekDates)) return false
+  if (isSlotPast(slot, weekDates) || isClosedToPublic(slot)) return false
   return slot.groupType === 'empty' || slot.enrolled < MAX_STUDENTS
 }
 

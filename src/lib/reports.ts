@@ -3,7 +3,7 @@
 // differently for different lessons in the same month — a weekday rate, a
 // one-time discount, etc.), so every total here is a plain sum of each
 // billable row's own price — never a rate multiplied by a lesson count.
-import { Booking, Slot, DayIndex, MAX_STUDENTS, TEMPLATE_KEY, dayLabel, formatPrice, formatShortDate } from './types'
+import { Booking, Slot, DayIndex, MAX_STUDENTS, TEMPLATE_KEY, dayLabel, formatPrice, formatShortDate, isClosedToPublic } from './types'
 import { pricePerStudent } from './pricing'
 
 export interface MonthTotal {
@@ -135,7 +135,7 @@ export function effectivePrice(b: Booking, sizes: Map<string, number>): number {
 // mostly-blank timetable as free capacity.
 export function countOpenSlots(slots: Slot[]): number {
   return slots
-    .filter((s) => s.groupType !== 'empty')
+    .filter((s) => s.groupType !== 'empty' && !isClosedToPublic(s))
     .reduce((sum, s) => sum + Math.max(0, MAX_STUDENTS - s.enrolled), 0)
 }
 

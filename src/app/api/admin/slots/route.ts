@@ -7,7 +7,7 @@ import {
 } from '@/lib/serverDb'
 import { Slot, GroupType, OVER_CAPACITY_LIMIT } from '@/lib/types'
 
-const GROUP_TYPES: GroupType[] = ['middle-school', 'high-4', 'high-5', 'mixed', 'empty']
+const GROUP_TYPES: GroupType[] = ['middle-school', 'high-4', 'high-5', 'mixed', 'private', 'empty']
 const TIME_RE = /^\d{2}:\d{2}$/
 
 function isValidSlot(s: unknown): s is Slot {

@@ -1,7 +1,7 @@
 import { getSupabaseAdmin, isAdminConfigured } from './supabaseAdmin'
 import {
   Slot, Booking, Testimonial, MAX_STUDENTS, OVER_CAPACITY_LIMIT, TEMPLATE_KEY,
-  rowToSlot, rowToBooking, rowToTestimonial, templateSlotId, buildDefaultSlots, dayLabel,
+  rowToSlot, rowToBooking, rowToTestimonial, templateSlotId, buildDefaultSlots, dayLabel, isClosedToPublic,
   ReportExportSummary, ReportExportRecord, rowToReportExportSummary, rowToReportExportRecord,
 } from './types'
 
@@ -424,6 +424,9 @@ export async function createBooking(booking: NewBooking, capacityLimit = MAX_STU
   const slot = slots.find((s) => s.id === booking.slotId)
   if (!slot) throw new SlotNotFoundError('Unknown slot')
   if (isSlotInPast(slot, weekKey)) throw new SlotPastError('Slot already started')
+  // Only the admin path raises the ceiling, so this closes private lessons to
+  // the public form while the teacher can still add a student to one.
+  if (capacityLimit === MAX_STUDENTS && isClosedToPublic(slot)) throw new SlotFullError('Private lesson')
 
   // Take the seat first — atomically. false means the slot filled up between
   // the page load and the submit.

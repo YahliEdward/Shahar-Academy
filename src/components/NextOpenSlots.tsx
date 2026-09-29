@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import {
-  Slot, dayLabel, GROUP_LABELS, MAX_STUDENTS,
+  Slot, dayLabel, GROUP_LABELS, MAX_STUDENTS, isClosedToPublic,
   getSlots, getWeekKey, getWeekDates, isSlotPast,
 } from '@/lib/types'
 import BookingModal from './BookingModal'
@@ -38,7 +38,7 @@ async function loadOpenSlots(): Promise<OpenSlot[]> {
     }),
   )
   const upcoming = weeks.flat().sort((a, b) => a.start.getTime() - b.start.getTime())
-  const groups = upcoming.filter((o) => o.slot.groupType !== 'empty' && o.slot.enrolled < MAX_STUDENTS)
+  const groups = upcoming.filter((o) => o.slot.groupType !== 'empty' && !isClosedToPublic(o.slot) && o.slot.enrolled < MAX_STUDENTS)
   const unassigned = upcoming.filter((o) => o.slot.groupType === 'empty')
   return [...groups, ...unassigned]
     .slice(0, MAX_SHOWN)
